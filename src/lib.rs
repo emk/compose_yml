@@ -4,7 +4,7 @@
 #![cfg_attr(feature = "serde_macros", plugin(serde_macros))]
 
 extern crate serde;
-extern crate serde_json;
+extern crate serde_yaml;
 
 // This code is run if we have a nightly build of Rust, and hence compiler
 // plugins.
@@ -16,9 +16,9 @@ include!("serde_types.in.rs");
 #[cfg(feature = "serde_codegen")]
 include!(concat!(env!("OUT_DIR"), "/serde_types.rs"));
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-    }
+#[test]
+fn it_serializes_as_yaml() {
+    let point = Point { x: 1, y: 2 };
+    let s = serde_yaml::to_string(&point).unwrap();
+    assert_eq!(s, "---\n\"x\": 1\n\"y\": 2");
 }

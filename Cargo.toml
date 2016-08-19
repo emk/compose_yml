@@ -13,7 +13,6 @@ serde_codegen = { version = "0.8", optional = true }
 
 [dependencies]
 serde = "0.8"
-serde_json = "0.8"
 serde_macros = { version = "0.8", optional = true }
 serde_yaml = "0.4.0"
 yaml-rust = "0.3.3"
