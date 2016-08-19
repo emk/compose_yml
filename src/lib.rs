@@ -1,3 +1,7 @@
+//! Support for reading and writing `docker-compose.yml` files.
+
+#![warn(missing_docs)]
+
 // Compiler plugins only work with Rust nightly builds, not with stable
 // compilers.  We want to work with both.
 #![cfg_attr(feature = "serde_macros", feature(plugin, custom_derive))]
@@ -5,6 +9,8 @@
 
 extern crate serde;
 extern crate serde_yaml;
+
+use std::collections::HashMap;
 
 // This code is run if we have a nightly build of Rust, and hence compiler
 // plugins.
@@ -15,10 +21,3 @@ include!("serde_types.in.rs");
 // generated from `serde_types.in.rs` by `build.rs` at build time.
 #[cfg(feature = "serde_codegen")]
 include!(concat!(env!("OUT_DIR"), "/serde_types.rs"));
-
-#[test]
-fn it_serializes_as_yaml() {
-    let point = Point { x: 1, y: 2 };
-    let s = serde_yaml::to_string(&point).unwrap();
-    assert_eq!(s, "---\n\"x\": 1\n\"y\": 2");
-}
