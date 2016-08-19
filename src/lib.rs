@@ -7,10 +7,10 @@
 #![cfg_attr(feature = "serde_macros", feature(plugin, custom_derive))]
 #![cfg_attr(feature = "serde_macros", plugin(serde_macros))]
 
+#[macro_use] extern crate lazy_static;
+extern crate regex;
 extern crate serde;
 extern crate serde_yaml;
-
-use std::collections::HashMap;
 
 // This code is run if we have a nightly build of Rust, and hence compiler
 // plugins.
