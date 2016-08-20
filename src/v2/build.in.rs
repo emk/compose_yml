@@ -3,7 +3,7 @@
 // of how this works.
 
 /// Information on how to build a Docker image.
-#[derive(Debug, Serialize)]
+#[derive(Debug)]
 pub struct Build {
     /// The source directory to use for this build.
     pub context: Context,
@@ -12,7 +12,39 @@ pub struct Build {
     pub dockerfile: Option<String>,
 
     /// Build arguments.
-    pub args: Option<BTreeMap<String, String>>,
+    pub args: BTreeMap<String, String>,
+}
+
+// Serialize using the short form if possible.
+impl Serialize for Build {
+    fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
+        where S: Serializer
+    {
+        let mut len = 1;
+        if self.dockerfile.is_some() {
+            len += 1;
+        }
+        if !self.args.is_empty() {
+            len += 1;
+        }
+
+        if len == 1 {
+            self.context.serialize(serializer)
+        } else {
+            let mut state = try!(serializer.serialize_struct("Build", len));
+            try!(serializer.serialize_struct_elt(&mut state, "context",
+                                                 &self.context));
+            if self.dockerfile.is_some() {
+                try!(serializer.serialize_struct_elt(&mut state, "dockerfile",
+                                                     &self.dockerfile.as_ref().unwrap()));
+            }
+            if !self.args.is_empty() {
+                try!(serializer.serialize_struct_elt(&mut state, "args",
+                                                     &self.args));
+            }
+            serializer.serialize_struct_end(state)
+        }
+    }
 }
 
 // This hideous deserializer handles the fact that `build:` can be
@@ -37,7 +69,7 @@ impl Deserialize for Build {
                 Ok(Build {
                     context: Context::new(value),
                     dockerfile: None,
-                    args: None,
+                    args: Default::default(),
                 })
             }
 
@@ -84,7 +116,7 @@ impl Deserialize for Build {
                 Ok(Build {
                     context: context,
                     dockerfile: dockerfile,
-                    args: args,
+                    args: args.unwrap_or_else(|| { Default::default() }),
                 })
             }
         }
@@ -99,7 +131,14 @@ fn build_may_be_a_bare_string() {
     let build: Build = serde_yaml::from_str("---\n\".\"").unwrap();
     assert_eq!(build.context, Context::new("."));
     assert_eq!(build.dockerfile, None);
-    assert_eq!(build.args, None);
+    assert_eq!(build.args, Default::default());
+}
+
+#[test]
+fn build_will_serialize_as_a_bare_string_when_possible() {
+    let build: Build = serde_yaml::from_str("---\n\".\"").unwrap();
+    let yaml = serde_yaml::to_string(&build).unwrap();
+    assert_eq!(yaml, "---\n\".\"")
 }
 
 #[test]
@@ -113,8 +152,7 @@ args:
     let build: Build = serde_yaml::from_str(yaml).unwrap();
     assert_eq!(build.context, Context::new("."));
     assert_eq!(build.dockerfile, Some("Dockerfile".to_owned()));
-    assert_eq!(build.args.expect("args should be present").get("key").cloned(),
-               Some("value".to_owned()));
+    assert_eq!(build.args.get("key").cloned(), Some("value".to_owned()));
 }
 
 #[test]
@@ -125,6 +163,5 @@ args:
   - \"key=value\"
 ";
     let build: Build = serde_yaml::from_str(yaml).unwrap();
-    assert_eq!(build.args.expect("args should be present").get("key").cloned(),
-               Some("value".to_owned()));
+    assert_eq!(build.args.get("key").cloned(), Some("value".to_owned()));
 }
