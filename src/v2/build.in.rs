@@ -10,6 +10,9 @@ pub struct Build {
 
     /// The name of an alternate `Dockerfile` to use.
     pub dockerfile: Option<String>,
+
+    /// Build arguments.
+    pub args: Option<BTreeMap<String, String>>,
 }
 
 // This hideous deserializer handles the fact that `build:` can be
@@ -34,6 +37,7 @@ impl Deserialize for Build {
                 Ok(Build {
                     context: Context::new(value),
                     dockerfile: None,
+                    args: None,
                 })
             }
 
@@ -45,6 +49,7 @@ impl Deserialize for Build {
             {
                 let mut context: Option<Context> = None;
                 let mut dockerfile: Option<String> = None;
+                let mut args: Option<BTreeMap<String, String>> = None;
 
                 while let Some(key) = try!(visitor.visit_key::<String>()) {
                     match key.as_ref() {
@@ -60,6 +65,12 @@ impl Deserialize for Build {
                             }
                             dockerfile = Some(try!(visitor.visit_value()));
                         }
+                        "args" => {
+                            if args.is_some() {
+                                return Err(<V::Error as Error>::duplicate_field("args"));
+                            }
+                            args = Some(try!(visitor.visit_value()));
+                        }
                         name => {
                             return Err(<V::Error as Error>::unknown_field(name));
                         }
@@ -73,6 +84,7 @@ impl Deserialize for Build {
                 Ok(Build {
                     context: context,
                     dockerfile: dockerfile,
+                    args: args,
                 })
             }
         }
@@ -87,6 +99,7 @@ fn build_may_be_a_bare_string() {
     let build: Build = serde_yaml::from_str("---\n\".\"").unwrap();
     assert_eq!(build.context, Context::new("."));
     assert_eq!(build.dockerfile, None);
+    assert_eq!(build.args, None);
 }
 
 #[test]
@@ -94,8 +107,12 @@ fn build_may_be_a_struct() {
     let yaml = "---
 context: \".\"
 dockerfile: \"Dockerfile\"
+args:
+  key: \"value\"
 ";
     let build: Build = serde_yaml::from_str(yaml).unwrap();
     assert_eq!(build.context, Context::new("."));
     assert_eq!(build.dockerfile, Some("Dockerfile".to_owned()));
+    assert_eq!(build.args.expect("args should be present").get("key").cloned(),
+               Some("value".to_owned()));
 }
