@@ -1,14 +1,6 @@
-// Basic datatypes which can be converted to and from YAML.  Processed
-// using serde, either in `serde_macros` mode (with nightly Rust) or in
-// `serde_codegen` mode and `build.rs` (with stable Rust).
-//
-// To get better error messages for this file, build it using the nightly
-// release of Rust:
-//
-// ```sh
-// rustup toolchain install nightly
-// rustup run nightly cargo build --no-default-features --features unstable
-// ```
+// This is not a normal Rust module! It's included directly into v2.rs,
+// possibly after build-time preprocessing.  See v2.rs for an explanation
+// of how this works.
 
 use regex::Regex;
 use serde::Error;
