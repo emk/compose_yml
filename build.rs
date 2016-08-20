@@ -9,6 +9,7 @@
 
 #[cfg(feature = "serde_codegen")]
 fn main() {
+    use std::fs;
     extern crate glob;
     extern crate serde_codegen;
 
@@ -30,6 +31,11 @@ fn main() {
                 dst.set_file_name(src.file_stem().expect("Failed to get file stem"));
                 dst.set_extension("rs");
 
+                // Make sure our target directory exists.  We only need
+                // this if there are extra nested sudirectories under src/.
+                fs::create_dir_all(dst.parent().unwrap()).unwrap();
+
+                // Process our source file.
                 serde_codegen::expand(&src, &dst).unwrap();
             }
             Err(e) => {
