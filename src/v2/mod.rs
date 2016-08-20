@@ -2,7 +2,7 @@
 
 use regex::Regex;
 use serde::Error;
-use serde::de::{self, Deserialize, Deserializer, MapVisitor, Visitor};
+use serde::de::{self, Deserialize, Deserializer, MapVisitor, SeqVisitor, Visitor};
 use serde::ser::{self, Serialize, Serializer};
 #[cfg(test)] use serde_yaml;
 use std::collections::BTreeMap;
@@ -44,6 +44,9 @@ macro_rules! serde_include {
         include!(concat!(env!("OUT_DIR"), "/v2/", $basename, ".rs"));
     };
 }
+
+// Support types.
+serde_include!("command_line");
 
 // Basic file structure.
 serde_include!("file");

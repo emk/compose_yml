@@ -162,3 +162,9 @@ args:
     let build: Build = serde_yaml::from_str(yaml).unwrap();
     assert_eq!(build.args.get("key").cloned(), Some("value".to_owned()));
 }
+
+// TODO: Implement valueless keys.
+//
+// args:
+//   - buildno
+//   - password
