@@ -3,7 +3,7 @@
 // of how this works.
 
 /// Information on how to build a Docker image.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Build {
     /// The source directory to use for this build.
     pub context: Context,

@@ -3,7 +3,7 @@
 // of how this works.
 
 /// A service which will be managed by `docker-compose`.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Service {
     /// How to build an image for this service.
     pub build: Option<Build>,
