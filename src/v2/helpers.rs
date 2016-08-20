@@ -6,6 +6,22 @@ use serde::Error;
 use serde::de::{Deserialize, Deserializer, MapVisitor, SeqVisitor, Visitor};
 use std::collections::BTreeMap;
 
+/// Normalize YAML-format data for comparison purposes.  Used by unit
+/// tests.
+#[cfg(test)]
+pub fn normalize_yaml(yaml: &str) -> String {
+    lazy_static! {
+        // Match a key/value pair.
+        static ref WS_NL: Regex =
+            Regex::new(" +\n").unwrap();
+
+        static ref NL_EOS: Regex =
+            Regex::new("\n$").unwrap();
+    }
+
+    NL_EOS.replace_all(&WS_NL.replace_all(yaml, "\n"), "")
+}
+
 /// Certain maps in `docker-compose.yml` files may be specified in two
 /// forms.  The first form is an ordinary map:
 ///

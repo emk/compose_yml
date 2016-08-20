@@ -12,6 +12,17 @@ use self::helpers::*;
 
 mod helpers;
 
+macro_rules! assert_roundtrip {
+    ( $ty:ty, $yaml:expr ) => {
+        {
+            let yaml: &str = $yaml;
+            let data: $ty = serde_yaml::from_str(&yaml).unwrap();
+            let yaml2 = serde_yaml::to_string(&data).unwrap();
+            assert_eq!(normalize_yaml(yaml), normalize_yaml(&yaml2));
+        }
+    }
+}
+
 /// A macro for including another source file directly into this one,
 /// without defining a normal submodule, and with support for preprocessing
 /// the source code using serde_codegen if necessary.

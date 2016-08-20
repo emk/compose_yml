@@ -128,6 +128,8 @@ impl Deserialize for Build {
 
 #[test]
 fn build_may_be_a_bare_string() {
+    assert_roundtrip!(Build, "---\n\".\"");
+
     let build: Build = serde_yaml::from_str("---\n\".\"").unwrap();
     assert_eq!(build.context, Context::new("."));
     assert_eq!(build.dockerfile, None);
@@ -135,20 +137,15 @@ fn build_may_be_a_bare_string() {
 }
 
 #[test]
-fn build_will_serialize_as_a_bare_string_when_possible() {
-    let build: Build = serde_yaml::from_str("---\n\".\"").unwrap();
-    let yaml = serde_yaml::to_string(&build).unwrap();
-    assert_eq!(yaml, "---\n\".\"")
-}
-
-#[test]
 fn build_may_be_a_struct() {
-    let yaml = "---
-context: \".\"
-dockerfile: \"Dockerfile\"
-args:
-  key: \"value\"
-";
+    let yaml = r#"---
+"args":
+  "key": "value"
+"context": "."
+"dockerfile": "Dockerfile"
+"#;
+    assert_roundtrip!(Build, yaml);
+
     let build: Build = serde_yaml::from_str(yaml).unwrap();
     assert_eq!(build.context, Context::new("."));
     assert_eq!(build.dockerfile, Some("Dockerfile".to_owned()));
