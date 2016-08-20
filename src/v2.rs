@@ -5,7 +5,7 @@ use serde::Error;
 use serde::de::{self, Deserialize, Deserializer, MapVisitor, Visitor};
 use serde::ser::{self, Serialize, Serializer};
 #[cfg(test)] use serde_yaml;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 /// A macro for including another source file directly into this one,

@@ -6,7 +6,7 @@
 #[derive(Serialize, Deserialize, Debug)]
 pub struct File {
     /// The individual services which make up this app.
-    pub services: HashMap<String, Service>,
+    pub services: BTreeMap<String, Service>,
 }
 
 #[test]
