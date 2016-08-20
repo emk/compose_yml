@@ -69,7 +69,7 @@ impl Deserialize for Build {
                             if args.is_some() {
                                 return Err(<V::Error as Error>::duplicate_field("args"));
                             }
-                            args = Some(try!(visitor.visit_value()));
+                            args = Some(try!(visitor.visit_value::<MapOrKeyValueList>()).into_map());
                         }
                         name => {
                             return Err(<V::Error as Error>::unknown_field(name));
@@ -113,6 +113,18 @@ args:
     let build: Build = serde_yaml::from_str(yaml).unwrap();
     assert_eq!(build.context, Context::new("."));
     assert_eq!(build.dockerfile, Some("Dockerfile".to_owned()));
+    assert_eq!(build.args.expect("args should be present").get("key").cloned(),
+               Some("value".to_owned()));
+}
+
+#[test]
+fn build_args_may_be_a_key_value_list() {
+    let yaml = "---
+context: \".\"
+args:
+  - \"key=value\"
+";
+    let build: Build = serde_yaml::from_str(yaml).unwrap();
     assert_eq!(build.args.expect("args should be present").get("key").cloned(),
                Some("value".to_owned()));
 }

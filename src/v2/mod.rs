@@ -8,6 +8,10 @@ use serde::ser::{self, Serialize, Serializer};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
+use self::helpers::*;
+
+mod helpers;
+
 /// A macro for including another source file directly into this one,
 /// without defining a normal submodule, and with support for preprocessing
 /// the source code using serde_codegen if necessary.
@@ -20,7 +24,7 @@ macro_rules! serde_include {
         // This code is run if we have a nightly build of Rust, and hence
         // compiler plugins.
         #[cfg(feature = "serde_macros")]
-        include!(concat!("v2/", $basename, ".in.rs"));
+        include!(concat!($basename, ".in.rs"));
 
         // This code is run if we have a stable build of Rust.  The
         // `$preprocessed` file is generated from `$original` by `build.rs`
