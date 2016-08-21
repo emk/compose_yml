@@ -31,9 +31,9 @@ pub struct Service {
 
     /// A list of devices to map into this container.
     ///
-    /// TODO: Parse string values.
+    /// TODO: Permissions.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub devices: Vec<String>,
+    pub devices: Vec<AliasedName>,
 
     /// A list of other containers to start first.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -77,7 +77,11 @@ pub struct Service {
     pub expose: Vec<String>,
 
     // TODO: extends
-    // TODO: external_links
+
+    /// Links to external containers.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub external_links: Vec<AliasedName>,
+
     // TODO: extra_hosts
 
     /// The name of the image to build or pull for this container.
@@ -85,7 +89,11 @@ pub struct Service {
     pub image: Option<String>,
 
     // TODO: labels
-    // TODO: links
+
+    /// Links to other services in this file.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub links: Vec<AliasedName>,
+
     // TODO: logging (driver, options)
     // TODO: network_mode
     // TODO: networks (aliases, ipv4_address, ipv6_address
