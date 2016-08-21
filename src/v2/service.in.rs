@@ -100,11 +100,19 @@ pub struct Service {
 
     // TODO: logging (driver, options)
     // TODO: network_mode
-    // TODO: networks (aliases, ipv4_address, ipv6_address
+    // TODO: networks (aliases, ipv4_address, ipv6_address)
     // TODO: pid
     // TODO: ports
-    // TODO: security_opt
-    // TODO: stop_signal
+
+    /// Security options for AppArmor or SELinux.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub security_opt: Vec<String>,
+
+    /// The name of the Unix signal which will be sent to stop this
+    /// container.  Defaults to SIGTERM if not specified.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stop_signal: Option<String>,
+
     // TODO: ulimits
     // TODO: volumes_from
 
@@ -139,12 +147,28 @@ pub struct Service {
     #[serde(default, skip_serializing_if = "is_false")]
     pub privileged: bool,
 
-    // TODO: read_only
+    // TODO: read_only (what is this, anyway?)
+
     // TODO: restart
     // TODO: shm_size
-    // TODO: stdin_open
-    // TODO: tty
-    // TODO: user
+
+    /// Should STDIN be left open when running the container?  Corresponds
+    /// to `docker run -i`.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub stdin_open: bool,
+
+    /// Should a TTY be be allocated for the container?  Corresponds to
+    /// `docker run -t`.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub tty: bool,
+
+    /// The user name (or UID) of the user under which to execute the
+    /// container's command.  May optionally be followed by `:group` or
+    /// `:gid` to specific the group or group ID.
+    ///
+    /// TODO: Parse out optional group field separately?
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user: Option<String>,
 
     /// The working directory to use for this container.
     ///
