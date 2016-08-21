@@ -63,7 +63,10 @@ pub struct Service {
             deserialize_with = "deserialize_string_or_list")]
     pub env_file: Vec<String>,
 
-    // environment
+    /// Environment variables and values to supply to the container.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
+            deserialize_with = "deserialize_map_or_key_value_list")]
+    pub environment: BTreeMap<String, String>,
 
     /// Expose a list of ports to any containers that link to us.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
