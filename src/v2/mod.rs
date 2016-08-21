@@ -46,6 +46,7 @@ macro_rules! serde_include {
 }
 
 // Support types.
+serde_include!("aliased_name");
 serde_include!("command_line");
 
 // Basic file structure.

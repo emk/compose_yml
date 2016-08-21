@@ -7,6 +7,36 @@ use serde::de;
 use serde::de::{Deserialize, Deserializer, MapVisitor, SeqVisitor, Visitor};
 use serde::ser::{Serialize, Serializer};
 use std::collections::BTreeMap;
+use std::error;
+use std::fmt;
+
+/// An error parsing a string in a Dockerfile.
+#[derive(Debug)]
+pub struct ParseError {
+    wanted: String,
+    input: String,
+}
+
+impl ParseError {
+    pub fn new(wanted: &str, input: &str) -> ParseError {
+        ParseError {
+            wanted: wanted.to_owned(),
+            input: input.to_owned(),
+        }
+    }
+}
+
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        write!(f, "Error parsing {}: <{}>", &self.wanted, &self.input)
+    }
+}
+
+impl error::Error for ParseError {
+    fn description(&self) -> &str {
+        "Parse error"
+    }
+}
 
 /// Normalize YAML-format data for comparison purposes.  Used by unit
 /// tests.

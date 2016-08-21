@@ -29,7 +29,11 @@ pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub container_name: Option<String>,
 
-    // devices
+    /// A list of devices to map into this container.
+    ///
+    /// TODO: Parse string values.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub devices: Vec<String>,
 
     /// A list of other containers to start first.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -72,26 +76,26 @@ pub struct Service {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub expose: Vec<String>,
 
-    // extends
-    // external_links
-    // extra_hosts
+    // TODO: extends
+    // TODO: external_links
+    // TODO: extra_hosts
 
     /// The name of the image to build or pull for this container.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub image: Option<String>,
 
-    // labels
-    // links
-    // logging (driver, options)
-    // network_mode
-    // networks (aliases, ipv4_address, ipv6_address
-    // pid
-    // ports
-    // security_opt
-    // stop_signal
-    // ulimits
-    // volumes_from
-    // cpu_shares, cpu_quota, cpuset, domainname, hostname, ipc, mac_address, mem_limit, memswap_limit, privileged, read_only, restart, shm_size, stdin_open, tty, user, working_dir
+    // TODO: labels
+    // TODO: links
+    // TODO: logging (driver, options)
+    // TODO: network_mode
+    // TODO: networks (aliases, ipv4_address, ipv6_address
+    // TODO: pid
+    // TODO: ports
+    // TODO: security_opt
+    // TODO: stop_signal
+    // TODO: ulimits
+    // TODO: volumes_from
+    // TODO: cpu_shares, cpu_quota, cpuset, domainname, hostname, ipc, mac_address, mem_limit, memswap_limit, privileged, read_only, restart, shm_size, stdin_open, tty, user, working_dir
 }
 
 #[test]
