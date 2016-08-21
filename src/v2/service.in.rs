@@ -35,15 +35,34 @@ pub struct Service {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub depends_on: Vec<String>,
 
-    // dns
-    // dns_search
-    // tmpfs
+    /// DNS servers.
+    #[serde(default, skip_serializing_if = "Vec::is_empty",
+            serialize_with = "serialize_item_or_list",
+            deserialize_with = "deserialize_string_or_list")]
+    pub dns: Vec<String>,
+
+    /// Domains to search for hostnames.
+    #[serde(default, skip_serializing_if = "Vec::is_empty",
+            serialize_with = "serialize_item_or_list",
+            deserialize_with = "deserialize_string_or_list")]
+    pub dns_search: Vec<String>,
+
+    /// Locations to mount temporary file systems.
+    #[serde(default, skip_serializing_if = "Vec::is_empty",
+            serialize_with = "serialize_item_or_list",
+            deserialize_with = "deserialize_string_or_list")]
+    pub tmpfs: Vec<String>,
 
     /// The entrypoint for the container (wraps `command`, basically).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub entrypoint: Option<CommandLine>,
 
-    // env_file
+    /// Environment files used to supply variables to the container.
+    #[serde(default, skip_serializing_if = "Vec::is_empty",
+            serialize_with = "serialize_item_or_list",
+            deserialize_with = "deserialize_string_or_list")]
+    pub env_file: Vec<String>,
+
     // environment
 
     /// Expose a list of ports to any containers that link to us.
@@ -70,4 +89,16 @@ pub struct Service {
     // ulimits
     // volumes_from
     // cpu_shares, cpu_quota, cpuset, domainname, hostname, ipc, mac_address, mem_limit, memswap_limit, privileged, read_only, restart, shm_size, stdin_open, tty, user, working_dir
+}
+
+#[test]
+fn service_handles_sample_fields_correctly() {
+    let yaml = r#"---
+"dns": "8.8.8.8"
+"dns_search":
+  - "example.com"
+  - "example.net"
+"image": "hello"
+"#;
+    assert_roundtrip!(Service, yaml);
 }

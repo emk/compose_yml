@@ -3,7 +3,9 @@
 
 use regex::Regex;
 use serde::Error;
+use serde::de;
 use serde::de::{Deserialize, Deserializer, MapVisitor, SeqVisitor, Visitor};
+use serde::ser::{Serialize, Serializer};
 use std::collections::BTreeMap;
 
 /// Normalize YAML-format data for comparison purposes.  Used by unit
@@ -127,4 +129,55 @@ impl Deserialize for MapOrKeyValueList {
         let map = try!(deserialize_map_or_key_value_list(deserializer));
         Ok(MapOrKeyValueList(map))
     }
+}
+
+/// Serialize a list normally, unless it has only a single element, in
+/// which case serialize just that element directly.
+pub fn serialize_item_or_list<T, S>(value: &[T], serializer: &mut S) ->
+    Result<(), S::Error>
+    where T: Serialize, S: Serializer
+{
+    if value.len() == 1 {
+        value[0].serialize(serializer)
+    } else {
+        let mut state = try!(serializer.serialize_seq(Some(value.len())));
+        for item in value {
+            try!(serializer.serialize_seq_elt(&mut state, item));
+        }
+        serializer.serialize_seq_end(state)
+    }
+}
+
+/// Deserialize either list or a single bare string as a list.
+pub fn deserialize_string_or_list<D>(deserializer: &mut D) ->
+    Result<Vec<String>, D::Error>
+    where D: Deserializer
+{
+    struct StringOrListVisitor;
+
+    impl Visitor for StringOrListVisitor {
+        type Value = Vec<String>;
+
+        // Handle a single item.
+        fn visit_str<E>(&mut self, value: &str) -> Result<Self::Value, E>
+            where E: de::Error
+        {
+            Ok(vec!(value.to_owned()))
+        }
+
+        // Handle a list of items.
+        fn visit_seq<V>(&mut self, mut visitor: V) -> Result<Self::Value, V::Error>
+            where V: SeqVisitor
+        {
+            let mut items: Vec<String> = vec!();
+            while let Some(item) = try!(visitor.visit::<String>()) {
+                items.push(item);
+            }
+            try!(visitor.end());
+            Ok(items)
+        }
+
+    }
+
+    deserializer.deserialize(StringOrListVisitor)
 }
