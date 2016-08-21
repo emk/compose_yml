@@ -38,6 +38,12 @@ impl error::Error for InvalidValueError {
     }
 }
 
+/// Test whether a value is false.  Used to determine when to serialize
+/// things.
+pub fn is_false(b: &bool) -> bool {
+    !b
+}
+
 /// Normalize YAML-format data for comparison purposes.  Used by unit
 /// tests.
 #[cfg(test)]

@@ -88,7 +88,11 @@ pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub image: Option<String>,
 
-    // TODO: labels
+    /// Docker labels for this container, specifying various sorts of
+    /// custom metadata.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
+            deserialize_with = "deserialize_map_or_key_value_list")]
+    pub labels: BTreeMap<String, String>,
 
     /// Links to other services in this file.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -103,7 +107,50 @@ pub struct Service {
     // TODO: stop_signal
     // TODO: ulimits
     // TODO: volumes_from
-    // TODO: cpu_shares, cpu_quota, cpuset, domainname, hostname, ipc, mac_address, mem_limit, memswap_limit, privileged, read_only, restart, shm_size, stdin_open, tty, user, working_dir
+
+    /// The relative number of CPU shares to give to this container.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cpu_shares: Option<u32>,
+
+    /// Limit the CFS CPU quota.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cpu_quota: Option<u32>,
+
+    // TODO: cpuset
+
+    /// The domain name to use for this container.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub domainname: Option<String>,
+
+    /// The hostname to use for this container.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hostname: Option<String>,
+
+    // TODO: ipc
+
+    /// The MAC address to use for this container's network interface.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mac_address: Option<String>,
+
+    // TODO: mem_limit
+    // TODO: memswap_limit
+
+    /// The MAC address to use for this container's network interface.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub privileged: bool,
+
+    // TODO: read_only
+    // TODO: restart
+    // TODO: shm_size
+    // TODO: stdin_open
+    // TODO: tty
+    // TODO: user
+
+    /// The working directory to use for this container.
+    ///
+    /// TODO: Use PathBuf?
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub working_dir: Option<String>,
 }
 
 #[test]
