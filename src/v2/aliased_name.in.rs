@@ -41,9 +41,11 @@ impl AliasedName {
         }
         Ok(())
     }
+}
 
+impl SimpleSerializeDeserialize for AliasedName {
     /// Parse an aliased name from a string.
-    pub fn from_str(s: &str) -> Result<AliasedName, InvalidValueError> {
+    fn from_str(s: &str) -> Result<AliasedName, InvalidValueError> {
         lazy_static! {
             static ref ALIASED_NAME: Regex =
                 Regex::new("^([^:]+)(?::([^:]+))?$").unwrap();
@@ -58,7 +60,7 @@ impl AliasedName {
     }
 
     /// Convert to a string.
-    pub fn to_string(&self) -> Result<String, InvalidValueError> {
+    fn to_string(&self) -> Result<String, InvalidValueError> {
         try!(self.validate());
         match &self.alias {
             &Some(ref alias) => Ok(format!("{}:{}", &self.name, alias)),
@@ -67,27 +69,9 @@ impl AliasedName {
     }
 }
 
-impl Serialize for AliasedName {
-    fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
-        where S: Serializer
-    {
-        match &self.to_string() {
-            &Ok(ref s) => serializer.serialize_str(s),
-            &Err(ref err) => Err(ser::Error::custom(format!("{}", err)))
-        }
-    }
-}
-
-impl Deserialize for AliasedName {
-    fn deserialize<D>(deserializer: &mut D) -> Result<AliasedName, D::Error>
-        where D: Deserializer
-    {
-        let string = try!(String::deserialize(deserializer));
-        AliasedName::from_str(&string).map_err(|err| {
-            de::Error::custom(format!("{}", err))
-        })
-    }
-}
+// Implement Serialize and Deserialize using a macro, to work around
+// restrictions in Rust's trait system.
+impl_simple_serialize_deserialize!(AliasedName);
 
 #[test]
 fn aliased_name_can_be_converted_to_and_from_a_string() {

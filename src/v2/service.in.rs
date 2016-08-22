@@ -114,6 +114,7 @@ pub struct Service {
     pub stop_signal: Option<String>,
 
     // TODO: ulimits
+    // TODO: volumes
     // TODO: volumes_from
 
     /// The relative number of CPU shares to give to this container.
@@ -140,8 +141,15 @@ pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<String>,
 
-    // TODO: mem_limit
-    // TODO: memswap_limit
+    /// The maximum amount of memory which this container may use, in
+    /// bytes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mem_limit: Option<MemorySize>,
+
+    /// The maximum amount of swap space which this container may use, in
+    /// bytes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memswap_limit: Option<MemorySize>,
 
     /// The MAC address to use for this container's network interface.
     #[serde(default, skip_serializing_if = "is_false")]
@@ -150,7 +158,11 @@ pub struct Service {
     // TODO: read_only (what is this, anyway?)
 
     // TODO: restart
-    // TODO: shm_size
+
+    /// The amount of shared memory to allocate for this container, in
+    /// bytes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub shm_size: Option<MemorySize>,
 
     /// Should STDIN be left open when running the container?  Corresponds
     /// to `docker run -i`.

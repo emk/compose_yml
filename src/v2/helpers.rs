@@ -7,36 +7,6 @@ use serde::de;
 use serde::de::{Deserialize, Deserializer, MapVisitor, SeqVisitor, Visitor};
 use serde::ser::{Serialize, Serializer};
 use std::collections::BTreeMap;
-use std::error;
-use std::fmt;
-
-/// An error parsing a string in a Dockerfile.
-#[derive(Debug)]
-pub struct InvalidValueError {
-    wanted: String,
-    input: String,
-}
-
-impl InvalidValueError {
-    pub fn new(wanted: &str, input: &str) -> InvalidValueError {
-        InvalidValueError {
-            wanted: wanted.to_owned(),
-            input: input.to_owned(),
-        }
-    }
-}
-
-impl fmt::Display for InvalidValueError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "Invalid {}: <{}>", &self.wanted, &self.input)
-    }
-}
-
-impl error::Error for InvalidValueError {
-    fn description(&self) -> &str {
-        "Invalid value"
-    }
-}
 
 /// Test whether a value is false.  Used to determine when to serialize
 /// things.

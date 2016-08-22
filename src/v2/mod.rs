@@ -9,8 +9,11 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use self::helpers::*;
+use self::simple_serialize_deserialize::*;
 
 mod helpers;
+#[macro_use]
+mod simple_serialize_deserialize;
 
 macro_rules! assert_roundtrip {
     ( $ty:ty, $yaml:expr ) => {
@@ -48,6 +51,7 @@ macro_rules! serde_include {
 // Support types.
 serde_include!("aliased_name");
 serde_include!("command_line");
+serde_include!("memory_size");
 
 // Basic file structure.
 serde_include!("file");
