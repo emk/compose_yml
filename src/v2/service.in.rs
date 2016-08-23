@@ -78,7 +78,9 @@ pub struct Service {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub expose: Vec<String>,
 
-    // TODO: extends
+    /// Extend another service, either in this file or another.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extends: Option<Extends>,
 
     /// Links to external containers.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

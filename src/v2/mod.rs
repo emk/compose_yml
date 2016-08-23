@@ -64,3 +64,5 @@ serde_include!("service");
 // Service-related types.
 serde_include!("build");
 serde_include!("context");
+serde_include!("extends");
+
