@@ -10,7 +10,6 @@
 /// recommends.
 ///
 /// [external_traits]: https://www.reddit.com/r/rust/comments/3709tl/implementing_external_trait_for_types/
-#[macro_export]
 macro_rules! impl_serialize_to_string {
     ($ty:ty) => {
         impl Serialize for $ty {
@@ -26,7 +25,6 @@ macro_rules! impl_serialize_to_string {
 /// Provide an implementation of `Deserialize` for a `FromString` type.
 /// See `impl_serialize_to_string` for an explanation of why we do this
 /// with a macro.
-#[macro_export]
 macro_rules! impl_deserialize_from_str {
     ($ty:ty) => {
         impl Deserialize for $ty {
