@@ -115,6 +115,12 @@ pub fn serialize_opt_string_or_struct<T, S>(value: &Option<T>,
     where T: SerializeStringOrStruct,
           S: Serializer
 {
+    // A fun little trick: We need to pass `value` to to `serialize_some`,
+    // but we don't want `serialize_some` to call the normal `serialize`
+    // method on it.  So we define a local wrapper type that overrides the
+    // serialization.  This is one of the more subtle tricks of generic
+    // programming in Rust: using a "newtype" wrapper struct to override
+    // how a trait is applied to a class.
     struct Wrap<'a, T>(&'a T) where T: 'a + SerializeStringOrStruct;
 
     impl<'a, T> Serialize for Wrap<'a, T> where T: 'a + SerializeStringOrStruct {
