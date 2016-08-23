@@ -3,7 +3,7 @@
 use regex::Regex;
 use serde::de::{self, Deserialize, Deserializer, SeqVisitor, Visitor};
 use serde::ser::{self, Serialize, Serializer};
-#[cfg(test)] use serde_yaml;
+use serde_yaml;
 use std::collections::BTreeMap;
 use std::fmt;
 use std::path::{Path, PathBuf};

@@ -9,6 +9,14 @@ pub struct File {
     pub services: BTreeMap<String, Service>,
 }
 
+impl FromStr for File {
+    type Err = serde_yaml::Error;
+
+    fn from_str(s: &str) -> Result<File, Self::Err> {
+        serde_yaml::from_str(&s)
+    }
+}
+
 #[test]
 fn file_can_be_converted_from_and_to_yaml() {
     let yaml = r#"---

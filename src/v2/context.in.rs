@@ -16,7 +16,7 @@ pub enum Context {
 impl Context {
     /// Construct a new Context from a string, identifying it as either a
     /// local path or a remote git repository.
-    fn new(s: &str) -> Context {
+    pub fn new(s: &str) -> Context {
         // Compile our regex just once.  There's a nice macro for this if
         // we're using nightly Rust, but lazy_static works on stable.
         lazy_static! {
