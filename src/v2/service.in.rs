@@ -104,7 +104,10 @@ pub struct Service {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub links: Vec<AliasedName>,
 
-    // TODO: logging (driver, options)
+    /// Logging options for this container.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub logging: Option<Logging>,
+
     // TODO: network_mode
     // TODO: networks (aliases, ipv4_address, ipv6_address)
     // TODO: pid

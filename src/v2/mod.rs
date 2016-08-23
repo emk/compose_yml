@@ -65,4 +65,5 @@ serde_include!("service");
 serde_include!("build");
 serde_include!("context");
 serde_include!("extends");
+serde_include!("logging");
 
