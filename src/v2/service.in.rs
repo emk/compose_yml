@@ -6,7 +6,9 @@
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Service {
     /// How to build an image for this service.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none",
+            serialize_with = "serialize_opt_string_or_struct",
+            deserialize_with = "deserialize_opt_string_or_struct")]
     pub build: Option<Build>,
 
     /// A list of capability names to grant to this container.

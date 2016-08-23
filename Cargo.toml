@@ -19,3 +19,4 @@ serde = "0.8"
 serde_macros = { version = "0.8", optional = true }
 serde_yaml = "0.4.0"
 yaml-rust = "0.3.3"
+void = "1.0.2"

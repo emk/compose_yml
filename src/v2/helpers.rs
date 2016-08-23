@@ -4,7 +4,7 @@
 use regex::Regex;
 use serde::Error;
 use serde::de;
-use serde::de::{Deserialize, Deserializer, MapVisitor, SeqVisitor, Visitor};
+use serde::de::{Deserializer, MapVisitor, SeqVisitor, Visitor};
 use serde::ser::{Serialize, Serializer};
 use std::collections::BTreeMap;
 
@@ -110,31 +110,6 @@ pub fn deserialize_map_or_key_value_list<D>(deserializer: &mut D) ->
     }
 
     deserializer.deserialize_map(MapOrKeyValueListVisitor)
-}
-
-/// A wrapper type which calls `deserialize_map_or_key_value_list`, for
-/// those times when we're already manually deserializing the data
-/// structure containing this field.  Search the source tree for examples;
-/// it's tricky.
-#[derive(Debug)]
-pub struct MapOrKeyValueList(pub BTreeMap<String, String>);
-
-impl MapOrKeyValueList {
-    /// Convert this MapOrKeyValueList into the underlying BTreeMap.
-    pub fn into_map(self) -> BTreeMap<String, String> {
-        match self {
-            MapOrKeyValueList(map) => map
-        }
-    }
-}
-
-impl Deserialize for MapOrKeyValueList {
-    fn deserialize<D>(deserializer: &mut D) -> Result<MapOrKeyValueList, D::Error>
-        where D: Deserializer
-    {
-        let map = try!(deserialize_map_or_key_value_list(deserializer));
-        Ok(MapOrKeyValueList(map))
-    }
 }
 
 /// Serialize a list normally, unless it has only a single element, in

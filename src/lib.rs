@@ -11,5 +11,6 @@
 extern crate regex;
 extern crate serde;
 extern crate serde_yaml;
+extern crate void;
 
 pub mod v2;
