@@ -83,7 +83,7 @@ impl FromStr for MemorySize {
 impl_deserialize_from_str!(MemorySize);
 
 #[test]
-fn memory_size_supports_simple_serialization() {
+fn memory_size_supports_string_serialization() {
     let pairs = vec!(
         (MemorySize::bytes(0), "0"),
         (MemorySize::bytes(1), "1"),

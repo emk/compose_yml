@@ -10,6 +10,8 @@
 #[derive(Debug, Eq, PartialEq)]
 pub struct AliasedName {
     /// The name of the external resouce outside the container.
+    //
+    /// TODO: Export reader functions?
     name: String,
 
     /// An optional alias for the external resource inside the container.

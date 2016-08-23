@@ -84,7 +84,9 @@ pub struct Service {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub external_links: Vec<AliasedName>,
 
-    // TODO: extra_hosts
+    /// Mappings for extra hosts in /etc/hosts.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub extra_hosts: Vec<HostMapping>,
 
     /// The name of the image to build or pull for this container.
     #[serde(skip_serializing_if = "Option::is_none")]
