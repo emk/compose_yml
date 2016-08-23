@@ -33,7 +33,17 @@ impl Context {
     }
 }
 
+impl FromStr for Context {
+    type Err = Void;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Context::new(s))
+    }
+}
+
 // Custom serializer to output both directories and git URLs as strings.
+// We can't implement `Display` and use `impl_serialize_to_string` because
+// we need to handle non-UTF-8 paths that we can't serialize.
 impl Serialize for Context {
     fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
         where S: Serializer
@@ -53,16 +63,7 @@ impl Serialize for Context {
     }
 }
 
-// Custom deserializer to determine whether we have a directory or a git
-// URL.
-impl Deserialize for Context {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Context, D::Error>
-        where D: Deserializer
-    {
-        let s: String = try!(Deserialize::deserialize(deserializer));
-        Ok(Context::new(&s))
-    }
-}
+impl_deserialize_from_str!(Context);
 
 #[test]
 fn context_may_contain_git_urls() {

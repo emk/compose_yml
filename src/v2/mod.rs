@@ -5,17 +5,17 @@ use serde::de::{self, Deserialize, Deserializer, SeqVisitor, Visitor};
 use serde::ser::{self, Serialize, Serializer};
 #[cfg(test)] use serde_yaml;
 use std::collections::BTreeMap;
+use std::fmt;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use void::Void;
 
 use self::helpers::*;
-use self::simple_serialize_deserialize::*;
 use self::string_or_struct::*;
 
 mod helpers;
 #[macro_use]
-mod simple_serialize_deserialize;
+mod string_serialize_deserialize;
 mod string_or_struct;
 
 macro_rules! assert_roundtrip {

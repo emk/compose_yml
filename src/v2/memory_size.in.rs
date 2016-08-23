@@ -36,26 +36,32 @@ impl MemorySize {
     }
 }
 
-impl SimpleSerializeDeserialize for MemorySize {
-    fn to_string(&self) -> Result<String, InvalidValueError> {
+impl fmt::Display for MemorySize {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         let bytes = self.to_bytes();
         if bytes == 0 {
             // Just print 0 without any units, because anything else looks
             // weird.
-            Ok("0".to_owned())
+            write!(f, "0")
         } else if bytes % (1024*1024*1024) == 0 {
-            Ok(format!("{}g", bytes / (1024*1024*1024)))
+            write!(f, "{}g", bytes / (1024*1024*1024))
         } else if bytes % (1024*1024) == 0 {
-            Ok(format!("{}m", bytes / (1024*1024)))
+            write!(f, "{}m", bytes / (1024*1024))
         } else if bytes % 1024 == 0 {
-            Ok(format!("{}k", bytes / 1024))
+            write!(f, "{}k", bytes / 1024)
         } else {
             // TODO: Verify `b` is the default specifier.
-            Ok(format!("{}", bytes))
+            write!(f, "{}", bytes)
         }
     }
+}
 
-    fn from_str(s: &str) -> Result<Self, InvalidValueError> {
+impl_serialize_to_string!(MemorySize);
+
+impl FromStr for MemorySize {
+    type Err = InvalidValueError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         lazy_static! {
             static ref MEM_SIZE: Regex =
                 Regex::new("^([0-9]+)([bkmg])?$").unwrap();
@@ -69,14 +75,12 @@ impl SimpleSerializeDeserialize for MemorySize {
             Some("k") => Ok(MemorySize::kb(value)),
             Some("m") => Ok(MemorySize::mb(value)),
             Some("g") => Ok(MemorySize::gb(value)),
-            _ => panic!("Unexpected error parsing MemorySize <{}>", s),
+            _ => unreachable!("Unexpected error parsing MemorySize <{}>", s),
         }
     }
 }
 
-// Implement Serialize and Deserialize using a macro, to work around
-// restrictions in Rust's trait system.
-impl_simple_serialize_deserialize!(MemorySize);
+impl_deserialize_from_str!(MemorySize);
 
 #[test]
 fn memory_size_supports_simple_serialization() {
@@ -91,7 +95,7 @@ fn memory_size_supports_simple_serialization() {
         (MemorySize::gb(1), "1g"),
     );
     for (mem_sz, s) in pairs {
-        assert_eq!(mem_sz.to_string().unwrap(), s);
+        assert_eq!(mem_sz.to_string(), s);
         assert_eq!(mem_sz, MemorySize::from_str(s).unwrap());
     }
 

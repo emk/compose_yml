@@ -10,11 +10,11 @@
 #[derive(Debug, Eq, PartialEq)]
 pub struct AliasedName {
     /// The name of the external resouce outside the container.
-    pub name: String,
+    name: String,
 
     /// An optional alias for the external resource inside the container.
     /// If not present, the external name should be used.
-    pub alias: Option<String>,
+    alias: Option<String>,
 }
 
 impl AliasedName {
@@ -43,9 +43,21 @@ impl AliasedName {
     }
 }
 
-impl SimpleSerializeDeserialize for AliasedName {
-    /// Parse an aliased name from a string.
-    fn from_str(s: &str) -> Result<AliasedName, InvalidValueError> {
+impl fmt::Display for AliasedName {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        match &self.alias {
+            &Some(ref alias) => write!(f, "{}:{}", &self.name, alias),
+            &None => write!(f, "{}", &self.name),
+        }
+    }
+}
+
+impl_serialize_to_string!(AliasedName);
+
+impl FromStr for AliasedName {
+    type Err = InvalidValueError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         lazy_static! {
             static ref ALIASED_NAME: Regex =
                 Regex::new("^([^:]+)(?::([^:]+))?$").unwrap();
@@ -58,20 +70,9 @@ impl SimpleSerializeDeserialize for AliasedName {
             alias: caps.at(2).map(|v| v.to_owned()),
         })
     }
-
-    /// Convert to a string.
-    fn to_string(&self) -> Result<String, InvalidValueError> {
-        try!(self.validate());
-        match &self.alias {
-            &Some(ref alias) => Ok(format!("{}:{}", &self.name, alias)),
-            &None => Ok(self.name.to_owned()),
-        }
-    }
 }
 
-// Implement Serialize and Deserialize using a macro, to work around
-// restrictions in Rust's trait system.
-impl_simple_serialize_deserialize!(AliasedName);
+impl_deserialize_from_str!(AliasedName);
 
 #[test]
 fn aliased_name_can_be_converted_to_and_from_a_string() {
@@ -82,8 +83,8 @@ fn aliased_name_can_be_converted_to_and_from_a_string() {
                              alias: Some("bar".to_owned()) });
     assert!(AliasedName::from_str("foo:bar:baz").is_err());
 
-    assert_eq!(AliasedName::new("foo", None).unwrap().to_string().unwrap(),
+    assert_eq!(AliasedName::new("foo", None).unwrap().to_string(),
                "foo");
-    assert_eq!(AliasedName::new("foo", Some("bar")).unwrap().to_string().unwrap(),
+    assert_eq!(AliasedName::new("foo", Some("bar")).unwrap().to_string(),
                "foo:bar");
 }
