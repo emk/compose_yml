@@ -4,6 +4,12 @@ version = "0.1.0"
 authors = ["Eric Kidd <git@randomhacks.net>"]
 build = "build.rs"
 
+description = "Parse, manipulate and serialize docker-compose.yml in a strongly-typed fashion (work in progress!)"
+documentation = "http://docs.randomhacks.net/docker_compose-rs/"
+license = "CC0-1.0"
+readme = "README.md"
+repository = "https://github.com/emk/docker_compose-rs"
+
 [features]
 default = ["glob", "serde_codegen"]
 unstable = ["serde_macros"]
