@@ -11,12 +11,14 @@ use std::str::FromStr;
 use void::Void;
 
 use self::helpers::*;
+pub use self::mode_enum::*;
 use self::string_or_struct::*;
 
 mod helpers;
 #[macro_use]
 mod string_serialize_deserialize;
 mod string_or_struct;
+mod mode_enum;
 
 macro_rules! assert_roundtrip {
     ( $ty:ty, $yaml:expr ) => {
@@ -66,4 +68,3 @@ serde_include!("build");
 serde_include!("context");
 serde_include!("extends");
 serde_include!("logging");
-serde_include!("network_mode");

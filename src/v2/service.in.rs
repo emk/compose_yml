@@ -108,9 +108,16 @@ pub struct Service {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub logging: Option<Logging>,
 
-    // TODO: network_mode
+    /// What networking mode should we use?
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub network_mode: Option<NetworkMode>,
+
     // TODO: networks (aliases, ipv4_address, ipv6_address)
-    // TODO: pid
+
+    /// What PID namespacing mode should we use?
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pid: Option<PidMode>,
+
     // TODO: ports
 
     /// Security options for AppArmor or SELinux.
@@ -144,7 +151,9 @@ pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hostname: Option<String>,
 
-    // TODO: ipc
+    /// What IPC namespacing mode should we use?
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ipc: Option<IpcMode>,
 
     /// The MAC address to use for this container's network interface.
     #[serde(skip_serializing_if = "Option::is_none")]
