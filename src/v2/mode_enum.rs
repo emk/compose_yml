@@ -63,10 +63,11 @@ macro_rules! mode_enum {
     // Mandatory separator to avoid the need for lookahead to tell where
     // simple args stop and complex ones start.
     ;
-        // This pattern matches a list of enum values with String args.
+        // This pattern matches a list of enum values with single args
+        // of various types.
         $(
             $(#[$flag1:meta])*
-            ($tag1:expr) => $item1:ident(String)
+            ($tag1:expr) => $item1:ident($arg:ty)
         ),*
     }) => {
         $(#[$flag])*
@@ -78,7 +79,7 @@ macro_rules! mode_enum {
             )*
             $(
                 $(#[$flag1])*
-                $item1(String),
+                $item1($arg),
             )*
         }
 
@@ -111,9 +112,15 @@ macro_rules! mode_enum {
                         let caps = try!(COMPOUND.captures(s).ok_or_else(|| {
                             InvalidValueError::new(stringify!($name), s)
                         }));
-                        let name = caps.at(2).unwrap().to_owned();
+                        let valstr = caps.at(2).unwrap();
                         match caps.at(1).unwrap() {
-                            $( $tag1 => Ok($name::$item1(name)), )*
+                            $( $tag1 => {
+                               let value = try!(FromStr::from_str(valstr).map_err(|_| {
+                                   InvalidValueError::new(stringify!($name),
+                                                          valstr)
+                               }));
+                               Ok($name::$item1(value))
+                            })*
                             _ => Err(InvalidValueError::new(stringify!($name), s))
                         }
                     }
@@ -187,4 +194,3 @@ mode_enum! {
         ("container") => Container(String)
     }
 }
-
