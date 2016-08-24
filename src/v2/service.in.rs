@@ -175,7 +175,9 @@ pub struct Service {
 
     // TODO: read_only (what is this, anyway?)
 
-    // TODO: restart
+    /// What should we do when the container exits?
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub restart: Option<RestartMode>,
 
     /// The amount of shared memory to allocate for this container, in
     /// bytes.
