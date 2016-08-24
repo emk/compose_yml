@@ -33,7 +33,7 @@ pub struct Service {
 
     /// A list of devices to map into this container.
     ///
-    /// TODO: Permissions.
+    /// TODO: Permission flags: rwm
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub devices: Vec<AliasedName>,
 
@@ -133,12 +133,18 @@ pub struct Service {
     // TODO: volumes
     // TODO: volumes_from
 
+    /// This will only apply to volumes with no host path and no mapping to
+    /// a volume declared under the `volumes` key at the top level of this
+    /// file.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub volume_driver: Option<String>,
+
     /// The relative number of CPU shares to give to this container.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub cpu_shares: Option<u32>,
 
     /// Limit the CFS CPU quota.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub cpu_quota: Option<u32>,
 
     // TODO: cpuset
