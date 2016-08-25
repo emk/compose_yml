@@ -69,4 +69,6 @@ serde_include!("build");
 serde_include!("context");
 serde_include!("extends");
 serde_include!("logging");
+serde_include!("port_mapping");
 serde_include!("service_volume");
+serde_include!("volumes_from");

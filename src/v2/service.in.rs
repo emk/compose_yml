@@ -33,7 +33,8 @@ pub struct Service {
 
     /// A list of devices to map into this container.
     ///
-    /// TODO: Permission flags: rwm
+    /// TODO: Add VolumePermissions and make both host and container
+    /// mandatory.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub devices: Vec<AliasedName>,
 
@@ -118,7 +119,9 @@ pub struct Service {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pid: Option<PidMode>,
 
-    // TODO: ports
+    /// What ports do we want to map to our host system?
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub ports: Vec<PortMapping>,
 
     /// Security options for AppArmor or SELinux.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -135,7 +138,9 @@ pub struct Service {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub volumes: Vec<ServiceVolume>,
 
-    // TODO: volumes_from
+    /// Other places to get volumes from.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub volumes_from: Vec<VolumesFrom>,
 
     /// This will only apply to volumes with no host path and no mapping to
     /// a volume declared under the `volumes` key at the top level of this
