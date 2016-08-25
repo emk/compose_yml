@@ -69,3 +69,4 @@ serde_include!("build");
 serde_include!("context");
 serde_include!("extends");
 serde_include!("logging");
+serde_include!("service_volume");

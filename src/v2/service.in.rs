@@ -130,7 +130,11 @@ pub struct Service {
     pub stop_signal: Option<String>,
 
     // TODO: ulimits
-    // TODO: volumes
+
+    /// Volumes associated with this service.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub volumes: Vec<ServiceVolume>,
+
     // TODO: volumes_from
 
     /// This will only apply to volumes with no host path and no mapping to
