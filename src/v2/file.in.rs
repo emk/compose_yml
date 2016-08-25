@@ -9,6 +9,22 @@ pub struct File {
     pub services: BTreeMap<String, Service>,
 }
 
+impl File {
+    /// Read a file from an input stream containing YAML.
+    pub fn from_reader<R>(r: R) -> serde_yaml::error::Result<Self>
+        where R: io::Read
+    {
+        serde_yaml::from_reader(r)
+    }
+
+    /// Write a file to an output stream as YAML.
+    pub fn to_writer<W>(&self, w: &mut W) -> serde_yaml::error::Result<()>
+        where W: io::Write
+    {
+        serde_yaml::to_writer(w, self)
+    }
+}
+
 impl FromStr for File {
     type Err = serde_yaml::Error;
 

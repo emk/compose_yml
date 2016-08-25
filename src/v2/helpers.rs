@@ -106,7 +106,16 @@ pub fn deserialize_map_or_key_value_list<D>(deserializer: &mut D) ->
                     let msg = format!("duplicate map key: {}", &key);
                     return Err(<V::Error as Error>::custom(msg));
                 }
-                map.insert(key, try!(visitor.visit_value::<String>()));
+                // Work around https://github.com/serde-rs/serde/issues/528
+                //
+                // TODO: Apply a better fix.
+                match visitor.visit_value::<String>() {
+                    Ok(val) => { map.insert(key, val); },
+                    Err(_) => {
+                        let msg = format!("Expected string value in key/value map");
+                        return Err(<V::Error as Error>::custom(msg));
+                    }
+                }
             }
             try!(visitor.end());
             Ok(map)

@@ -6,6 +6,7 @@ use serde::ser::{self, Serialize, Serializer};
 use serde_yaml;
 use std::collections::BTreeMap;
 use std::fmt;
+use std::io;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use void::Void;
