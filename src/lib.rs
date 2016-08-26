@@ -59,4 +59,10 @@ extern crate serde;
 extern crate serde_yaml;
 extern crate void;
 
+use std::error;
+
 pub mod v2;
+
+/// An error manipulating a `docker-compose.yml` file.  For now, we use a
+/// generic, catch-all error type, but this may change.
+pub type Error = Box<error::Error+Send+Sync>;

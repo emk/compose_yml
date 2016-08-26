@@ -11,17 +11,31 @@ pub struct File {
 
 impl File {
     /// Read a file from an input stream containing YAML.
-    pub fn from_reader<R>(r: R) -> serde_yaml::error::Result<Self>
+    pub fn read<R>(r: R) -> Result<Self, Error>
         where R: io::Read
     {
-        serde_yaml::from_reader(r)
+        Ok(try!(serde_yaml::from_reader(r)))
     }
 
     /// Write a file to an output stream as YAML.
-    pub fn to_writer<W>(&self, w: &mut W) -> serde_yaml::error::Result<()>
+    pub fn write<W>(&self, w: &mut W) -> Result<(), Error>
         where W: io::Write
     {
-        serde_yaml::to_writer(w, self)
+        Ok(try!(serde_yaml::to_writer(w, self)))
+    }
+
+    /// Read a file from the specified path.
+    pub fn read_from_path<P>(path: P) -> Result<Self, Error>
+        where P: AsRef<Path>
+    {
+        Self::read(try!(fs::File::open(path)))
+    }
+
+    /// Write a file to the specified path.
+    pub fn write_to_path<P>(&self, path: P) -> Result<(), Error>
+        where P: AsRef<Path>
+    {
+        self.write(&mut try!(fs::File::create(path)))
     }
 }
 

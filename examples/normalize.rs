@@ -13,8 +13,8 @@ use std::io::{self, Write};
 pub type Error = Box<error::Error+Send+Sync>;
 
 fn normalize() -> Result<(), Error> {
-    let file = try!(dc::File::from_reader(io::stdin()));
-    try!(file.to_writer(&mut io::stdout()));
+    let file = try!(dc::File::read(io::stdin()));
+    try!(file.write(&mut io::stdout()));
     Ok(())
 }
 

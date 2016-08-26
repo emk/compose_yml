@@ -5,6 +5,7 @@ use serde::de::{self, Deserialize, Deserializer, SeqVisitor, Visitor};
 use serde::ser::{self, Serialize, Serializer};
 use serde_yaml;
 use std::collections::BTreeMap;
+use std::fs;
 use std::fmt;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -14,6 +15,10 @@ use void::Void;
 use self::helpers::*;
 pub use self::mode_enum::*;
 use self::string_or_struct::*;
+
+// Re-export this from the submodule for people who only `use
+// docker_compose::v2 as dc` so they can use it as `dc::Error`.
+pub use super::Error;
 
 mod helpers;
 #[macro_use]
