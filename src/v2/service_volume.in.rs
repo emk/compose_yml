@@ -3,7 +3,7 @@
 // of how this works.
 
 /// A volume associated with a service.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ServiceVolume {
     /// If this volume is external to the container, where should we find
     /// it?  We don't attempt to parse this because the format is

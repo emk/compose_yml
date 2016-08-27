@@ -3,7 +3,7 @@
 // of how this works.
 
 /// A `docker-compose.yml` file.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct File {
     /// The individual services which make up this app.
     pub services: BTreeMap<String, Service>,

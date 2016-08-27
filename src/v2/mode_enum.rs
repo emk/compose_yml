@@ -31,7 +31,7 @@ use super::helpers::*;
 /// ```
 /// mode_enum! {
 ///     /// How should we configure the container's networking?
-///     #[derive(Debug, PartialEq, Eq)]
+///     #[derive(Debug, Clone, PartialEq, Eq)]
 ///     pub enum SimplifiedNetworkMode {
 ///         /// Use the standard Docker networking bridge.
 ///         ("bridge") => Bridge,
@@ -134,7 +134,7 @@ macro_rules! mode_enum {
 
 mode_enum! {
     /// How should we configure the container's networking?
-    #[derive(Debug, PartialEq, Eq)]
+    #[derive(Debug, Clone, PartialEq, Eq)]
     pub enum NetworkMode {
         /// Use the standard Docker networking bridge.
         ("bridge") => Bridge,
@@ -167,7 +167,7 @@ fn network_mode_has_a_string_representation() {
 
 mode_enum! {
     /// What process ID namespace should we use?
-    #[derive(Debug, PartialEq, Eq)]
+    #[derive(Debug, Clone, PartialEq, Eq)]
     pub enum PidMode {
         /// Use the host's PID namespace.
         ("host") => Host
@@ -182,7 +182,7 @@ mode_enum! {
 
 mode_enum! {
     /// What IPC namespace should we use for our container?
-    #[derive(Debug, PartialEq, Eq)]
+    #[derive(Debug, Clone, PartialEq, Eq)]
     pub enum IpcMode {
         /// Use the host's IPC namespace.
         ("host") => Host
@@ -196,7 +196,7 @@ mode_enum! {
 }
 
 /// What should Docker do when the container stops running?
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RestartMode {
     // This looks very much like a mode_enum, but the `on-failure` takes an
     // _optional_ argument.  Rather than trying to complicate our macro

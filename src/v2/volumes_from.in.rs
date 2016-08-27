@@ -3,7 +3,7 @@
 // of how this works.
 
 /// The name of either a service or a container.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ServiceOrContainer {
     // TODO: Lots of the mode_enum stuff has these two cases built-in.  Can
     // we re-use this there?
@@ -16,7 +16,7 @@ pub enum ServiceOrContainer {
 }
 
 /// Mount the volumes defined by another container into this one.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct VolumesFrom {
     /// Where do we get these volumes from?
     pub source: ServiceOrContainer,

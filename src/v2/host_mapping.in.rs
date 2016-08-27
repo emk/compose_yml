@@ -3,7 +3,7 @@
 // of how this works.
 
 /// A host mapping to add to `/etc/hosts`.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HostMapping {
     // TODO: Export reader functions?
     hostname: String,

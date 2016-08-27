@@ -4,7 +4,7 @@
 
 /// Specify another service which should be used as the base for this
 /// service.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Extends {
     /// The name of a service to extend.
     pub service: String,

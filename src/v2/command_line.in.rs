@@ -3,7 +3,7 @@
 // of how this works.
 
 /// A command line to be executed by Docker.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum CommandLine {
     /// A command-line specified as unparsed shell code.
     ShellCode(String),

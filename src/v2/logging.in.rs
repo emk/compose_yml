@@ -3,7 +3,7 @@
 // of how this works.
 
 /// Logging configuration.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Logging {
     /// The logging driver to use.
     #[serde(skip_serializing_if = "Option::is_none")]

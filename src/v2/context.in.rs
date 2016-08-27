@@ -4,7 +4,7 @@
 
 /// Either a local directory path, or a Git-format "URL" (not necessarily a
 /// real URL, alas).
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Context {
     /// A regular local directory.
     Dir(PathBuf),

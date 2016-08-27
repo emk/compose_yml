@@ -7,7 +7,7 @@
 ///
 /// TODO: Not sure I want these fields public; hiding them would simplify
 /// validation and allow removing the error result from to_string.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct AliasedName {
     /// The name of the external resouce outside the container.
     //
