@@ -108,7 +108,7 @@ pub fn deserialize_map_or_key_value_list<D>(deserializer: &mut D) ->
                 }
                 // Work around https://github.com/serde-rs/serde/issues/528
                 //
-                // TODO: Apply a better fix.
+                // TODO BLOCKED: Apply a better fix for error messages.
                 match visitor.visit_value::<String>() {
                     Ok(val) => { map.insert(key, val); },
                     Err(_) => {

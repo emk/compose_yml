@@ -5,8 +5,8 @@
 /// The name of either a service or a container.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ServiceOrContainer {
-    // TODO: Lots of the mode_enum stuff has these two cases built-in.  Can
-    // we re-use this there?
+    // TODO MED: Lots of the mode_enum stuff has these two cases built-in.
+    // Can we re-use this there?
 
     /// The local name of a service defined in this `docker-compose.yml`
     /// file.

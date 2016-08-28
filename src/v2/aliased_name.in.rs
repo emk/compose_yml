@@ -5,13 +5,10 @@
 /// The name of an external resource, and an optional local alias to which
 /// it is mapped inside a container.
 ///
-/// TODO: Not sure I want these fields public; hiding them would simplify
-/// validation and allow removing the error result from to_string.
+/// TODO MED: Not sure I want these fields public.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct AliasedName {
     /// The name of the external resouce outside the container.
-    //
-    /// TODO: Export reader functions?
     name: String,
 
     /// An optional alias for the external resource inside the container.

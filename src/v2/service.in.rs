@@ -34,7 +34,7 @@ pub struct Service {
 
     /// A list of devices to map into this container.
     ///
-    /// TODO: Add VolumePermissions and make both host and container
+    /// TODO LOW: Add DevicePermissions and make both host and container
     /// mandatory.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub devices: Vec<AliasedName>,
@@ -117,7 +117,7 @@ pub struct Service {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub network_mode: Option<NetworkMode>,
 
-    // TODO: networks (aliases, ipv4_address, ipv6_address)
+    // TODO LOW: networks (aliases, ipv4_address, ipv6_address)
 
     /// What PID namespacing mode should we use?
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -136,7 +136,7 @@ pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stop_signal: Option<String>,
 
-    // TODO: ulimits
+    // TODO LOW: ulimits
 
     /// Volumes associated with this service.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -160,7 +160,7 @@ pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cpu_quota: Option<u32>,
 
-    // TODO: cpuset
+    // TODO LOW: cpuset
 
     /// The domain name to use for this container.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -192,7 +192,7 @@ pub struct Service {
     #[serde(default, skip_serializing_if = "is_false")]
     pub privileged: bool,
 
-    // TODO: read_only (what is this, anyway?)
+    // TODO LOW: read_only (what is this, anyway?)
 
     /// What should we do when the container exits?
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -217,15 +217,13 @@ pub struct Service {
     /// container's command.  May optionally be followed by `:group` or
     /// `:gid` to specific the group or group ID.
     ///
-    /// TODO: Parse out optional group field separately?
+    /// TODO LOW: Parse out optional group field separately?
     #[serde(skip_serializing_if = "Option::is_none")]
     pub user: Option<String>,
 
     /// The working directory to use for this container.
-    ///
-    /// TODO: Use PathBuf?
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub working_dir: Option<String>,
+    pub working_dir: Option<PathBuf>,
 }
 
 #[test]

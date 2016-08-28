@@ -5,9 +5,8 @@
 /// A host mapping to add to `/etc/hosts`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HostMapping {
-    // TODO: Export reader functions?
-    hostname: String,
-    address: IpAddr,
+    pub hostname: String,
+    pub address: IpAddr,
 }
 
 impl HostMapping {

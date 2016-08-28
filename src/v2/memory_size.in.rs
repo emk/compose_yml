@@ -50,7 +50,7 @@ impl fmt::Display for MemorySize {
         } else if bytes % 1024 == 0 {
             write!(f, "{}k", bytes / 1024)
         } else {
-            // TODO: Verify `b` is the default specifier.
+            // `b` is the default specifier, so don't print it.
             write!(f, "{}", bytes)
         }
     }
