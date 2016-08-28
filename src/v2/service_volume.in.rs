@@ -2,6 +2,71 @@
 // possibly after build-time preprocessing.  See v2.rs for an explanation
 // of how this works.
 
+/// Where can we find the volume we want to map into a container?
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum HostVolume {
+    /// This volume corresponds to a path on the host.  It may be a
+    /// relative or absolute path.
+    Path(PathBuf),
+    /// A path relative to the current user's home directory on the host.
+    /// Must be a relative path.
+    UserRelativePath(PathBuf),
+    /// This volume corresponds to a volume named in the top-level
+    /// `volumes` section.
+    Name(String),
+}
+
+impl fmt::Display for HostVolume {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        match self {
+            &HostVolume::Path(ref path) => {
+                let p = try!(path.to_str().ok_or(fmt::Error));
+                if path.is_absolute() {
+                    write!(f, "{}", p)
+                } else if p.starts_with("./") || p.starts_with("../") {
+                    write!(f, "{}", p)
+                } else {
+                    // Relative paths must begin with `./` when serialized.
+                    write!(f, "./{}", p)
+                }
+            }
+            &HostVolume::UserRelativePath(ref path) => {
+                let p = try!(path.to_str().ok_or(fmt::Error));
+                if path.is_absolute() {
+                    return Err(fmt::Error);
+                }
+                write!(f, "~/{}", p)
+            }
+            &HostVolume::Name(ref name) => {
+                write!(f, "{}", name)
+            }
+        }
+    }
+}
+
+impl FromStr for HostVolume {
+    type Err = InvalidValueError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        lazy_static! {
+            static ref HOST_VOLUME: Regex =
+                Regex::new(r#"^(\.{0,2}/.*)|~/(.+)|([^./~].*)$"#).unwrap();
+        }
+        let caps = try!(HOST_VOLUME.captures(s).ok_or_else(|| {
+            InvalidValueError::new("host volume", s)
+        }));
+        if let Some(path) = caps.at(1) {
+            Ok(HostVolume::Path(Path::new(path).to_owned()))
+        } else if let Some(path) = caps.at(2) {
+            Ok(HostVolume::UserRelativePath(Path::new(path).to_owned()))
+        } else if let Some(name) = caps.at(3) {
+            Ok(HostVolume::Name(name.to_owned()))
+        } else {
+            unreachable!()
+        }
+    }
+}
+
 /// A volume associated with a service.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ServiceVolume {
@@ -9,7 +74,7 @@ pub struct ServiceVolume {
     /// it?  We don't attempt to parse this because the format is
     /// tricky--it can contain variable interpolation, `~/`-relative paths,
     /// and volume names.
-    pub host: Option<String>,
+    pub host: Option<HostVolume>,
     /// Where should we mount this volume in the container?  This must be
     /// an absolute path.
     pub container: PathBuf,
@@ -58,14 +123,14 @@ impl FromStr for ServiceVolume {
             }
             2 => {
                 Ok(ServiceVolume {
-                    host: Some(items[0].to_owned()),
+                    host: Some(try!(FromStr::from_str(items[0]))),
                     container: Path::new(items[1]).to_owned(),
                     permissions: Default::default(),
                 })
             }
             3 => {
                 Ok(ServiceVolume {
-                    host: Some(items[0].to_owned()),
+                    host: Some(try!(FromStr::from_str(items[0]))),
                     container: Path::new(items[1]).to_owned(),
                     permissions: try!(FromStr::from_str(items[2])),
                 })
@@ -85,12 +150,12 @@ fn service_volumes_should_have_string_representations() {
         permissions: Default::default(),
     };
     let vol2 = ServiceVolume {
-        host: Some("named".to_owned()),
+        host: Some(HostVolume::Name("named".to_owned())),
         container: Path::new("/var/lib").to_owned(),
         permissions: Default::default(),
     };
     let vol3 = ServiceVolume {
-        host: Some("/etc/foo".to_owned()),
+        host: Some(HostVolume::Path(Path::new("/etc/foo").to_owned())),
         container: Path::new("/etc/myfoo").to_owned(),
         permissions: VolumePermissions::ReadOnly,
     };

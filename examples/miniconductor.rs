@@ -56,8 +56,6 @@ fn update(file: &mut dc::File) -> Result<(), dc::Error> {
     // we can modify the services.
     for (_name, service) in file.services.iter_mut() {
         // Insert standard env_file entries.
-        //
-        // TODO: Rename env_file → env_files?
         service.env_files.insert(0, "config.env".to_owned());
         service.env_files.insert(1, "environments/$ENV/config.env".to_owned());
 
@@ -68,9 +66,7 @@ fn update(file: &mut dc::File) -> Result<(), dc::Error> {
         if let Some(ref dir) = build_dir {
             // Mount the local build directory as `/app` inside the container.
             service.volumes.push(dc::ServiceVolume {
-                // TODO: Get rid of `unwrap` by fixing API types here.
-                // Should also get rid of `format!`.
-                host: Some(format!("./{}", dir.to_str().unwrap())),
+                host: Some(dc::HostVolume::Path(dir.clone())),
                 container: Path::new("/app").to_owned(),
                 permissions: Default::default(),
             });
