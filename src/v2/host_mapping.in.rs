@@ -7,13 +7,12 @@
 pub struct HostMapping {
     // TODO: Export reader functions?
     hostname: String,
-    address: String,
+    address: IpAddr,
 }
 
 impl HostMapping {
     /// Create a new mapping from `hostname` to `address`.
-    pub fn new(hostname: &str, address: &str) -> HostMapping {
-        // TODO: Check syntax of fields?
+    pub fn new(hostname: &str, address: &IpAddr) -> HostMapping {
         HostMapping {
             hostname: hostname.to_owned(),
             address: address.to_owned(),
@@ -40,7 +39,11 @@ impl FromStr for HostMapping {
         let caps = try!(HOST_ADDRESS.captures(s).ok_or_else(|| {
             InvalidValueError::new("host mapping", s)
         }));
-        Ok(HostMapping::new(caps.at(1).unwrap(), caps.at(2).unwrap()))
+        let addr: IpAddr =
+            try!(FromStr::from_str(caps.at(2).unwrap()).map_err(|_| {
+                InvalidValueError::new("IP address", s)
+            }));
+        Ok(HostMapping::new(caps.at(1).unwrap(), &addr))
     }
 }
 
@@ -48,8 +51,9 @@ impl_deserialize_from_str!(HostMapping);
 
 #[test]
 fn host_mapping_supports_string_serialization() {
-    assert_eq!(HostMapping::new("foo.example.com", "127.0.0.1"),
+    let localhost: IpAddr = FromStr::from_str("127.0.0.1").unwrap();
+    assert_eq!(HostMapping::new("foo.example.com", &localhost),
                HostMapping::from_str("foo.example.com:127.0.0.1").unwrap());
-    assert_eq!(HostMapping::new("foo.example.com", "127.0.0.1").to_string(),
+    assert_eq!(HostMapping::new("foo.example.com", &localhost).to_string(),
                "foo.example.com:127.0.0.1");
 }

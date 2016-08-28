@@ -54,7 +54,7 @@ pub struct PortMapping {
     /// An optional host address on which to listen.  Defaults to all host
     /// addresses.  If this field is specified, then `host_ports` must also
     /// be specified.
-    host_address: Option<String>,
+    host_address: Option<IpAddr>,
     /// The host port(s) on which to listen.  Must contain the same number
     /// of ports as `container_ports`.  Defaults to an
     /// automatically-assigned port number.
@@ -107,8 +107,12 @@ impl FromStr for PortMapping {
                 })
             }
             3 => {
+                let addr: IpAddr =
+                    try!(FromStr::from_str(fields[2]).map_err(|_| {
+                        InvalidValueError::new("IP address", s)
+                    }));
                 Ok(PortMapping {
-                    host_address: Some(fields[2].to_owned()),
+                    host_address: Some(addr),
                     host_ports: Some(try!(FromStr::from_str(fields[1]))),
                     container_ports: try!(FromStr::from_str(fields[0])),
                 })
@@ -124,6 +128,8 @@ impl_deserialize_from_str!(PortMapping);
 
 #[test]
 fn port_mapping_should_have_a_string_representation() {
+    let localhost: IpAddr = FromStr::from_str("127.0.0.1").unwrap();
+
     let map1 = PortMapping {
         host_address: None,
         host_ports: None,
@@ -135,7 +141,7 @@ fn port_mapping_should_have_a_string_representation() {
         container_ports: Ports::Range(3000, 3009),
     };
     let map3 = PortMapping {
-        host_address: Some("127.0.0.1".to_owned()),
+        host_address: Some(localhost),
         host_ports: Some(Ports::Port(80)),
         container_ports: Ports::Port(80),
     };

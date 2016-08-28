@@ -8,6 +8,7 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::fmt;
 use std::io;
+use std::net::IpAddr;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use void::Void;
