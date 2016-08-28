@@ -14,7 +14,7 @@
 //!
 //! let yaml = r#"---
 //!
-//! version: 2
+//! version: "2"
 //! services:
 //!   app1:
 //!     build:

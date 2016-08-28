@@ -5,6 +5,10 @@
 /// A `docker-compose.yml` file.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct File {
+    /// The version of the `docker-compose.yml` file format.  Must be 2.
+    #[serde(deserialize_with = "check_version")]
+    version: String,
+
     /// The individual services which make up this app.
     pub services: BTreeMap<String, Service>,
 }
@@ -53,11 +57,22 @@ fn file_can_be_converted_from_and_to_yaml() {
 "services":
   "foo":
     "build": "."
+"version": "2"
 "#;
-
     assert_roundtrip!(File, yaml);
 
     let file: File = serde_yaml::from_str(&yaml).unwrap();
     let foo = file.services.get("foo").unwrap();
     assert_eq!(foo.build.as_ref().unwrap().context, Context::new("."));
+}
+
+#[test]
+fn file_can_only_load_from_version_2() {
+    let yaml = r#"---
+"services":
+  "foo":
+    "build": "."
+"version": "3"
+"#;
+    assert!(serde_yaml::from_str::<File>(&yaml).is_err());
 }

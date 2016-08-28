@@ -4,7 +4,7 @@
 use regex::Regex;
 use serde::Error;
 use serde::de;
-use serde::de::{Deserializer, MapVisitor, SeqVisitor, Visitor};
+use serde::de::{Deserialize, Deserializer, MapVisitor, SeqVisitor, Visitor};
 use serde::ser::{Serialize, Serializer};
 use std::collections::BTreeMap;
 use std::error;
@@ -202,4 +202,18 @@ pub fn deserialize_string_or_list<D>(deserializer: &mut D) ->
     }
 
     deserializer.deserialize(StringOrListVisitor)
+}
+
+/// Make sure that the file conforms to a version we can parse.
+pub fn check_version<D>(deserializer: &mut D) -> Result<String, D::Error>
+    where D: Deserializer
+{
+    let version = try!(String::deserialize(deserializer));
+    if &version != "2" {
+        let msg =
+            format!("Can only deserialize docker-compose.yml version 2, found {}",
+                    version);
+        return Err(<D::Error as Error>::custom(msg));
+    }
+    Ok(version)
 }
