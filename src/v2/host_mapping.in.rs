@@ -5,7 +5,9 @@
 /// A host mapping to add to `/etc/hosts`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HostMapping {
+    /// The hostname to add to `/etc/hosts`.
     pub hostname: String,
+    /// The IPv4 or IPv6 address to map it to.
     pub address: IpAddr,
 }
 
