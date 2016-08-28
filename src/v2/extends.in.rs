@@ -5,6 +5,7 @@
 /// Specify another service which should be used as the base for this
 /// service.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Extends {
     /// The name of a service to extend.
     pub service: String,

@@ -4,6 +4,7 @@
 
 /// Information on how to build a Docker image.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Build {
     /// The source directory to use for this build.
     pub context: Context,

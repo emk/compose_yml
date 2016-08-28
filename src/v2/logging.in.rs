@@ -4,6 +4,7 @@
 
 /// Logging configuration.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Logging {
     /// The logging driver to use.
     #[serde(skip_serializing_if = "Option::is_none")]

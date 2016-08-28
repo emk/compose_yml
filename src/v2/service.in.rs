@@ -4,6 +4,7 @@
 
 /// A service which will be managed by `docker-compose`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Service {
     /// How to build an image for this service.
     #[serde(default, skip_serializing_if = "Option::is_none",

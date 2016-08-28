@@ -4,6 +4,7 @@
 
 /// A `docker-compose.yml` file.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct File {
     /// The version of the `docker-compose.yml` file format.  Must be 2.
     #[serde(deserialize_with = "check_version")]
