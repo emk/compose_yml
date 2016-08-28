@@ -58,8 +58,8 @@ fn update(file: &mut dc::File) -> Result<(), dc::Error> {
         // Insert standard env_file entries.
         //
         // TODO: Rename env_file → env_files?
-        service.env_file.insert(0, "config.env".to_owned());
-        service.env_file.insert(1, "environments/$ENV/config.env".to_owned());
+        service.env_files.insert(0, "config.env".to_owned());
+        service.env_files.insert(1, "environments/$ENV/config.env".to_owned());
 
         // Figure out where we'll keep the local checkout, if any.
         let build_dir = try!(service_build_dir(service));

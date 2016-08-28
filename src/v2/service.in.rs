@@ -64,11 +64,14 @@ pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub entrypoint: Option<CommandLine>,
 
-    /// Environment files used to supply variables to the container.
-    #[serde(default, skip_serializing_if = "Vec::is_empty",
+    /// Environment files used to supply variables to the container.  Note
+    /// that this is `env_file` in the underlying Docker format, but the
+    /// singular form looks weird at the API level.
+    #[serde(rename = "env_file",
+            default, skip_serializing_if = "Vec::is_empty",
             serialize_with = "serialize_item_or_list",
             deserialize_with = "deserialize_string_or_list")]
-    pub env_file: Vec<String>,
+    pub env_files: Vec<String>,
 
     /// Environment variables and values to supply to the container.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
@@ -235,3 +238,15 @@ fn service_handles_sample_fields_correctly() {
 "#;
     assert_roundtrip!(Service, yaml);
 }
+
+#[test]
+fn service_env_file_is_renamed() {
+    let yaml = r#"---
+"env_file":
+  - "foo/bar.env"
+"#;
+    let service: Service = serde_yaml::from_str(&yaml).unwrap();
+    assert_eq!(service.env_files.len(), 1);
+    assert_eq!(service.env_files[0], "foo/bar.env");
+}
+
