@@ -379,6 +379,25 @@ impl<T> RawOr<T>
     /// Return a `&mut T` for this `RawOr<T>`, performing any necessary
     /// environment variable interpolations and updating the value in
     /// place.
+    ///
+    /// ```
+    /// use std::env;
+    /// use std::str::FromStr;
+    /// use docker_compose::v2 as dc;
+    ///
+    /// env::set_var("NETWORK_MODE", "host");
+    /// let mut mode: dc::RawOr<dc::NetworkMode> =
+    ///   FromStr::from_str("$NETWORK_MODE").unwrap();
+    ///
+    /// // Before interpolation.
+    /// assert_eq!("$NETWORK_MODE", mode.to_string());
+    ///
+    /// // Interpolate.
+    /// assert_eq!(mode.interpolate().unwrap(), &dc::NetworkMode::Host);
+    ///
+    /// // After interpolation.
+    /// assert_eq!("host", mode.to_string());
+    /// ```
     pub fn interpolate(&mut self) -> Result<&mut T, InterpolationError> {
         let &mut RawOr(ref mut inner) = self;
 
@@ -417,5 +436,24 @@ impl<T> fmt::Display for RawOr<T>
             &RawOr(RawOrValue::Raw(ref raw)) => write!(f, "{}", raw),
             &RawOr(RawOrValue::Value(ref value)) => write!(f, "{}", value),
         }
+    }
+}
+
+impl<T> FromStr for RawOr<T>
+    where T: InterpolatableValue
+{
+    type Err = InvalidValueError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        raw(s).map_err(|err| {
+            match err {
+                // Pass through underlying InvalidValueError.
+                InterpolationError::UnparsableValue(err) => err,
+                // Otherwise whine about the interpolation.
+                //
+                // TODO LOW: Add a more descriptive message?
+                _ => InvalidValueError::new("interpolation", s),
+            }
+        })
     }
 }
