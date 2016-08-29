@@ -295,6 +295,7 @@ enum RawOrValue<T>
 /// assert!(dc::escape::<dc::NetworkMode, _>("invalid").is_err());
 /// assert!(dc::raw::<dc::NetworkMode, _>("invalid").is_err());
 /// ```
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RawOr<T>(RawOrValue<T>)
     where T: InterpolatableValue;
 
