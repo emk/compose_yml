@@ -14,6 +14,7 @@ use std::str::FromStr;
 use void::Void;
 
 use self::helpers::*;
+pub use self::interpolation::*;
 pub use self::mode_enum::*;
 use self::string_or_struct::*;
 
@@ -22,7 +23,7 @@ use self::string_or_struct::*;
 pub use super::Error;
 
 mod helpers;
-pub mod interpolation;
+mod interpolation;
 #[macro_use]
 mod string_serialize_deserialize;
 mod string_or_struct;
