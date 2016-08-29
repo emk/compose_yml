@@ -14,6 +14,9 @@ use super::helpers::InvalidValueError;
 pub enum InterpolationError {
     /// The interpolation syntax in the specified string was invalid.
     InvalidSyntax(String),
+    /// A value was passed to `escape`, but it wasn't parseable as a data
+    /// structure of the intended type.
+    UnparsableValue(InvalidValueError),
     /// The string contains an undefined environment variable.  This is not
     /// an error for `docker-compose` (which treats undefined variables as
     /// empty), but it is an error for us because we're a
@@ -33,6 +36,8 @@ impl fmt::Display for InterpolationError {
         match self {
             &InterpolationError::InvalidSyntax(ref input) =>
                 write!(f, "{}: <{}>", self.description(), input),
+            &InterpolationError::UnparsableValue(ref err) =>
+                write!(f, "{}: {}", self.description(), err),
             &InterpolationError::UndefinedVariable(ref var) =>
                 write!(f, "{}: {}", self.description(), var),
             &InterpolationError::InterpolationDisabled(ref input) =>
@@ -46,11 +51,26 @@ impl error::Error for InterpolationError {
         match self {
             &InterpolationError::InvalidSyntax(_) =>
                 "invalid interpolation syntax",
+            &InterpolationError::UnparsableValue(_) =>
+                "cannot escape invalid value",
             &InterpolationError::UndefinedVariable(_) =>
                 "undefined environment variable in interpolation",
             &InterpolationError::InterpolationDisabled(_) =>
                 "cannot parse without interpolating environment variables",
         }
+    }
+
+    fn cause(&self) -> Option<&Error> {
+        match self {
+            &InterpolationError::UnparsableValue(ref err) => Some(err),
+            _ => None,
+        }
+    }
+}
+
+impl From<InvalidValueError> for InterpolationError {
+    fn from(err: InvalidValueError) -> InterpolationError {
+        InterpolationError::UnparsableValue(err)
     }
 }
 
@@ -232,7 +252,7 @@ enum RawOrValue<T>
 /// // We can call `escape`, `value` and `raw` with explicit type
 /// // parameters using the following syntax.
 /// assert_eq!("bridge",
-///            dc::escape::<dc::NetworkMode, _>("bridge").to_string());
+///            dc::escape::<dc::NetworkMode, _>("bridge").unwrap().to_string());
 ///
 /// // But typically, when working with `RawOr`, we'll be passing values
 /// // into a context where the type is known, allowing type interference
@@ -244,9 +264,14 @@ enum RawOrValue<T>
 ///
 /// // This is how we'll normally create `RawOr` values.
 /// assert_eq!("bridge", nm_string(dc::value(dc::NetworkMode::Bridge)));
-/// assert_eq!("bridge", nm_string(dc::escape("bridge")));
-/// assert_eq!("container:$$FOO", nm_string(dc::escape("container:$FOO")));
+/// assert_eq!("bridge", nm_string(dc::escape("bridge").unwrap()));
+/// assert_eq!("container:$$FOO", nm_string(dc::escape("container:$FOO").unwrap()));
 /// assert_eq!("$NETWORK_MODE", nm_string(dc::raw("$NETWORK_MODE").unwrap()));
+///
+/// // If you call `escape`, we have to pass it a string which parses to
+/// // correct type, or it will return an error.  This is part of our "verify
+/// // as much as possible" philosophy."
+/// assert!(dc::escape::<dc::NetworkMode, _>("invalid").is_err());
 /// ```
 pub struct RawOr<T>(RawOrValue<T>)
     where T: FromStr<Err = InvalidValueError>+Display;
@@ -264,13 +289,12 @@ pub fn raw<T, S>(s: S) -> Result<RawOr<T>, InterpolationError>
 
 /// Escape a string and convert it into a `RawOr<T>` value.  See `RawOr<T>`
 /// for examples of how to use this API.
-///
-/// TODO HIGH: Always parse?
-pub fn escape<T, S>(s: S) -> RawOr<T>
+pub fn escape<T, S>(s: S) -> Result<RawOr<T>, InterpolationError>
     where T: FromStr<Err = InvalidValueError>+Display,
           S: AsRef<str>
 {
-    RawOr(RawOrValue::Raw(escape_str(s.as_ref())))
+    let value: T = try!(FromStr::from_str(&escape_str(s.as_ref())));
+    Ok(RawOr(RawOrValue::Value(value)))
 }
 
 /// Convert a value into a `RawOr<T>` value.  See `RawOr<T>` for examples
