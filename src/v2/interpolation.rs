@@ -169,7 +169,7 @@ fn interpolate_env_returns_an_error_if_variable_is_undefined() {
 }
 
 /// Escape interpolation sequences in a string literal.
-pub fn escape_str(input: &str) -> String {
+fn escape_str(input: &str) -> String {
     input.replace("$", "$$")
 }
 
@@ -182,7 +182,7 @@ fn escape_str_escapes_dollar_signs() {
 /// with an error if we encounter an actual interpolation that would
 /// require an environment variable.  This is used for manipulating
 /// `docker-compose.yml` files without expanding any environment variables.
-pub fn unescape_str(input: &str) -> Result<String, InterpolationError> {
+fn unescape_str(input: &str) -> Result<String, InterpolationError> {
     interpolate_helper(input, Mode::Unescape)
 }
 
@@ -222,12 +222,29 @@ fn validate_tests_interpolation_strings() {
     assert!(validate("${foo!}").is_err());
 }
 
+/// A value which can be represented as a string containing environment
+/// variable interpolations.  This is basically just an alias for a larger
+/// set of traits, so we automatically implement it for all eligible types.
+pub trait InterpolatableValue: FromStr<Err = InvalidValueError> + Display + Clone + Eq
+{
+}
+
+impl<T> InterpolatableValue for T
+    where T: FromStr<Err = InvalidValueError> + Display + Clone + Eq
+{
+}
+
 /// Either a raw, unparsed string, or a value of the specified type.  This
 /// is the internal, private implementation of `RawOr`.
+#[derive(Debug, Clone, PartialEq, Eq)]
 enum RawOrValue<T> 
-    where T: FromStr<Err = InvalidValueError>+Display
+    where T: InterpolatableValue
 {
+    /// A raw value.  Invariant: This is valid, but it contains actual
+    /// references to environment variables.  If we can parse a string,
+    /// we always do, and we store it as `Value`.
     Raw(String),
+    /// A parsed value.
     Value(T),
 }
 
@@ -244,6 +261,9 @@ enum RawOrValue<T>
 ///
 /// Hence `RawOr<T>`, which can represent both unparsed and parsed values,
 /// and switch between them in a controlled fashion.
+///
+/// We normally create `RawOr<T>` values using one of `value`, `escape` or
+/// `raw`, as shown below.
 ///
 /// ```
 /// use std::string::ToString;
@@ -268,52 +288,129 @@ enum RawOrValue<T>
 /// assert_eq!("container:$$FOO", nm_string(dc::escape("container:$FOO").unwrap()));
 /// assert_eq!("$NETWORK_MODE", nm_string(dc::raw("$NETWORK_MODE").unwrap()));
 ///
-/// // If you call `escape`, we have to pass it a string which parses to
-/// // correct type, or it will return an error.  This is part of our "verify
-/// // as much as possible" philosophy."
+/// // If we call `escape`, we have to pass it a string which parses to
+/// // correct type, or it will return an error.  Similar rules apply to `raw`
+/// // if no actual interpolations are present in the string.  This is part of
+/// // our "verify as much as possible" philosophy.
 /// assert!(dc::escape::<dc::NetworkMode, _>("invalid").is_err());
+/// assert!(dc::raw::<dc::NetworkMode, _>("invalid").is_err());
 /// ```
 pub struct RawOr<T>(RawOrValue<T>)
-    where T: FromStr<Err = InvalidValueError>+Display;
+    where T: InterpolatableValue;
 
 /// Convert a raw string containing variable interpolations into a
 /// `RawOr<T>` value.  See `RawOr<T>` for examples of how to use this API.
 pub fn raw<T, S>(s: S) -> Result<RawOr<T>, InterpolationError>
-    where T: FromStr<Err = InvalidValueError>+Display,
+    where T: InterpolatableValue,
           S: Into<String>
 {
     let raw: String = s.into();
     try!(validate(&raw));
-    Ok(RawOr(RawOrValue::Raw(raw)))
+    match unescape_str(&raw) {
+        // We can unescape it, so either parse it or fail.
+        Ok(unescaped) =>
+            Ok(RawOr(RawOrValue::Value(try!(FromStr::from_str(&unescaped))))),
+        // It's valid but we can't unescape it, which means that it contains
+        // environment references that we want to leave as raw strings.
+        Err(_) => Ok(RawOr(RawOrValue::Raw(raw))),
+    }
 }
 
 /// Escape a string and convert it into a `RawOr<T>` value.  See `RawOr<T>`
 /// for examples of how to use this API.
 pub fn escape<T, S>(s: S) -> Result<RawOr<T>, InterpolationError>
-    where T: FromStr<Err = InvalidValueError>+Display,
+    where T: InterpolatableValue,
           S: AsRef<str>
 {
     let value: T = try!(FromStr::from_str(&escape_str(s.as_ref())));
     Ok(RawOr(RawOrValue::Value(value)))
 }
 
-/// Convert a value into a `RawOr<T>` value.  See `RawOr<T>` for examples
-/// of how to use this API.
-pub fn value<T, V>(v: V) -> RawOr<T>
-    where T: FromStr<Err = InvalidValueError>+Display,
-          V: Into<T>
+/// Convert a value into a `RawOr<T>` value, taking ownership of the
+/// original value.  See `RawOr<T>` for examples of how to use this API.
+pub fn value<T>(v: T) -> RawOr<T>
+    where T: InterpolatableValue
 {
-    RawOr(RawOrValue::Value(v.into()))
+    RawOr(RawOrValue::Value(v))
 }
 
 impl<T> RawOr<T>
-    where T: FromStr<Err = InvalidValueError>+Display
+    where T: InterpolatableValue
 {
-    
+    /// Either return a `&T` for this `RawOr<T>`, or return an error if
+    /// parsing the value would require performing interpolation.
+    ///
+    /// ```
+    /// use docker_compose::v2 as dc;
+    ///
+    /// let bridge = dc::value(dc::NetworkMode::Bridge);
+    /// assert_eq!(bridge.value().unwrap(), &dc::NetworkMode::Bridge);
+    /// ```
+    pub fn value(&self) -> Result<&T, InterpolationError> {
+        match self {
+            &RawOr(RawOrValue::Value(ref val)) => Ok(val),
+            // Because of invariants on RawOrValue, we know `unescape_str`
+            // should always return an error.
+            &RawOr(RawOrValue::Raw(ref raw)) =>
+                Err(unescape_str(&raw).unwrap_err()),
+        }
+    }
+
+    /// Either return a mutable `&mut T` for this `RawOr<T>`, or return an
+    /// error if parsing the value would require performing interpolation.
+    ///
+    /// ```
+    /// use docker_compose::v2 as dc;
+    ///
+    /// let mut mode = dc::value(dc::NetworkMode::Bridge);
+    /// *mode.value_mut().unwrap() = dc::NetworkMode::Host;
+    /// assert_eq!(mode.value_mut().unwrap(), &dc::NetworkMode::Host);
+    /// ```
+    pub fn value_mut(&mut self) -> Result<&mut T, InterpolationError> {
+        match self {
+            &mut RawOr(RawOrValue::Value(ref mut val)) => Ok(val),
+            // Because of invariants on RawOrValue, we know `unescape_str`
+            // should always return an error.
+            &mut RawOr(RawOrValue::Raw(ref raw)) =>
+                Err(unescape_str(&raw).unwrap_err()),
+        }
+    }
+
+    /// Return a `&mut T` for this `RawOr<T>`, performing any necessary
+    /// environment variable interpolations and updating the value in
+    /// place.
+    pub fn interpolate(&mut self) -> Result<&mut T, InterpolationError> {
+        let &mut RawOr(ref mut inner) = self;
+
+        // We have to very careful about how we destructure this value to
+        // avoid winding up with two `mut` references to `self`, and
+        // thereby making the borrow checker sad.  This means our code
+        // looks very weird.  There may be a way to simplify it.
+        //
+        // This is one of those fairly rare circumstances where we actually
+        // work around the borrow checker in a non-obvious way.
+        if let &mut RawOrValue::Value(ref mut val) = inner {
+            // We already have a parsed value, so just return that.
+            Ok(val)
+        } else {
+            let new_val =
+                if let &mut RawOrValue::Raw(ref raw) = inner {
+                    try!(FromStr::from_str(&try!(interpolate_env(raw))))
+                } else {
+                    unreachable!()
+                };
+            *inner = RawOrValue::Value(new_val);
+            if let &mut RawOrValue::Value(ref mut val) = inner {
+                Ok(val)
+            } else {
+                unreachable!()
+            }
+        }
+    }
 }
 
 impl<T> fmt::Display for RawOr<T>
-    where T: FromStr<Err = InvalidValueError>+Display
+    where T: InterpolatableValue
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match self {
