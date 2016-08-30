@@ -10,6 +10,8 @@ use std::collections::BTreeMap;
 use std::error;
 use std::fmt;
 
+use super::interpolation::{InterpolatableValue, RawOr, raw};
+
 /// An error parsing a string in a Dockerfile.
 #[derive(Debug)]
 pub struct InvalidValueError {
@@ -155,9 +157,9 @@ pub fn deserialize_map_or_key_value_list<D>(deserializer: &mut D) ->
 
 /// Serialize a list normally, unless it has only a single element, in
 /// which case serialize just that element directly.
-pub fn serialize_item_or_list<T, S>(value: &[T], serializer: &mut S) ->
+pub fn serialize_item_or_list<T, S>(value: &[RawOr<T>], serializer: &mut S) ->
     Result<(), S::Error>
-    where T: Serialize, S: Serializer
+    where T: InterpolatableValue, S: Serializer
 {
     if value.len() == 1 {
         value[0].serialize(serializer)
@@ -172,28 +174,34 @@ pub fn serialize_item_or_list<T, S>(value: &[T], serializer: &mut S) ->
 
 /// Deserialize either list or a single bare string as a list.
 pub fn deserialize_string_or_list<D>(deserializer: &mut D) ->
-    Result<Vec<String>, D::Error>
+    Result<Vec<RawOr<String>>, D::Error>
     where D: Deserializer
 {
     struct StringOrListVisitor;
 
     impl Visitor for StringOrListVisitor {
-        type Value = Vec<String>;
+        type Value = Vec<RawOr<String>>;
 
         // Handle a single item.
         fn visit_str<E>(&mut self, value: &str) -> Result<Self::Value, E>
             where E: de::Error
         {
-            Ok(vec!(value.to_owned()))
+            let v = try!(raw(value).map_err(|err| {
+                E::custom(format!("{}", err))
+            }));
+            Ok(vec!(v))
         }
 
         // Handle a list of items.
         fn visit_seq<V>(&mut self, mut visitor: V) -> Result<Self::Value, V::Error>
             where V: SeqVisitor
         {
-            let mut items: Vec<String> = vec!();
+            let mut items: Vec<RawOr<String>> = vec!();
             while let Some(item) = try!(visitor.visit::<String>()) {
-                items.push(item);
+                let v = try!(raw(item).map_err(|err| {
+                    <V::Error as Error>::custom(format!("{}", err))
+                }));
+                items.push(v);
             }
             try!(visitor.end());
             Ok(items)

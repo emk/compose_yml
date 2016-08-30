@@ -68,6 +68,8 @@ impl FromStr for HostVolume {
 }
 
 /// A volume associated with a service.
+///
+/// TODO: Rename to `Mount` or `VolumeMount`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ServiceVolume {
     /// If this volume is external to the container, where should we find
@@ -81,6 +83,8 @@ pub struct ServiceVolume {
     /// What should the permissions of this volume be in the container?
     pub permissions: VolumePermissions,
 }
+
+impl_interpolatable_value!(ServiceVolume);
 
 impl fmt::Display for ServiceVolume {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
@@ -105,8 +109,6 @@ impl fmt::Display for ServiceVolume {
         Ok(())
     }
 }
-
-impl_serialize_to_string!(ServiceVolume);
 
 impl FromStr for ServiceVolume {
     type Err = InvalidValueError;
@@ -139,8 +141,6 @@ impl FromStr for ServiceVolume {
         }
     }           
 }
-
-impl_deserialize_from_str!(ServiceVolume);
 
 #[test]
 fn service_volumes_should_have_string_representations() {

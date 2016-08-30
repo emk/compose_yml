@@ -42,6 +42,8 @@ impl AliasedName {
     }
 }
 
+impl_interpolatable_value!(AliasedName);
+
 impl fmt::Display for AliasedName {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match &self.alias {
@@ -50,8 +52,6 @@ impl fmt::Display for AliasedName {
         }
     }
 }
-
-impl_serialize_to_string!(AliasedName);
 
 impl FromStr for AliasedName {
     type Err = InvalidValueError;
@@ -70,8 +70,6 @@ impl FromStr for AliasedName {
         })
     }
 }
-
-impl_deserialize_from_str!(AliasedName);
 
 #[test]
 fn aliased_name_can_be_converted_to_and_from_a_string() {

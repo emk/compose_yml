@@ -36,6 +36,8 @@ impl MemorySize {
     }
 }
 
+impl_interpolatable_value!(MemorySize);
+
 impl fmt::Display for MemorySize {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         let bytes = self.to_bytes();
@@ -55,8 +57,6 @@ impl fmt::Display for MemorySize {
         }
     }
 }
-
-impl_serialize_to_string!(MemorySize);
 
 impl FromStr for MemorySize {
     type Err = InvalidValueError;
@@ -79,8 +79,6 @@ impl FromStr for MemorySize {
         }
     }
 }
-
-impl_deserialize_from_str!(MemorySize);
 
 #[test]
 fn memory_size_supports_string_serialization() {

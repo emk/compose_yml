@@ -21,13 +21,13 @@ impl HostMapping {
     }
 }
 
+impl_interpolatable_value!(HostMapping);
+
 impl fmt::Display for HostMapping {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         write!(f, "{}:{}", &self.hostname, &self.address)
     }
 }
-
-impl_serialize_to_string!(HostMapping);
 
 impl FromStr for HostMapping {
     type Err = InvalidValueError;
@@ -47,8 +47,6 @@ impl FromStr for HostMapping {
         Ok(HostMapping::new(caps.at(1).unwrap(), &addr))
     }
 }
-
-impl_deserialize_from_str!(HostMapping);
 
 #[test]
 fn host_mapping_supports_string_serialization() {

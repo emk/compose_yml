@@ -2,8 +2,6 @@
 //! arguments for some values.
 
 use regex::Regex;
-use serde::de::{self, Deserialize, Deserializer};
-use serde::ser::{Serialize, Serializer};
 use std::fmt;
 use std::str::FromStr;
 
@@ -83,6 +81,8 @@ macro_rules! mode_enum {
             )*
         }
 
+        impl_interpolatable_value!($name);
+
         // Set up serialization to strings.
         impl fmt::Display for $name {
             fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
@@ -93,8 +93,6 @@ macro_rules! mode_enum {
                 }
             }
         }
-
-        impl_serialize_to_string!($name);
 
         // Set up deserialization from strings.
         impl FromStr for $name {
@@ -127,8 +125,6 @@ macro_rules! mode_enum {
                 }
             }
         }
-
-        impl_deserialize_from_str!($name);
     }
 }
 
@@ -214,6 +210,8 @@ pub enum RestartMode {
     UnlessStopped,
 }
 
+impl_interpolatable_value!(RestartMode);
+
 // Set up serialization to strings.
 impl fmt::Display for RestartMode {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
@@ -227,8 +225,6 @@ impl fmt::Display for RestartMode {
         }
     }
 }
-
-impl_serialize_to_string!(RestartMode);
 
 // Set up deserialization from strings.
 impl FromStr for RestartMode {
@@ -263,8 +259,6 @@ impl FromStr for RestartMode {
         }
     }
 }
-
-impl_deserialize_from_str!(RestartMode);
 
 #[test]
 fn restart_mode_has_a_string_representation() {

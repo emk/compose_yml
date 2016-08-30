@@ -1,10 +1,14 @@
 //! Interpolation of shell-style variables into strings.
 
 use regex::{Captures, Regex};
+use serde::de::{self, Deserialize, Deserializer};
+use serde::ser::{Serialize, Serializer};
 use std::env;
 use std::error::{self, Error};
 use std::fmt::{self, Display};
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use std::string;
 
 use super::helpers::InvalidValueError;
 
@@ -222,16 +226,118 @@ fn validate_tests_interpolation_strings() {
     assert!(validate("${foo!}").is_err());
 }
 
-/// A value which can be represented as a string containing environment
-/// variable interpolations.  This is basically just an alias for a larger
-/// set of traits, so we automatically implement it for all eligible types.
-pub trait InterpolatableValue: FromStr<Err = InvalidValueError> + Display + Clone + Eq
-{
+/// Local helper trait to convert the different kinds of errors we might
+/// receive from `FromStr::Err` into an `InvalidValueError`.  Yeah, this is
+/// some abusive template metaprogramming, basically, even though we're not
+/// writing C++.
+///
+/// This will show up as an instance method on all affected types.
+pub trait IntoInvalidValueError: Error + Sized {
+    /// Consume an `Error` and return an `InvalidValueError`.  This is the
+    /// default implementation for when an `impl` doesn't override it with
+    /// something more specific.
+    fn into_invalid_value_error(self, wanted: &str, input: &str) ->
+        InvalidValueError
+    {
+        InvalidValueError::new(wanted, input)
+    }
 }
 
-impl<T> InterpolatableValue for T
-    where T: FromStr<Err = InvalidValueError> + Display + Clone + Eq
+impl IntoInvalidValueError for InvalidValueError {
+    /// We already have the correct type of error, so we override this
+    /// function to copy it through.
+    fn into_invalid_value_error(self, _: &str, _: &str) -> InvalidValueError {
+        self
+    }
+}
+
+impl IntoInvalidValueError for string::ParseError {
+    // Just use the default method in this case.
+}
+
+/// A value which can be represented as a string containing environment
+/// variable interpolations.  We require a custom `parse` implementation,
+/// because we want to handle types that are not necessarily `FromStr`.
+pub trait InterpolatableValue: Clone + Eq {
+    fn iv_from_str(s: &str) -> Result<Self, InvalidValueError>;
+    fn fmt_iv(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error>;
+}
+
+/// Provide a default implementation of InterpolatableValue that works for
+/// any type which supports `FromStr<Err = InvalidValueError>` and
+/// `Display`.
+///
+/// Conceptually, this is equivalent to the following, which doesn't work
+/// even on nightly Rust with `#[feature(specialization)]` enabled, for
+/// some reason that would probably take a long GitHub issues discussion to
+/// sort out.
+///
+/// ```text
+/// impl<T, E> InterpolatableValue for T
+///     where T: FromStr<Err = E> + Display + Clone + Eq,
+///           E: IntoInvalidValueError
+/// {
+///     default fn iv_from_str(s: &str) -> Result<Self, InvalidValueError> {
+///         FromStr::from_str(s).map_err(|err| {
+///             err.into_invalid_value_error("???", s)
+///         })
+///     }
+///
+///     default fn fmt_iv(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+///         self.fmt(f)
+///     }
+/// }
+/// ```
+macro_rules! impl_interpolatable_value {
+    ($ty:ty) => {
+        impl $crate::v2::interpolation::InterpolatableValue for $ty {
+            fn iv_from_str(s: &str) ->
+                Result<Self, $crate::v2::helpers::InvalidValueError>
+            {
+                use $crate::v2::interpolation::IntoInvalidValueError;
+                fn convert_err<E>(err: E, input: &str) -> InvalidValueError
+                    where E: IntoInvalidValueError
+                {
+                    err.into_invalid_value_error(stringify!($ty), input)
+                }
+
+                FromStr::from_str(s)
+                    .map_err(|err| convert_err(err, s))
+            }
+
+            fn fmt_iv(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+                use std::fmt::Display;
+                self.fmt(f)
+            }
+        }
+    }
+}
+
+impl_interpolatable_value!(String);
+
+/// This can be parsed and formatted, but not using the usual APIs.
+impl InterpolatableValue for PathBuf {
+    fn iv_from_str(s: &str) -> Result<Self, InvalidValueError> {
+        Ok(Path::new(s).to_owned())
+    }
+
+    fn fmt_iv(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        self.display().fmt(f)
+    }
+}
+
+/// A wrapper type to make `format!` call `fmt_iv` instead of `fmt`.
+struct DisplayInterpolatableValue<'a, V>(&'a V)
+    where V: 'a + InterpolatableValue;
+
+impl<'a, T> fmt::Display for DisplayInterpolatableValue<'a, T>
+    where T: InterpolatableValue
 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        match self {
+            &DisplayInterpolatableValue(val) => val.fmt_iv(f),
+        }
+    }
 }
 
 /// Either a raw, unparsed string, or a value of the specified type.  This
@@ -309,8 +415,10 @@ pub fn raw<T, S>(s: S) -> Result<RawOr<T>, InterpolationError>
     try!(validate(&raw));
     match unescape_str(&raw) {
         // We can unescape it, so either parse it or fail.
-        Ok(unescaped) =>
-            Ok(RawOr(RawOrValue::Value(try!(FromStr::from_str(&unescaped))))),
+        Ok(unescaped) => {
+            let parsed: T = try!(InterpolatableValue::iv_from_str(&unescaped));
+            Ok(RawOr(RawOrValue::Value(parsed)))
+        }
         // It's valid but we can't unescape it, which means that it contains
         // environment references that we want to leave as raw strings.
         Err(_) => Ok(RawOr(RawOrValue::Raw(raw))),
@@ -323,7 +431,7 @@ pub fn escape<T, S>(s: S) -> Result<RawOr<T>, InterpolationError>
     where T: InterpolatableValue,
           S: AsRef<str>
 {
-    let value: T = try!(FromStr::from_str(&escape_str(s.as_ref())));
+    let value: T = try!(InterpolatableValue::iv_from_str(s.as_ref()));
     Ok(RawOr(RawOrValue::Value(value)))
 }
 
@@ -415,7 +523,7 @@ impl<T> RawOr<T>
         } else {
             let new_val =
                 if let &mut RawOrValue::Raw(ref raw) = inner {
-                    try!(FromStr::from_str(&try!(interpolate_env(raw))))
+                    try!(InterpolatableValue::iv_from_str(&try!(interpolate_env(raw))))
                 } else {
                     unreachable!()
                 };
@@ -435,8 +543,21 @@ impl<T> fmt::Display for RawOr<T>
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match self {
             &RawOr(RawOrValue::Raw(ref raw)) => write!(f, "{}", raw),
-            &RawOr(RawOrValue::Value(ref value)) => write!(f, "{}", value),
+            &RawOr(RawOrValue::Value(ref value)) => {
+                let s = format!("{}", DisplayInterpolatableValue(value));
+                write!(f, "{}", escape_str(&s))
+            }
         }
+    }
+}
+
+impl<T> Serialize for RawOr<T>
+    where T: InterpolatableValue
+{
+    fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
+        where S: Serializer
+    {
+        serializer.serialize_str(&self.to_string())
     }
 }
 
@@ -455,6 +576,19 @@ impl<T> FromStr for RawOr<T>
                 // TODO LOW: Add a more descriptive message?
                 _ => InvalidValueError::new("interpolation", s),
             }
+        })
+    }
+}
+
+impl<T> Deserialize for RawOr<T>
+    where T: InterpolatableValue
+{
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, D::Error>
+        where D: Deserializer
+    {
+        let string = try!(String::deserialize(deserializer));
+        Self::from_str(&string).map_err(|err| {
+            de::Error::custom(format!("{}", err))
         })
     }
 }

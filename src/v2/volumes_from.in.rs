@@ -24,6 +24,8 @@ pub struct VolumesFrom {
     pub permissions: VolumePermissions,
 }
 
+impl_interpolatable_value!(VolumesFrom);
+
 impl fmt::Display for VolumesFrom {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         // We serialize service names without the `service:` here, but most
@@ -40,8 +42,6 @@ impl fmt::Display for VolumesFrom {
         Ok(())
     }
 }
-
-impl_serialize_to_string!(VolumesFrom);
 
 impl FromStr for VolumesFrom {
     type Err = InvalidValueError;
@@ -73,8 +73,6 @@ impl FromStr for VolumesFrom {
         })
     }
 }
-
-impl_deserialize_from_str!(VolumesFrom);
 
 #[test]
 fn volumes_from_should_have_a_string_representation() {

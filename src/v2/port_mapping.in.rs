@@ -63,6 +63,8 @@ pub struct PortMapping {
     container_ports: Ports,
 }
 
+impl_interpolatable_value!(PortMapping);
+
 impl fmt::Display for PortMapping {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         // We can't serialize a host_address without host_ports.
@@ -79,8 +81,6 @@ impl fmt::Display for PortMapping {
         write!(f, "{}", self.container_ports)
     }
 }
-
-impl_serialize_to_string!(PortMapping);
 
 impl FromStr for PortMapping {
     type Err = InvalidValueError;
@@ -123,8 +123,6 @@ impl FromStr for PortMapping {
         }
     }
 }
-
-impl_deserialize_from_str!(PortMapping);
 
 #[test]
 fn port_mapping_should_have_a_string_representation() {

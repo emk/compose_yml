@@ -56,8 +56,8 @@ fn update(file: &mut dc::File) -> Result<(), dc::Error> {
     // we can modify the services.
     for (_name, service) in file.services.iter_mut() {
         // Insert standard env_file entries.
-        service.env_files.insert(0, "config.env".to_owned());
-        service.env_files.insert(1, "environments/$ENV/config.env".to_owned());
+        service.env_files.insert(0, try!(dc::escape("config.env")));
+        service.env_files.insert(1, try!(dc::raw("environments/$ENV/config.env")));
 
         // Figure out where we'll keep the local checkout, if any.
         let build_dir = try!(service_build_dir(service));
@@ -65,11 +65,11 @@ fn update(file: &mut dc::File) -> Result<(), dc::Error> {
         // If we have a local build directory, update the service to use it.
         if let Some(ref dir) = build_dir {
             // Mount the local build directory as `/app` inside the container.
-            service.volumes.push(dc::ServiceVolume {
+            service.volumes.push(dc::value(dc::ServiceVolume {
                 host: Some(dc::HostVolume::Path(dir.clone())),
                 container: Path::new("/app").to_owned(),
                 permissions: Default::default(),
-            });
+            }));
             // Update the `build` field if present.
             if let Some(ref mut build) = service.build {
                 build.context = dc::Context::Dir(dir.clone());
