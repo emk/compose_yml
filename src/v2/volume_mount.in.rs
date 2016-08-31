@@ -68,10 +68,8 @@ impl FromStr for HostVolume {
 }
 
 /// A volume associated with a service.
-///
-/// TODO: Rename to `Mount` or `VolumeMount`.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ServiceVolume {
+pub struct VolumeMount {
     /// If this volume is external to the container, where should we find
     /// it?  We don't attempt to parse this because the format is
     /// tricky--it can contain variable interpolation, `~/`-relative paths,
@@ -84,9 +82,9 @@ pub struct ServiceVolume {
     pub permissions: VolumePermissions,
 }
 
-impl_interpolatable_value!(ServiceVolume);
+impl_interpolatable_value!(VolumeMount);
 
-impl fmt::Display for ServiceVolume {
+impl fmt::Display for VolumeMount {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         // We can't have permissions on a purely internal volume, if I'm
         // reading this correctly.
@@ -110,28 +108,28 @@ impl fmt::Display for ServiceVolume {
     }
 }
 
-impl FromStr for ServiceVolume {
+impl FromStr for VolumeMount {
     type Err = InvalidValueError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let items = s.split(":").collect::<Vec<_>>();
         match items.len() {
             1 => {
-                Ok(ServiceVolume {
+                Ok(VolumeMount {
                     host: None,
                     container: Path::new(items[0]).to_owned(),
                     permissions: Default::default(),
                 })
             }
             2 => {
-                Ok(ServiceVolume {
+                Ok(VolumeMount {
                     host: Some(try!(FromStr::from_str(items[0]))),
                     container: Path::new(items[1]).to_owned(),
                     permissions: Default::default(),
                 })
             }
             3 => {
-                Ok(ServiceVolume {
+                Ok(VolumeMount {
                     host: Some(try!(FromStr::from_str(items[0]))),
                     container: Path::new(items[1]).to_owned(),
                     permissions: try!(FromStr::from_str(items[2])),
@@ -143,18 +141,18 @@ impl FromStr for ServiceVolume {
 }
 
 #[test]
-fn service_volumes_should_have_string_representations() {
-    let vol1 = ServiceVolume {
+fn volume_mounts_should_have_string_representations() {
+    let vol1 = VolumeMount {
         host: None,
         container: Path::new("/var/lib").to_owned(),
         permissions: Default::default(),
     };
-    let vol2 = ServiceVolume {
+    let vol2 = VolumeMount {
         host: Some(HostVolume::Name("named".to_owned())),
         container: Path::new("/var/lib").to_owned(),
         permissions: Default::default(),
     };
-    let vol3 = ServiceVolume {
+    let vol3 = VolumeMount {
         host: Some(HostVolume::Path(Path::new("/etc/foo").to_owned())),
         container: Path::new("/etc/myfoo").to_owned(),
         permissions: VolumePermissions::ReadOnly,
@@ -167,6 +165,6 @@ fn service_volumes_should_have_string_representations() {
     );
     for (mode, s) in pairs {
         assert_eq!(mode.to_string(), s);
-        assert_eq!(mode, ServiceVolume::from_str(s).unwrap());
+        assert_eq!(mode, VolumeMount::from_str(s).unwrap());
     }
 }

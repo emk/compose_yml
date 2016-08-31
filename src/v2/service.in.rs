@@ -62,8 +62,6 @@ pub struct Service {
     pub tmpfs: Vec<RawOr<String>>,
 
     /// The entrypoint for the container (wraps `command`, basically).
-    ///
-    /// TODO: Deal with RawOr for CommandLine.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub entrypoint: Option<CommandLine>,
 
@@ -144,7 +142,7 @@ pub struct Service {
 
     /// Volumes associated with this service.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub volumes: Vec<RawOr<ServiceVolume>>,
+    pub volumes: Vec<RawOr<VolumeMount>>,
 
     /// Other places to get volumes from.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
