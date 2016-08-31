@@ -1,8 +1,9 @@
 //! Support for the `docker-compose.yml` version 2 file format.
 
 use regex::Regex;
+use serde;
 use serde::de::{self, Deserialize, Deserializer, SeqVisitor, Visitor};
-use serde::ser::{self, Serialize, Serializer};
+use serde::ser::{Serialize, Serializer};
 use serde_yaml;
 use std::collections::BTreeMap;
 use std::fs;

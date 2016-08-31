@@ -6,13 +6,13 @@
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum CommandLine {
     /// A command-line specified as unparsed shell code.
-    ShellCode(String),
+    ShellCode(RawOr<String>),
 
     /// A pre-parsed command-line.  This may actually be empty for fields
     /// like `command`, so we don't try to enforce a minimal length, even
     /// if other fields like `entrypoint` supposedly want at least one
     /// entry.
-    Parsed(Vec<String>),
+    Parsed(Vec<RawOr<String>>),
 }
 
 impl Serialize for CommandLine {
@@ -20,7 +20,7 @@ impl Serialize for CommandLine {
         where S: Serializer
     {
         match self {
-            &CommandLine::ShellCode(ref s) => serializer.serialize_str(s),
+            &CommandLine::ShellCode(ref s) => s.serialize(serializer),
             &CommandLine::Parsed(ref l) => l.serialize(serializer),
         }
     }
@@ -39,7 +39,9 @@ impl Deserialize for CommandLine {
             fn visit_str<E>(&mut self, value: &str) -> Result<CommandLine, E>
                 where E: de::Error
             {
-                Ok(CommandLine::ShellCode(value.to_owned()))
+                Ok(CommandLine::ShellCode(try!(raw(value).map_err(|err| {
+                    E::custom(format!("{}", err))
+                }))))
             }
 
             // The deserializer found a sequence.
@@ -47,9 +49,11 @@ impl Deserialize for CommandLine {
                 Result<Self::Value, V::Error>
                 where V: SeqVisitor
             {
-                let mut args: Vec<String> = vec!();
+                let mut args: Vec<RawOr<String>> = vec!();
                 while let Some(arg) = try!(visitor.visit::<String>()) {
-                    args.push(arg);
+                    args.push(try!(raw(arg).map_err(|err| {
+                        <V::Error as serde::Error>::custom(format!("{}", err))
+                    })));
                 }
                 try!(visitor.end());
                 Ok(CommandLine::Parsed(args))
@@ -63,7 +67,7 @@ impl Deserialize for CommandLine {
 #[test]
 fn command_line_may_be_shell_code() {
     let yaml = r#"---
-"ls /"
+"ls $DIR"
 "#;
     assert_roundtrip!(CommandLine, yaml);
 }

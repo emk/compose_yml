@@ -64,7 +64,7 @@ fn file_can_be_converted_from_and_to_yaml() {
 
     let file: File = serde_yaml::from_str(&yaml).unwrap();
     let foo = file.services.get("foo").unwrap();
-    assert_eq!(foo.build.as_ref().unwrap().context, Context::new("."));
+    assert_eq!(foo.build.as_ref().unwrap().context, value(Context::new(".")));
 }
 
 #[test]

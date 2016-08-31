@@ -30,14 +30,15 @@
 //!
 //! let app1 = file.services.get("app1").unwrap();
 //! let build1 = app1.build.as_ref().unwrap();
-//! assert_eq!(build1.context, dc::Context::new("./app1"));
-//! assert_eq!(build1.dockerfile.as_ref().unwrap(), "Dockerfile-alt");
+//! assert_eq!(build1.context, dc::value(dc::Context::new("./app1")));
+//! assert_eq!(build1.dockerfile.as_ref().unwrap(),
+//!            &dc::value("Dockerfile-alt".to_owned()));
 //!
 //! // We automatically convert all different `build:` syntaxes
 //! // to be consistent.
 //! let app2 = file.services.get("app2").unwrap();
 //! let build2 = app2.build.as_ref().unwrap();
-//! assert_eq!(build2.context, dc::Context::new("./app2"));
+//! assert_eq!(build2.context, dc::value(dc::Context::new("./app2")));
 //! ```
 //!
 //! An interesting place to start browsing this documentation is

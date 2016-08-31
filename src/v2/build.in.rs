@@ -7,11 +7,11 @@
 #[serde(deny_unknown_fields)]
 pub struct Build {
     /// The source directory to use for this build.
-    pub context: Context,
+    pub context: RawOr<Context>,
 
     /// The name of an alternate `Dockerfile` to use.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub dockerfile: Option<String>,
+    pub dockerfile: Option<RawOr<String>>,
 
     /// Build arguments.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
@@ -25,7 +25,7 @@ impl FromStr for Build {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Build {
-            context: Context::new(s),
+            context: value(Context::new(s)),
             dockerfile: None,
             args: Default::default(),
         })
@@ -48,7 +48,7 @@ impl SerializeStringOrStruct for Build {
 #[test]
 fn build_has_a_string_representation() {
     let build: Build = Build::from_str(".").unwrap();
-    assert_eq!(build.context, Context::new("."));
+    assert_eq!(build.context, value(Context::new(".")));
     assert_eq!(build.dockerfile, None);
     assert_eq!(build.args, Default::default());
 }
@@ -64,8 +64,8 @@ fn build_may_be_a_struct() {
     assert_roundtrip!(Build, yaml);
 
     let build: Build = serde_yaml::from_str(yaml).unwrap();
-    assert_eq!(build.context, Context::new("."));
-    assert_eq!(build.dockerfile, Some("Dockerfile".to_owned()));
+    assert_eq!(build.context, value(Context::new(".")));
+    assert_eq!(build.dockerfile, Some(value("Dockerfile".to_owned())));
     assert_eq!(build.args.get("key").cloned(), Some("value".to_owned()));
 }
 

@@ -33,6 +33,8 @@ impl Context {
     }
 }
 
+impl_interpolatable_value!(Context);
+
 impl FromStr for Context {
     type Err = Void;
 
@@ -41,29 +43,14 @@ impl FromStr for Context {
     }
 }
 
-// Custom serializer to output both directories and git URLs as strings.
-// We can't implement `Display` and use `impl_serialize_to_string` because
-// we need to handle non-UTF-8 paths that we can't serialize.
-impl Serialize for Context {
-    fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
-        where S: Serializer
-    {
+impl fmt::Display for Context {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match self {
-            &Context::Dir(ref path) => {
-                // Rust is very paranoid: Not all OS paths can be converted
-                // to UTF-8 strings!  And we need to handle this.
-                let s = try!(path.to_str().ok_or_else(|| {
-                    let msg = format!("Could not convert path to UTF-8: {:?}", path);
-                    ser::Error::invalid_value(&msg)
-                }));
-                serializer.serialize_str(&s)
-            }
-            &Context::GitUrl(ref url) => serializer.serialize_str(url),
+            &Context::Dir(ref path) => write!(f, "{}", path.display()),
+            &Context::GitUrl(ref url) => write!(f, "{}", url),
         }
     }
 }
-
-impl_deserialize_from_str!(Context);
 
 #[test]
 fn context_may_contain_git_urls() {
@@ -77,10 +64,9 @@ fn context_may_contain_git_urls() {
              "github.com/docker/docker.git");
 
     for url in urls {
-        let yaml = format!("---\n\"{}\"", url);
-        let context: Context = serde_yaml::from_str(&yaml).unwrap();
+        let context: Context = FromStr::from_str(url).unwrap();
         assert_eq!(context, Context::GitUrl(url.to_string()));
-        assert_eq!(serde_yaml::to_string(&context).unwrap(), yaml);
+        assert_eq!(context.to_string(), url);
     }
 }
 
@@ -88,9 +74,8 @@ fn context_may_contain_git_urls() {
 fn context_may_contain_dir_paths() {
     let paths = vec!(".", "./foo", "./foo/bar/");
     for path in paths {
-        let yaml = format!("---\n\"{}\"", path);
-        let context: Context = serde_yaml::from_str(&yaml).unwrap();
+        let context: Context = FromStr::from_str(path).unwrap();
         assert_eq!(context, Context::Dir(Path::new(path).to_owned()));
-        assert_eq!(serde_yaml::to_string(&context).unwrap(), yaml);
+        assert_eq!(context.to_string(), path);
     }
 }

@@ -9,6 +9,7 @@ use std::fmt::{self, Display};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::string;
+use void::Void;
 
 use super::helpers::InvalidValueError;
 
@@ -253,6 +254,12 @@ impl IntoInvalidValueError for InvalidValueError {
 
 impl IntoInvalidValueError for string::ParseError {
     // Just use the default method in this case.
+}
+
+impl IntoInvalidValueError for Void {
+    fn into_invalid_value_error(self, _: &str, _: &str) -> InvalidValueError {
+        unreachable!()
+    }
 }
 
 /// A value which can be represented as a string containing environment

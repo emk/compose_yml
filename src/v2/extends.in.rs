@@ -8,12 +8,12 @@
 #[serde(deny_unknown_fields)]
 pub struct Extends {
     /// The name of a service to extend.
-    pub service: String,
+    pub service: RawOr<String>,
 
     /// The file in which the service to extend is defined.  Defaults to
     /// the current file.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub file: Option<PathBuf>,
+    pub file: Option<RawOr<PathBuf>>,
 }
 
 #[test]

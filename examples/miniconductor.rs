@@ -44,7 +44,7 @@ fn service_build_dir(service: &dc::Service) ->
     Result<Option<PathBuf>, dc::Error>
 {
     if let Some(ref build) = service.build {
-        Ok(Some(try!(git_to_local(&build.context))))
+        Ok(Some(try!(git_to_local(try!(build.context.value())))))
     } else {
         Ok(None)
     }
@@ -72,7 +72,7 @@ fn update(file: &mut dc::File) -> Result<(), dc::Error> {
             }));
             // Update the `build` field if present.
             if let Some(ref mut build) = service.build {
-                build.context = dc::Context::Dir(dir.clone());
+                build.context = dc::value(dc::Context::Dir(dir.clone()));
             }
         }
     }

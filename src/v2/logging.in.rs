@@ -8,7 +8,7 @@
 pub struct Logging {
     /// The logging driver to use.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub driver: Option<String>,
+    pub driver: Option<RawOr<String>>,
 
     /// Options to pass to the log driver.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
