@@ -46,19 +46,19 @@ pub struct Service {
     /// DNS servers.
     #[serde(default, skip_serializing_if = "Vec::is_empty",
             serialize_with = "serialize_item_or_list",
-            deserialize_with = "deserialize_string_or_list")]
+            deserialize_with = "deserialize_item_or_list")]
     pub dns: Vec<RawOr<String>>,
 
     /// Domains to search for hostnames.
     #[serde(default, skip_serializing_if = "Vec::is_empty",
             serialize_with = "serialize_item_or_list",
-            deserialize_with = "deserialize_string_or_list")]
+            deserialize_with = "deserialize_item_or_list")]
     pub dns_search: Vec<RawOr<String>>,
 
     /// Locations to mount temporary file systems.
     #[serde(default, skip_serializing_if = "Vec::is_empty",
             serialize_with = "serialize_item_or_list",
-            deserialize_with = "deserialize_string_or_list")]
+            deserialize_with = "deserialize_item_or_list")]
     pub tmpfs: Vec<RawOr<String>>,
 
     /// The entrypoint for the container (wraps `command`, basically).
@@ -71,8 +71,8 @@ pub struct Service {
     #[serde(rename = "env_file",
             default, skip_serializing_if = "Vec::is_empty",
             serialize_with = "serialize_item_or_list",
-            deserialize_with = "deserialize_string_or_list")]
-    pub env_files: Vec<RawOr<String>>,
+            deserialize_with = "deserialize_item_or_list")]
+    pub env_files: Vec<RawOr<PathBuf>>,
 
     /// Environment variables and values to supply to the container.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty",

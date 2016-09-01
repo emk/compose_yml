@@ -9,6 +9,7 @@ use serde::ser::{Serialize, Serializer};
 use std::collections::BTreeMap;
 use std::error;
 use std::fmt;
+use std::marker::PhantomData;
 
 use super::interpolation::{InterpolatableValue, RawOr, raw};
 
@@ -173,14 +174,19 @@ pub fn serialize_item_or_list<T, S>(value: &[RawOr<T>], serializer: &mut S) ->
 }
 
 /// Deserialize either list or a single bare string as a list.
-pub fn deserialize_string_or_list<D>(deserializer: &mut D) ->
-    Result<Vec<RawOr<String>>, D::Error>
-    where D: Deserializer
+pub fn deserialize_item_or_list<T, D>(deserializer: &mut D) ->
+    Result<Vec<RawOr<T>>, D::Error>
+    where T: InterpolatableValue, D: Deserializer
 {
-    struct StringOrListVisitor;
+    // Our Visitor type, tagged with a 0-size PhantomData value so that it can
+    // carry type information.
+    struct StringOrListVisitor<T>(PhantomData<T>)
+        where T: InterpolatableValue;
 
-    impl Visitor for StringOrListVisitor {
-        type Value = Vec<RawOr<String>>;
+    impl<T> Visitor for StringOrListVisitor<T>
+        where T: InterpolatableValue
+    {
+        type Value = Vec<RawOr<T>>;
 
         // Handle a single item.
         fn visit_str<E>(&mut self, value: &str) -> Result<Self::Value, E>
@@ -196,7 +202,7 @@ pub fn deserialize_string_or_list<D>(deserializer: &mut D) ->
         fn visit_seq<V>(&mut self, mut visitor: V) -> Result<Self::Value, V::Error>
             where V: SeqVisitor
         {
-            let mut items: Vec<RawOr<String>> = vec!();
+            let mut items: Vec<RawOr<T>> = vec!();
             while let Some(item) = try!(visitor.visit::<String>()) {
                 let v = try!(raw(item).map_err(|err| {
                     <V::Error as Error>::custom(format!("{}", err))
@@ -209,7 +215,7 @@ pub fn deserialize_string_or_list<D>(deserializer: &mut D) ->
 
     }
 
-    deserializer.deserialize(StringOrListVisitor)
+    deserializer.deserialize(StringOrListVisitor(PhantomData))
 }
 
 /// Make sure that the file conforms to a version we can parse.
