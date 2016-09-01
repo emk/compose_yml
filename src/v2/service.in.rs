@@ -45,19 +45,16 @@ pub struct Service {
 
     /// DNS servers.
     #[serde(default, skip_serializing_if = "Vec::is_empty",
-            serialize_with = "serialize_item_or_list",
             deserialize_with = "deserialize_item_or_list")]
     pub dns: Vec<RawOr<String>>,
 
     /// Domains to search for hostnames.
     #[serde(default, skip_serializing_if = "Vec::is_empty",
-            serialize_with = "serialize_item_or_list",
             deserialize_with = "deserialize_item_or_list")]
     pub dns_search: Vec<RawOr<String>>,
 
     /// Locations to mount temporary file systems.
     #[serde(default, skip_serializing_if = "Vec::is_empty",
-            serialize_with = "serialize_item_or_list",
             deserialize_with = "deserialize_item_or_list")]
     pub tmpfs: Vec<RawOr<String>>,
 
@@ -70,7 +67,6 @@ pub struct Service {
     /// singular form looks weird at the API level.
     #[serde(rename = "env_file",
             default, skip_serializing_if = "Vec::is_empty",
-            serialize_with = "serialize_item_or_list",
             deserialize_with = "deserialize_item_or_list")]
     pub env_files: Vec<RawOr<PathBuf>>,
 
@@ -239,7 +235,8 @@ pub struct Service {
 #[test]
 fn service_handles_sample_fields_correctly() {
     let yaml = r#"---
-"dns": "8.8.8.8"
+"dns":
+  - "8.8.8.8"
 "dns_search":
   - "example.com"
   - "example.net"

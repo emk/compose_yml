@@ -5,7 +5,6 @@ use regex::Regex;
 use serde::Error;
 use serde::de;
 use serde::de::{Deserialize, Deserializer, MapVisitor, SeqVisitor, Visitor};
-use serde::ser::{Serialize, Serializer};
 use std::collections::BTreeMap;
 use std::error;
 use std::fmt;
@@ -154,23 +153,6 @@ pub fn deserialize_map_or_key_value_list<D>(deserializer: &mut D) ->
     }
 
     deserializer.deserialize_map(MapOrKeyValueListVisitor)
-}
-
-/// Serialize a list normally, unless it has only a single element, in
-/// which case serialize just that element directly.
-pub fn serialize_item_or_list<T, S>(value: &[RawOr<T>], serializer: &mut S) ->
-    Result<(), S::Error>
-    where T: InterpolatableValue, S: Serializer
-{
-    if value.len() == 1 {
-        value[0].serialize(serializer)
-    } else {
-        let mut state = try!(serializer.serialize_seq(Some(value.len())));
-        for item in value {
-            try!(serializer.serialize_seq_elt(&mut state, item));
-        }
-        serializer.serialize_seq_end(state)
-    }
 }
 
 /// Deserialize either list or a single bare string as a list.
