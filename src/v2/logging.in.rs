@@ -3,7 +3,7 @@
 // of how this works.
 
 /// Logging configuration.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(deny_unknown_fields)]
 pub struct Logging {
     /// The logging driver to use.
@@ -13,4 +13,12 @@ pub struct Logging {
     /// Options to pass to the log driver.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub options: BTreeMap<String, String>,
+
+    /// PRIVATE.  Mark this struct as having unknown fields for future
+    /// compatibility.  This prevents direct construction and exhaustive
+    /// matching.  This needs to be be public because of
+    /// http://stackoverflow.com/q/39277157/12089
+    #[doc(hidden)]
+    #[serde(default, skip_serializing, skip_deserializing)]
+    pub _phantom: PhantomData<()>,
 }

@@ -1,6 +1,6 @@
 [package]
 name = "docker_compose"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Eric Kidd <git@randomhacks.net>"]
 build = "build.rs"
 

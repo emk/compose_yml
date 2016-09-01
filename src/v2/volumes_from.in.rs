@@ -22,6 +22,54 @@ pub struct VolumesFrom {
     pub source: ServiceOrContainer,
     /// What permissions should we apply to these volumes?
     pub permissions: VolumePermissions,
+    /// PRIVATE.  Mark this struct as having unknown fields for future
+    /// compatibility.  This prevents direct construction and exhaustive
+    /// matching.  This needs to be be public because of
+    /// http://stackoverflow.com/q/39277157/12089
+    #[doc(hidden)]
+    pub _phantom: PhantomData<()>,
+}
+
+impl VolumesFrom {
+    /// Construct a `VolumesFrom` object using the name of a service in
+    /// this `docker-compose.yml` file.
+    ///
+    /// ```
+    /// use docker_compose::v2 as dc;
+    /// let vf = dc::VolumesFrom::service("myservice");
+    /// assert_eq!(vf.source,
+    ///            dc::ServiceOrContainer::Service("myservice".to_owned()));
+    ///
+    /// // To override a field, try:
+    /// dc::VolumesFrom {
+    ///   permissions: dc::VolumePermissions::ReadOnly,
+    ///   ..dc::VolumesFrom::service("myservice")
+    /// };
+    /// ```
+    pub fn service<S: Into<String>>(service: S) -> VolumesFrom {
+        VolumesFrom {
+            source: ServiceOrContainer::Service(service.into()),
+            permissions: Default::default(),
+            _phantom: PhantomData,
+        }
+    }
+
+    /// Construct a `VolumesFrom` object using the name of a Docker
+    /// container defined elsewhere.
+    ///
+    /// ```
+    /// use docker_compose::v2 as dc;
+    /// let vf = dc::VolumesFrom::container("mycontainer");
+    /// assert_eq!(vf.source,
+    ///            dc::ServiceOrContainer::Container("mycontainer".to_owned()));
+    /// ```
+    pub fn container<S: Into<String>>(container: S) -> VolumesFrom {
+        VolumesFrom {
+            source: ServiceOrContainer::Container(container.into()),
+            permissions: Default::default(),
+            _phantom: PhantomData,
+        }
+    }
 }
 
 impl_interpolatable_value!(VolumesFrom);
@@ -70,19 +118,17 @@ impl FromStr for VolumesFrom {
         Ok(VolumesFrom {
             source: source,
             permissions: permissions,
+            _phantom: PhantomData,
         })
     }
 }
 
 #[test]
 fn volumes_from_should_have_a_string_representation() {
-    let vf1 = VolumesFrom {
-        source: ServiceOrContainer::Service("foo".to_owned()),
-        permissions: Default::default(),
-    };
+    let vf1 = VolumesFrom::service("foo");
     let vf2 = VolumesFrom {
-        source: ServiceOrContainer::Container("foo".to_owned()),
         permissions: VolumePermissions::ReadOnly,
+        ..VolumesFrom::container("foo")
     };
 
     let pairs = vec!(

@@ -80,6 +80,62 @@ pub struct VolumeMount {
     pub container: PathBuf,
     /// What should the permissions of this volume be in the container?
     pub permissions: VolumePermissions,
+
+    /// PRIVATE.  Mark this struct as having unknown fields for future
+    /// compatibility.  This prevents direct construction and exhaustive
+    /// matching.  This needs to be be public because of
+    /// http://stackoverflow.com/q/39277157/12089
+    #[doc(hidden)]
+    pub _phantom: PhantomData<()>,
+}
+
+impl VolumeMount {
+    /// Map a host path to a container path.
+    ///
+    /// ```
+    /// use docker_compose::v2 as dc;
+    /// dc::VolumeMount::host("./src", "/app");
+    /// ```
+    pub fn host<P1, P2>(host: P1, container: P2) -> VolumeMount
+        where P1: Into<PathBuf>, P2: Into<PathBuf>
+    {
+        VolumeMount {
+            host: Some(HostVolume::Path(host.into())),
+            container: container.into(),
+            permissions: Default::default(),
+            _phantom: PhantomData,
+        }
+    }
+
+    /// Map a named volume to a container path.
+    ///
+    /// ```
+    /// use docker_compose::v2 as dc;
+    /// dc::VolumeMount::named("pgvolume", "/app");
+    /// ```
+    pub fn named<S, P>(name: S, container: P) -> VolumeMount
+        where S: Into<String>, P: Into<PathBuf>
+    {
+        VolumeMount {
+            host: Some(HostVolume::Name(name.into())),
+            container: container.into(),
+            permissions: Default::default(),
+            _phantom: PhantomData,
+        }
+    }
+
+    /// An anonymous persistent volume which will remain associated with
+    /// this service when it is recreated.
+    pub fn anonymous<P>(container: P) -> VolumeMount
+        where P: Into<PathBuf>
+    {
+        VolumeMount {
+            host: None,
+            container: container.into(),
+            permissions: Default::default(),
+            _phantom: PhantomData,
+        }        
+    }
 }
 
 impl_interpolatable_value!(VolumeMount);
@@ -119,6 +175,7 @@ impl FromStr for VolumeMount {
                     host: None,
                     container: Path::new(items[0]).to_owned(),
                     permissions: Default::default(),
+                    _phantom: PhantomData,
                 })
             }
             2 => {
@@ -126,6 +183,7 @@ impl FromStr for VolumeMount {
                     host: Some(try!(FromStr::from_str(items[0]))),
                     container: Path::new(items[1]).to_owned(),
                     permissions: Default::default(),
+                    _phantom: PhantomData,
                 })
             }
             3 => {
@@ -133,6 +191,7 @@ impl FromStr for VolumeMount {
                     host: Some(try!(FromStr::from_str(items[0]))),
                     container: Path::new(items[1]).to_owned(),
                     permissions: try!(FromStr::from_str(items[2])),
+                    _phantom: PhantomData,
                 })
             }
             _ => Err(InvalidValueError::new("volume", s)),
@@ -142,20 +201,11 @@ impl FromStr for VolumeMount {
 
 #[test]
 fn volume_mounts_should_have_string_representations() {
-    let vol1 = VolumeMount {
-        host: None,
-        container: Path::new("/var/lib").to_owned(),
-        permissions: Default::default(),
-    };
-    let vol2 = VolumeMount {
-        host: Some(HostVolume::Name("named".to_owned())),
-        container: Path::new("/var/lib").to_owned(),
-        permissions: Default::default(),
-    };
+    let vol1 = VolumeMount::anonymous("/var/lib");
+    let vol2 = VolumeMount::named("named", "/var/lib");
     let vol3 = VolumeMount {
-        host: Some(HostVolume::Path(Path::new("/etc/foo").to_owned())),
-        container: Path::new("/etc/myfoo").to_owned(),
         permissions: VolumePermissions::ReadOnly,
+        ..VolumeMount::host("/etc/foo", "/etc/myfoo")
     };
 
     let pairs = vec!(

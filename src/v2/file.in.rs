@@ -12,6 +12,14 @@ pub struct File {
 
     /// The individual services which make up this app.
     pub services: BTreeMap<String, Service>,
+
+    /// PRIVATE.  Mark this struct as having unknown fields for future
+    /// compatibility.  This prevents direct construction and exhaustive
+    /// matching.  This needs to be be public because of
+    /// http://stackoverflow.com/q/39277157/12089
+    #[doc(hidden)]
+    #[serde(default, skip_serializing, skip_deserializing)]
+    pub _phantom: PhantomData<()>,
 }
 
 impl File {
@@ -41,6 +49,16 @@ impl File {
         where P: AsRef<Path>
     {
         self.write(&mut try!(fs::File::create(path)))
+    }
+}
+
+impl Default for File {
+    fn default() -> File {
+        File {
+            version: "2".to_owned(),
+            services: Default::default(),
+            _phantom: PhantomData,
+        }
     }
 }
 

@@ -17,6 +17,38 @@ pub struct Build {
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
             deserialize_with = "deserialize_map_or_key_value_list")]
     pub args: BTreeMap<String, String>,
+
+    /// PRIVATE.  Mark this struct as having unknown fields for future
+    /// compatibility.  This prevents direct construction and exhaustive
+    /// matching.  This needs to be be public because of
+    /// http://stackoverflow.com/q/39277157/12089
+    #[doc(hidden)]
+    #[serde(default, skip_serializing, skip_deserializing)]
+    pub _phantom: PhantomData<()>,
+}
+
+impl Build {
+    /// Create a new build from just `Context`.  To override other fields, you
+    /// can use struct notation.
+    ///
+    /// ```
+    /// use docker_compose::v2 as dc;
+    ///
+    /// dc::Build::new(dc::Context::new("app"));
+    ///
+    /// dc::Build {
+    ///   dockerfile: Some(dc::escape("Dockerfile-alt").unwrap()),
+    ///   ..dc::Build::new(dc::Context::new("app"))
+    /// };
+    /// ```
+    pub fn new<C: Into<Context>>(ctx: C) -> Self {
+        Build {
+            context: value(ctx.into()),
+            dockerfile: Default::default(),
+            args: Default::default(),
+            _phantom: PhantomData,
+        }
+    }
 }
 
 impl FromStr for Build {
@@ -24,11 +56,7 @@ impl FromStr for Build {
     type Err = Void;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Build {
-            context: value(Context::new(s)),
-            dockerfile: None,
-            args: Default::default(),
-        })
+        Ok(Build::new(Context::new(s)))
     }
 }
 

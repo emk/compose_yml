@@ -4,11 +4,21 @@
 
 /// Either a port, or a range of ports.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-enum Ports {
+pub enum Ports {
     /// A single port.
     Port(u16),
     /// A range of ports.
     Range(u16, u16),
+}
+
+impl From<u16> for Ports {
+    /// Convert a raw port number into a `Ports` object.  This is used to
+    /// make the `PortMapping` constructors more ergonomic by automatically
+    /// promoting a `u16` port number to a `Ports` object in the most
+    /// common case.
+    fn from(port: u16) -> Ports {
+        Ports::Port(port)
+    }
 }
 
 impl fmt::Display for Ports {
@@ -54,13 +64,69 @@ pub struct PortMapping {
     /// An optional host address on which to listen.  Defaults to all host
     /// addresses.  If this field is specified, then `host_ports` must also
     /// be specified.
-    host_address: Option<IpAddr>,
+    pub host_address: Option<IpAddr>,
     /// The host port(s) on which to listen.  Must contain the same number
     /// of ports as `container_ports`.  Defaults to an
     /// automatically-assigned port number.
-    host_ports: Option<Ports>,
+    pub host_ports: Option<Ports>,
     /// The container port(s) to export.
-    container_ports: Ports,
+    pub container_ports: Ports,
+
+    /// PRIVATE.  Mark this struct as having unknown fields for future
+    /// compatibility.  This prevents direct construction and exhaustive
+    /// matching.  This needs to be be public because of
+    /// http://stackoverflow.com/q/39277157/12089
+    #[doc(hidden)]
+    pub _phantom: PhantomData<()>,
+}
+
+impl PortMapping {
+    /// Map a specified host port to a container port.  Can also be used to
+    /// map port ranges.
+    ///
+    /// ```
+    /// use docker_compose::v2 as dc;
+    ///
+    /// let mapping = dc::PortMapping::new(80, 3000);
+    /// assert_eq!(mapping.host_address, None);
+    /// assert_eq!(mapping.host_ports, Some(dc::Ports::Port(80)));
+    /// assert_eq!(mapping.container_ports, dc::Ports::Port(3000));
+    ///
+    /// dc::PortMapping::new(dc::Ports::Range(8080, 8089),
+    ///                      dc::Ports::Range(3000, 3009));
+    /// ```
+    pub fn new<P1, P2>(host_ports: P1, container_ports: P2) -> PortMapping
+        where P1: Into<Ports>, P2: Into<Ports>
+    {
+        PortMapping {
+            host_address: Default::default(),
+            host_ports: Some(host_ports.into()),
+            container_ports: container_ports.into(),
+            _phantom: PhantomData,
+        }
+    }
+
+    /// Allocate a host port and map it to the specified container port.
+    /// Can also be used with a port range.
+    ///
+    /// ```
+    /// use docker_compose::v2 as dc;
+    ///
+    /// let mapping = dc::PortMapping::any_to(3000);
+    /// assert_eq!(mapping.host_address, None);
+    /// assert_eq!(mapping.host_ports, None);
+    /// assert_eq!(mapping.container_ports, dc::Ports::Port(3000));
+    /// ```
+    pub fn any_to<P>(container_ports: P) -> PortMapping
+        where P: Into<Ports>
+    {
+        PortMapping {
+            host_address: Default::default(),
+            host_ports: None,
+            container_ports: container_ports.into(),
+            _phantom: PhantomData,
+        }
+    }
 }
 
 impl_interpolatable_value!(PortMapping);
@@ -97,6 +163,7 @@ impl FromStr for PortMapping {
                     host_address: None,
                     host_ports: None,
                     container_ports: try!(FromStr::from_str(fields[0])),
+                    _phantom: PhantomData,
                 })
             }
             2 => {
@@ -104,6 +171,7 @@ impl FromStr for PortMapping {
                     host_address: None,
                     host_ports: Some(try!(FromStr::from_str(fields[1]))),
                     container_ports: try!(FromStr::from_str(fields[0])),
+                    _phantom: PhantomData,
                 })
             }
             3 => {
@@ -115,6 +183,7 @@ impl FromStr for PortMapping {
                     host_address: Some(addr),
                     host_ports: Some(try!(FromStr::from_str(fields[1]))),
                     container_ports: try!(FromStr::from_str(fields[0])),
+                    _phantom: PhantomData,
                 })
             }
             _ => {
@@ -128,20 +197,12 @@ impl FromStr for PortMapping {
 fn port_mapping_should_have_a_string_representation() {
     let localhost: IpAddr = FromStr::from_str("127.0.0.1").unwrap();
 
-    let map1 = PortMapping {
-        host_address: None,
-        host_ports: None,
-        container_ports: Ports::Port(80),
-    };
-    let map2 = PortMapping {
-        host_address: None,
-        host_ports: Some(Ports::Range(8080, 8089)),
-        container_ports: Ports::Range(3000, 3009),
-    };
+    let map1 = PortMapping::any_to(80);
+    let map2 = PortMapping::new(Ports::Range(8080, 8089),
+                                Ports::Range(3000, 3009));
     let map3 = PortMapping {
         host_address: Some(localhost),
-        host_ports: Some(Ports::Port(80)),
-        container_ports: Ports::Port(80),
+        ..PortMapping::new(80, 80)
     };
 
     let pairs = vec!(

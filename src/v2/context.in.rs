@@ -16,7 +16,13 @@ pub enum Context {
 impl Context {
     /// Construct a new Context from a string, identifying it as either a
     /// local path or a remote git repository.
-    pub fn new(s: &str) -> Context {
+    ///
+    /// ```
+    /// use docker_compose::v2 as dc;
+    /// dc::Context::new("https://github.com/docker/docker.git");
+    /// dc::Context::new("src/myapp");
+    /// ```
+    pub fn new<S: AsRef<str>>(s: S) -> Context {
         // Compile our regex just once.  There's a nice macro for this if
         // we're using nightly Rust, but lazy_static works on stable.
         lazy_static! {
@@ -25,10 +31,11 @@ impl Context {
                 Regex::new("^(https?://|git://|github.com/|git@)").unwrap();
         }
 
-        if GIT_PREFIX.is_match(&s) {
-            Context::GitUrl(s.to_owned())
+        let s_ref = s.as_ref();
+        if GIT_PREFIX.is_match(&s_ref) {
+            Context::GitUrl(s_ref.to_owned())
         } else {
-            Context::Dir(Path::new(&s).to_owned())
+            Context::Dir(Path::new(&s_ref).to_owned())
         }
     }
 }
