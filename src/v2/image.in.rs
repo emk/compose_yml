@@ -41,6 +41,11 @@ pub struct Image {
 }
 
 impl Image {
+    /// Build an image from an image string.
+    pub fn new<S: AsRef<str>>(s: S) -> Result<Image, Error> {
+        Ok(try!(FromStr::from_str(s.as_ref())))
+    }
+
     /// Return the `Image` with the tag removed.
     pub fn without_tag(&self) -> Image {
         Image {
