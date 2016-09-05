@@ -18,6 +18,7 @@ use std::str::FromStr;
 use void::Void;
 
 use self::helpers::*;
+pub use self::git_url::GitUrl;
 pub use self::interpolation::{InterpolationError, RawOr, raw, escape, value};
 pub use self::mode_enum::*;
 use self::string_or_struct::*;
@@ -26,7 +27,9 @@ use self::string_or_struct::*;
 // docker_compose::v2 as dc` so they can use it as `dc::Error`.
 pub use super::Error;
 
+#[macro_use]
 mod helpers;
+mod git_url;
 #[macro_use]
 mod interpolation;
 #[macro_use]

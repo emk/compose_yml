@@ -58,6 +58,7 @@
 extern crate regex;
 extern crate serde;
 extern crate serde_yaml;
+extern crate url;
 extern crate void;
 
 use std::error;

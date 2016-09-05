@@ -42,6 +42,11 @@ impl error::Error for InvalidValueError {
     }
 }
 
+/// Create an error using a format string and arguments.
+macro_rules! err {
+    ($( $e:expr ),*) => ($crate::Error::from(format!($( $e ),*)));
+}
+
 /// Test whether a value is false.  Used to determine when to serialize
 /// things.
 pub fn is_false(b: &bool) -> bool {

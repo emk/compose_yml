@@ -27,7 +27,7 @@ fn git_to_local(ctx: &dc::Context) -> Result<PathBuf, dc::Error> {
             // Simulate a local checkout of the remote Git repository
             // mentioned in `build`.
             let re = Regex::new(r#"/([^./]+)(?:\.git)?"#).unwrap();
-            match re.captures(url) {
+            match re.captures(url.as_ref()) {
                 None => Err(err!("Can't get dir name from Git URL: {}", url)),
                 Some(caps) => {
                     let path = Path::new(caps.at(1).unwrap());

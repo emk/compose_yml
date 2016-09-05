@@ -10,7 +10,7 @@ pub enum Context {
     Dir(PathBuf),
     /// A Git repository, specified using any of the usual git repository
     /// syntaxes.
-    GitUrl(String),
+    GitUrl(GitUrl),
 }
 
 impl Context {
@@ -23,17 +23,11 @@ impl Context {
     /// dc::Context::new("src/myapp");
     /// ```
     pub fn new<S: AsRef<str>>(s: S) -> Context {
-        // Compile our regex just once.  There's a nice macro for this if
-        // we're using nightly Rust, but lazy_static works on stable.
-        lazy_static! {
-            // See http://stackoverflow.com/a/34120821/12089
-            static ref GIT_PREFIX: Regex =
-                Regex::new("^(https?://|git://|github.com/|git@)").unwrap();
-        }
-
         let s_ref = s.as_ref();
-        if GIT_PREFIX.is_match(&s_ref) {
-            Context::GitUrl(s_ref.to_owned())
+        if GitUrl::should_treat_as_url(s_ref) {
+            // unwrap is safe here because of contract on
+            // `should_treat_as_url`.
+            Context::GitUrl(GitUrl::new(s_ref.to_owned()).unwrap())
         } else {
             Context::Dir(Path::new(&s_ref).to_owned())
         }
@@ -72,7 +66,7 @@ fn context_may_contain_git_urls() {
 
     for url in urls {
         let context: Context = FromStr::from_str(url).unwrap();
-        assert_eq!(context, Context::GitUrl(url.to_string()));
+        assert_eq!(context, Context::GitUrl(GitUrl::new(url.to_string()).unwrap()));
         assert_eq!(context.to_string(), url);
     }
 }
