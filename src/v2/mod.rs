@@ -76,6 +76,7 @@ serde_include!("command_line");
 serde_include!("memory_size");
 serde_include!("permissions");
 serde_include!("host_mapping");
+serde_include!("image");
 
 // Basic file structure.
 serde_include!("file");

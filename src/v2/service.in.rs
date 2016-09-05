@@ -93,7 +93,7 @@ pub struct Service {
 
     /// The name of the image to build or pull for this container.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub image: Option<RawOr<String>>,
+    pub image: Option<RawOr<Image>>,
 
     /// Docker labels for this container, specifying various sorts of
     /// custom metadata.
@@ -255,4 +255,3 @@ fn service_env_file_is_renamed() {
     assert_eq!(service.env_files.len(), 1);
     assert_eq!(service.env_files[0], escape("foo/bar.env").unwrap());
 }
-
