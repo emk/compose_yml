@@ -3,7 +3,7 @@
 // of how this works.
 
 /// A server running a Docker registry.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RegistryHost {
     /// Either a hostname or an IP address.
     pub host: String,
@@ -25,7 +25,7 @@ impl fmt::Display for RegistryHost {
 /// The name of an external resource, and an optional local alias to which
 /// it is mapped inside a container.  Our fields names are based on the
 /// `docker` documentation.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Image {
     /// The server running our Docker registry.
     pub registry_host: Option<RegistryHost>,
@@ -38,6 +38,16 @@ pub struct Image {
 
     /// A tag identifying a specific version in our image registry.
     pub tag: Option<String>,
+}
+
+impl Image {
+    /// Return the `Image` with the tag removed.
+    pub fn without_tag(&self) -> Image {
+        Image {
+            tag: None,
+            ..self.to_owned()
+        }
+    }
 }
 
 impl fmt::Display for Image {
