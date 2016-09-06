@@ -9,6 +9,7 @@ pub struct File {
     /// The version of the `docker-compose.yml` file format.  Must be 2.
     #[serde(deserialize_with = "check_version")]
     version: String,
+    // TODO HIGH: Remove phantom and make sure `version` defaults correctly.
 
     /// The individual services which make up this app.
     pub services: BTreeMap<String, Service>,

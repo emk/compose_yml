@@ -71,9 +71,7 @@ impl FromStr for HostVolume {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct VolumeMount {
     /// If this volume is external to the container, where should we find
-    /// it?  We don't attempt to parse this because the format is
-    /// tricky--it can contain variable interpolation, `~/`-relative paths,
-    /// and volume names.
+    /// it?
     pub host: Option<HostVolume>,
     /// Where should we mount this volume in the container?  This must be
     /// an absolute path.
@@ -134,7 +132,7 @@ impl VolumeMount {
             container: container.into(),
             permissions: Default::default(),
             _phantom: PhantomData,
-        }        
+        }
     }
 }
 
@@ -196,7 +194,7 @@ impl FromStr for VolumeMount {
             }
             _ => Err(InvalidValueError::new("volume", s)),
         }
-    }           
+    }
 }
 
 #[test]
