@@ -20,6 +20,7 @@ use void::Void;
 use self::helpers::*;
 pub use self::git_url::GitUrl;
 pub use self::interpolation::{InterpolationError, RawOr, raw, escape, value};
+pub use self::merge_override::MergeOverride;
 pub use self::mode_enum::*;
 use self::string_or_struct::*;
 
@@ -35,6 +36,8 @@ mod interpolation;
 #[macro_use]
 mod string_serialize_deserialize;
 mod string_or_struct;
+#[macro_use]
+mod merge_override;
 mod mode_enum;
 
 macro_rules! assert_roundtrip {

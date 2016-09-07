@@ -15,6 +15,8 @@ pub enum CommandLine {
     Parsed(Vec<RawOr<String>>),
 }
 
+impl MergeOverride for CommandLine {}
+
 impl Serialize for CommandLine {
     fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
         where S: Serializer
@@ -34,7 +36,7 @@ impl Deserialize for CommandLine {
 
         impl Visitor for CommandLineVisitor {
             type Value = CommandLine;
-        
+
             // The deserializer found a string, so handle it.
             fn visit_str<E>(&mut self, value: &str) -> Result<CommandLine, E>
                 where E: de::Error

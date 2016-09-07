@@ -24,6 +24,10 @@ pub struct Extends {
     pub _phantom: PhantomData<()>,
 }
 
+derive_merge_override_for!(Extends, {
+    service, file, _phantom
+});
+
 impl Extends {
     /// Create a new `Extends` by specifying the service name.
     ///

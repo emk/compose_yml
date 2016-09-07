@@ -12,6 +12,7 @@ use std::string;
 use void::Void;
 
 use super::helpers::InvalidValueError;
+use super::merge_override::MergeOverride;
 
 /// An error interpolating environment variables in a `docker-compose.yml`
 /// file.
@@ -350,7 +351,7 @@ impl<'a, T> fmt::Display for DisplayInterpolatableValue<'a, T>
 /// Either a raw, unparsed string, or a value of the specified type.  This
 /// is the internal, private implementation of `RawOr`.
 #[derive(Debug, Clone, PartialEq, Eq)]
-enum RawOrValue<T> 
+enum RawOrValue<T>
     where T: InterpolatableValue
 {
     /// A raw value.  Invariant: This is valid, but it contains actual
@@ -411,6 +412,13 @@ enum RawOrValue<T>
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RawOr<T>(RawOrValue<T>)
     where T: InterpolatableValue;
+
+/// `InterpolatableValue` is basically just a string that we parse for
+/// internal use, so we can merge it as though it were a simple string,
+/// without getting into the internal details of whatever it might contain.
+/// So go ahead and use the default implementation of `MergeOverride` as if
+/// we were a primitive type.
+impl<T: InterpolatableValue> MergeOverride for RawOr<T> {}
 
 /// Convert a raw string containing variable interpolations into a
 /// `RawOr<T>` value.  See `RawOr<T>` for examples of how to use this API.

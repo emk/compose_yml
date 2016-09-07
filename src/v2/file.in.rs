@@ -23,6 +23,10 @@ pub struct File {
     pub _phantom: PhantomData<()>,
 }
 
+derive_merge_override_for!(File, {
+    version, services, _phantom
+});
+
 impl File {
     /// Read a file from an input stream containing YAML.
     pub fn read<R>(r: R) -> Result<Self, Error>

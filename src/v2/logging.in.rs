@@ -22,3 +22,7 @@ pub struct Logging {
     #[serde(default, skip_serializing, skip_deserializing)]
     pub _phantom: PhantomData<()>,
 }
+
+derive_merge_override_for!(Logging, {
+    driver, options, _phantom
+});

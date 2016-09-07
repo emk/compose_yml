@@ -27,6 +27,10 @@ pub struct Build {
     pub _phantom: PhantomData<()>,
 }
 
+derive_merge_override_for!(Build, {
+    context, dockerfile, args, _phantom
+});
+
 impl Build {
     /// Create a new build from just `Context`.  To override other fields, you
     /// can use struct notation.
