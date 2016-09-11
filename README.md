@@ -1,5 +1,7 @@
 # `docker_compose-rs`: Support for working with `docker-compose.yml` files
 
+[![Latest version](https://img.shields.io/crates/v/docker_compose.svg)](https://crates.io/crates/docker_compose) [![License](https://img.shields.io/crates/l/docker_compose.svg)](https://creativecommons.org/publicdomain/zero/1.0/) [![Build Status](https://travis-ci.org/emk/docker_compose-rs.svg?branch=master)](https://travis-ci.org/emk/docker_compose-rs)
+
 **This is a work in progress!** Most of `services:` is supported, but I'm
 still refining the APIs as higher-level tools get build around this.
 
