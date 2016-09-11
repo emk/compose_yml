@@ -7,6 +7,21 @@ still refining the APIs as higher-level tools get build around this.
 
 [API Documention](http://docs.randomhacks.net/docker_compose-rs/)
 
+## Goals
+
+`docker-compose.yml` is a very useful format, but it's hard to parse and
+transform correctly.  This library aims to offer:
+
+- High-level, type-safe APIs for anything you can find in a
+  `docker-compose.yml` file.
+- Parsing of individual string fields into real objects.
+- Support for working with strings that might contain variable
+  interpolations, and leaving them unparsed when necessary.
+- Canonical representations of fields which may have multiple formats.
+- Easy updates when `docker-compose.yml` gets extended.
+
+## Building
+
 You can build this library using stable Rust version 1.11.  But if you want
 to develop it, you will get _much_ better error messages using a nightly
 build of Rust.
