@@ -26,9 +26,11 @@ rustup run nightly cargo test --no-default-features --features unstable
 src="http://cdn2.hubspot.net/hubfs/515497/img/logo.svg" alt="Faraday
 logo"/></a>
 
-Part of the work on [`docker_compose-rs`] has been generously sponsored
-by [Faraday][] for use in their [`conductor`][conductor] tool, which
-orchestrates `docker-compose` for large, multi-pod apps.
+Part of the work on [`docker_compose-rs`][docker_compose-rs] has been
+generously sponsored by [Faraday][] for use in
+their [`conductor`][conductor] tool, which orchestrates `docker-compose`
+for large, multi-pod apps.
 
 [Faraday]: http://www.faraday.io/
 [conductor]: https://github.com/faradayio/conductor
+[docker_compose-rs]: https://github.com/emk/docker_compose-rs
