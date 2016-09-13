@@ -116,7 +116,8 @@ pub struct Service {
     pub network_mode: Option<RawOr<NetworkMode>>,
 
     /// Networks to which this container is attached.
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
+            deserialize_with = "deserialize_map_or_default_list")]
     pub networks: BTreeMap<String, NetworkInterface>,
 
     /// What PID namespacing mode should we use?
@@ -318,4 +319,16 @@ fn service_networks_supports_map() {
   "frontend": {}
 "#;
     assert_roundtrip!(Service, yaml);
+}
+
+#[test]
+fn service_networks_supports_list() {
+    let yaml = r#"---
+"networks":
+  - "backend"
+"#;
+    let service: Service = serde_yaml::from_str(&yaml).unwrap();
+    assert_eq!(service.networks.len(), 1);
+    assert_eq!(service.networks.get("backend").unwrap(),
+               &NetworkInterface::default());
 }

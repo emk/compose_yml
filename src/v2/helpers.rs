@@ -160,6 +160,41 @@ pub fn deserialize_map_or_key_value_list<D>(deserializer: &mut D) ->
     deserializer.deserialize_map(MapOrKeyValueListVisitor)
 }
 
+/// Given a map, deserialize it normally.  But if we have a list of string
+/// values, deserialize it as a map keyed with those strings, and with
+/// `Default::default()` used as the value.
+pub fn deserialize_map_or_default_list<T, D>(deserializer: &mut D) ->
+    Result<BTreeMap<String, T>, D::Error>
+    where T: Default + Deserialize, D: Deserializer
+{
+    struct MapOrDefaultListVisitor<T>(PhantomData<T>)
+        where T: Default + Deserialize;
+
+    impl<T: Default + Deserialize> Visitor for MapOrDefaultListVisitor<T> {
+        type Value = BTreeMap<String, T>;
+
+        fn visit_map<M>(&mut self, visitor: M) -> Result<Self::Value, M::Error>
+            where M: de::MapVisitor
+        {
+            let mut mvd = de::value::MapVisitorDeserializer::new(visitor);
+            Deserialize::deserialize(&mut mvd)
+        }
+
+        fn visit_seq<V>(&mut self, mut visitor: V) -> Result<Self::Value, V::Error>
+            where V: SeqVisitor
+        {
+            let mut map: Self::Value = BTreeMap::new();
+            // TODO LOW: Fail with error if values are interpolated.
+            while let Some(key) = try!(visitor.visit::<String>()) {
+                map.insert(key, Default::default());
+            }
+            Ok(map)
+        }
+    }
+
+    deserializer.deserialize(MapOrDefaultListVisitor(PhantomData::<T>))
+}
+
 /// Deserialize either list or a single bare string as a list.
 pub fn deserialize_item_or_list<T, D>(deserializer: &mut D) ->
     Result<Vec<RawOr<T>>, D::Error>
