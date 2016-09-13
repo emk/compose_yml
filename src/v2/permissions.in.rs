@@ -38,8 +38,6 @@ impl fmt::Display for DevicePermissions {
     }
 }
 
-impl_serialize_to_string!(DevicePermissions);
-
 impl FromStr for DevicePermissions {
     type Err = InvalidValueError;
 
@@ -58,8 +56,6 @@ impl FromStr for DevicePermissions {
         })
     }
 }
-
-impl_deserialize_from_str!(DevicePermissions);
 
 #[test]
 fn device_permissions_has_a_string_representation() {
@@ -98,8 +94,6 @@ impl fmt::Display for VolumePermissions {
         }
     }
 }
-
-impl_serialize_to_string!(VolumePermissions);
 
 impl FromStr for VolumePermissions {
     type Err = InvalidValueError;

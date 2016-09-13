@@ -9,22 +9,17 @@ pub struct File {
     /// The version of the `docker-compose.yml` file format.  Must be 2.
     #[serde(deserialize_with = "check_version")]
     version: String,
-    // TODO HIGH: Remove phantom and make sure `version` defaults correctly.
 
     /// The individual services which make up this app.
     pub services: BTreeMap<String, Service>,
 
-    /// PRIVATE.  Mark this struct as having unknown fields for future
-    /// compatibility.  This prevents direct construction and exhaustive
-    /// matching.  This needs to be be public because of
-    /// http://stackoverflow.com/q/39277157/12089
-    #[doc(hidden)]
-    #[serde(default, skip_serializing, skip_deserializing)]
-    pub _phantom: PhantomData<()>,
+    /// The networks used by this app.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub networks: BTreeMap<String, Network>,
 }
 
 derive_merge_override_for!(File, {
-    version, services, _phantom
+    version, services, networks
 });
 
 impl File {
@@ -62,7 +57,7 @@ impl Default for File {
         File {
             version: "2".to_owned(),
             services: Default::default(),
-            _phantom: PhantomData,
+            networks: Default::default(),
         }
     }
 }

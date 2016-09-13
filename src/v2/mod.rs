@@ -23,6 +23,7 @@ pub use self::interpolation::{InterpolationError, RawOr, raw, escape, value};
 pub use self::merge_override::MergeOverride;
 pub use self::mode_enum::*;
 use self::string_or_struct::*;
+use self::true_or_struct::*;
 
 // Re-export this from the submodule for people who only `use
 // docker_compose::v2 as dc` so they can use it as `dc::Error`.
@@ -33,9 +34,8 @@ mod helpers;
 mod git_url;
 #[macro_use]
 mod interpolation;
-#[macro_use]
-mod string_serialize_deserialize;
 mod string_or_struct;
+mod true_or_struct;
 #[macro_use]
 mod merge_override;
 mod mode_enum;
@@ -84,6 +84,7 @@ serde_include!("image");
 // Basic file structure.
 serde_include!("file");
 serde_include!("service");
+serde_include!("network");
 
 // Service-related types.
 serde_include!("build");
@@ -93,3 +94,6 @@ serde_include!("logging");
 serde_include!("port_mapping");
 serde_include!("volume_mount");
 serde_include!("volumes_from");
+
+// Network-related types.
+serde_include!("external_network");
