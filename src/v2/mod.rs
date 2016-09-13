@@ -91,6 +91,7 @@ serde_include!("build");
 serde_include!("context");
 serde_include!("extends");
 serde_include!("logging");
+serde_include!("network_interface");
 serde_include!("port_mapping");
 serde_include!("volume_mount");
 serde_include!("volumes_from");

@@ -115,7 +115,9 @@ pub struct Service {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub network_mode: Option<RawOr<NetworkMode>>,
 
-    // TODO LOW: networks (aliases, ipv4_address, ipv6_address)
+    /// Networks to which this container is attached.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub networks: BTreeMap<String, NetworkInterface>,
 
     /// What PID namespacing mode should we use?
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -256,6 +258,7 @@ derive_merge_override_for!(Service, {
     links,
     logging,
     network_mode,
+    networks,
     pid,
     ports,
     security_opt,
@@ -303,4 +306,16 @@ fn service_env_file_is_renamed() {
     let service: Service = serde_yaml::from_str(&yaml).unwrap();
     assert_eq!(service.env_files.len(), 1);
     assert_eq!(service.env_files[0], escape("foo/bar.env").unwrap());
+}
+
+#[test]
+fn service_networks_supports_map() {
+    let yaml = r#"---
+"networks":
+  "backend":
+    "aliases":
+      - "hostname2"
+  "frontend": {}
+"#;
+    assert_roundtrip!(Service, yaml);
 }
