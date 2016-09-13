@@ -13,6 +13,8 @@ pub struct File {
     /// The individual services which make up this app.
     pub services: BTreeMap<String, Service>,
 
+    // TODO MED: volumes
+
     /// The networks used by this app.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub networks: BTreeMap<String, Network>,
