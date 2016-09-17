@@ -32,6 +32,7 @@ pub use super::Error;
 
 #[macro_use]
 mod helpers;
+mod env_file;
 mod git_url;
 #[macro_use]
 mod interpolation;
