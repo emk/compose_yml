@@ -52,6 +52,26 @@ impl File {
     {
         self.write(&mut try!(fs::File::create(path)))
     }
+
+    /// Inline all our external resources, such as `env_files`, looking up
+    /// paths relative to `base`.
+    pub fn inline_all(&mut self, base: &Path) -> Result<(), Error> {
+        for (_name, service) in self.services.iter_mut() {
+            try!(service.inline_all(base));
+        }
+        Ok(())
+    }
+
+    /// Convert this file to a standalone file, with no dependencies on the
+    /// current environment or any external files.  This does _not_ lock
+    /// down the image versions used in this file.
+    pub fn make_standalone(&mut self, base: &Path) -> Result<(), Error> {
+        // We need to interpolate first, in case there are environment
+        // variables being used to construct the paths to `env_files`
+        // entries.
+        try!(self.interpolate_all());
+        self.inline_all(base)
+    }
 }
 
 impl Default for File {

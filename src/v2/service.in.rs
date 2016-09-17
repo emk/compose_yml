@@ -285,6 +285,22 @@ derive_standard_impls_for!(Service, {
     _phantom
 });
 
+impl Service {
+    /// Inline all our external resources, such as `env_files`, looking up
+    /// paths relative to `base`.
+    pub fn inline_all(&mut self, base: &Path) -> Result<(), Error> {
+        let mut new_env = BTreeMap::new();
+        for rel_path in &self.env_files {
+            let env_file = try!(EnvFile::load(&base.join(&try!(rel_path.value()))));
+            new_env.append(&mut env_file.as_map().clone());
+        }
+        new_env.append(&mut self.environment.clone());
+        self.environment = new_env;
+        self.env_files.clear();
+        Ok(())
+    }
+}
+
 #[test]
 fn service_handles_sample_fields_correctly() {
     let yaml = r#"---

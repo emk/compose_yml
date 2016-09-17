@@ -18,6 +18,7 @@ use std::str::FromStr;
 use void::Void;
 
 use self::helpers::*;
+use self::env_file::EnvFile;
 pub use self::git_url::GitUrl;
 pub use self::interpolation::{InterpolationError, RawOr, raw, escape, value,
                               InterpolateAll};

@@ -41,7 +41,7 @@ impl EnvFile {
     }
 
     /// Load an `EnvFile` from the disk.
-    pub fn new(path: &Path) -> Result<EnvFile, Error> {
+    pub fn load(path: &Path) -> Result<EnvFile, Error> {
         EnvFile::read(try!(fs::File::open(path).map_err(|e| {
             err!("can't read {}: {}", path.display(), e)
         })))
