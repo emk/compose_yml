@@ -27,7 +27,7 @@ pub struct Build {
     pub _phantom: PhantomData<()>,
 }
 
-derive_merge_override_for!(Build, {
+derive_standard_impls_for!(Build, {
     context, dockerfile, args, _phantom
 });
 

@@ -36,7 +36,7 @@ pub struct Network {
     pub _phantom: PhantomData<()>,
 }
 
-derive_merge_override_for!(Network, {
+derive_standard_impls_for!(Network, {
     driver, driver_opts, external, _phantom
 });
 

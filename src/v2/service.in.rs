@@ -235,7 +235,7 @@ pub struct Service {
     pub _phantom: PhantomData<()>,
 }
 
-derive_merge_override_for!(Service, {
+derive_standard_impls_for!(Service, {
     build,
     cap_add,
     cap_drop,

@@ -24,7 +24,7 @@ pub struct Extends {
     pub _phantom: PhantomData<()>,
 }
 
-derive_merge_override_for!(Extends, {
+derive_standard_impls_for!(Extends, {
     service, file, _phantom
 });
 

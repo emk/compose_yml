@@ -20,7 +20,7 @@ pub struct File {
     pub networks: BTreeMap<String, Network>,
 }
 
-derive_merge_override_for!(File, {
+derive_standard_impls_for!(File, {
     version, services, networks
 });
 

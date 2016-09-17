@@ -20,6 +20,6 @@ pub struct ExternalNetwork {
     pub _phantom: PhantomData<()>,
 }
 
-derive_merge_override_for!(ExternalNetwork, {
+derive_standard_impls_for!(ExternalNetwork, {
     name, _phantom
 });

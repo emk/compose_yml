@@ -16,6 +16,7 @@ pub enum CommandLine {
 }
 
 impl MergeOverride for CommandLine {}
+impl InterpolateAll for CommandLine {}
 
 impl Serialize for CommandLine {
     fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>

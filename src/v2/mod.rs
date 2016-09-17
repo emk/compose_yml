@@ -19,7 +19,8 @@ use void::Void;
 
 use self::helpers::*;
 pub use self::git_url::GitUrl;
-pub use self::interpolation::{InterpolationError, RawOr, raw, escape, value};
+pub use self::interpolation::{InterpolationError, RawOr, raw, escape, value,
+                              InterpolateAll};
 pub use self::merge_override::MergeOverride;
 pub use self::mode_enum::*;
 use self::string_or_struct::*;
@@ -39,6 +40,8 @@ mod true_or_struct;
 #[macro_use]
 mod merge_override;
 mod mode_enum;
+#[macro_use]
+mod derive;
 
 macro_rules! assert_roundtrip {
     ( $ty:ty, $yaml:expr ) => {

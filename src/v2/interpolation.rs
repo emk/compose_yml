@@ -3,9 +3,11 @@
 use regex::{Captures, Regex};
 use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
+use std::collections::BTreeMap;
 use std::env;
 use std::error::{self, Error};
 use std::fmt::{self, Display};
+use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::string;
@@ -605,5 +607,71 @@ impl<T> Deserialize for RawOr<T>
         Self::from_str(&string).map_err(|err| {
             de::Error::custom(format!("{}", err))
         })
+    }
+}
+
+/// Support for environment variable interpolation.
+pub trait InterpolateAll {
+    /// Recursively walk over this type, interpolating all `RawOr` values
+    /// containing references to the environment.  The default
+    /// implementation leaves a value unchanged.
+    fn interpolate_all(&mut self) -> Result<(), InterpolationError> {
+        Ok(())
+    }
+}
+
+impl InterpolateAll for u16 {}
+impl InterpolateAll for u32 {}
+impl InterpolateAll for bool {}
+impl InterpolateAll for String {}
+impl<T> InterpolateAll for PhantomData<T> {}
+
+impl<T: InterpolateAll> InterpolateAll for Option<T> {
+    fn interpolate_all(&mut self) -> Result<(), InterpolationError> {
+        if let &mut Some(ref mut v) = self {
+            try!(v.interpolate_all());
+        }
+        Ok(())
+    }
+}
+
+impl<T: InterpolateAll> InterpolateAll for Vec<T> {
+    fn interpolate_all(&mut self) -> Result<(), InterpolationError> {
+        for v in self.iter_mut() {
+            try!(v.interpolate_all());
+        }
+        Ok(())
+    }
+}
+
+impl<K: Ord+Clone, T: InterpolateAll> InterpolateAll for BTreeMap<K, T> {
+    fn interpolate_all(&mut self) -> Result<(), InterpolationError> {
+        for (_k, v) in self.iter_mut() {
+            try!(v.interpolate_all());
+        }
+        Ok(())
+    }
+}
+
+impl<T: InterpolatableValue> InterpolateAll for RawOr<T> {
+    fn interpolate_all(&mut self) -> Result<(), InterpolationError> {
+        try!(self.interpolate());
+        Ok(())
+    }
+}
+
+/// Derive `InterpolateAll` for a custom struct type, by recursively
+/// interpolating all fields.
+macro_rules! derive_interpolate_all_for {
+    ($ty:ident, { $( $field:ident ),+ }) => {
+        /// Recursive merge all fields in the structure.
+        impl $crate::v2::interpolation::InterpolateAll for $ty {
+            fn interpolate_all(&mut self) ->
+                Result<(), $crate::v2::interpolation::InterpolationError>
+            {
+                $( try!(self.$field.interpolate_all()); )+
+                Ok(())
+            }
+        }
     }
 }

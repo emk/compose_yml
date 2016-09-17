@@ -23,6 +23,6 @@ pub struct NetworkInterface {
     pub _phantom: PhantomData<()>,
 }
 
-derive_merge_override_for!(NetworkInterface, {
+derive_standard_impls_for!(NetworkInterface, {
     aliases, _phantom
 });

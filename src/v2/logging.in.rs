@@ -23,6 +23,6 @@ pub struct Logging {
     pub _phantom: PhantomData<()>,
 }
 
-derive_merge_override_for!(Logging, {
+derive_standard_impls_for!(Logging, {
     driver, options, _phantom
 });

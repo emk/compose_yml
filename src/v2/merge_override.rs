@@ -114,7 +114,7 @@ fn btree_map_merges_by_key() {
 }
 
 /// Derive `MergeOverride` for a custom struct type, by recursively merging
-/// all field.
+/// all fields.
 macro_rules! derive_merge_override_for {
     ($ty:ident, { $( $field:ident ),+ }) => {
         /// Recursive merge all fields in the structure.
