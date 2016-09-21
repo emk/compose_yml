@@ -47,7 +47,11 @@
 //!
 //! [dcv2]: https://docs.docker.com/compose/compose-file/
 
+#![cfg_attr(feature="clippy", feature(plugin))]
+#![cfg_attr(feature="clippy", plugin(clippy))]
+
 #![warn(missing_docs)]
+#![deny(warnings)]
 
 // Compiler plugins only work with Rust nightly builds, not with stable
 // compilers.  We want to work with both.

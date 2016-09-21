@@ -12,13 +12,14 @@ repository = "https://github.com/emk/docker_compose-rs"
 
 [features]
 default = ["glob", "serde_codegen"]
-unstable = ["serde_macros"]
+unstable = ["serde_macros", "clippy"]
 
 [build-dependencies]
 glob = { version = "0.2.11", optional = true }
 serde_codegen = { version = "0.8", optional = true }
 
 [dependencies]
+clippy = { version = "*", optional = true }
 lazy_static = "0.2.1"
 regex = "0.1.73"
 serde = "0.8"

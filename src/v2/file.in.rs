@@ -56,7 +56,7 @@ impl File {
     /// Inline all our external resources, such as `env_files`, looking up
     /// paths relative to `base`.
     pub fn inline_all(&mut self, base: &Path) -> Result<(), Error> {
-        for (_name, service) in self.services.iter_mut() {
+        for service in self.services.values_mut() {
             try!(service.inline_all(base));
         }
         Ok(())
@@ -93,6 +93,7 @@ impl FromStr for File {
 }
 
 #[test]
+#[cfg_attr(feature="clippy", allow(blacklisted_name))]
 fn file_can_be_converted_from_and_to_yaml() {
     let yaml = r#"---
 "services":

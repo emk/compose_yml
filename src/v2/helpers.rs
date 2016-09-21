@@ -56,6 +56,7 @@ pub fn is_false(b: &bool) -> bool {
 /// Normalize YAML-format data for comparison purposes.  Used by unit
 /// tests.
 #[cfg(test)]
+#[cfg_attr(feature="clippy", allow(trivial_regex))]
 pub fn normalize_yaml(yaml: &str) -> String {
     lazy_static! {
         // Match a key/value pair.
@@ -119,8 +120,8 @@ pub fn deserialize_map_or_key_value_list<D>(deserializer: &mut D) ->
                 match visitor.visit_value::<String>() {
                     Ok(val) => { map.insert(key, val); },
                     Err(_) => {
-                        let msg = format!("Expected string value in key/value map");
-                        return Err(<V::Error as Error>::custom(msg));
+                        let msg = "Expected string value in key/value map";
+                        return Err(<V::Error as Error>::custom(msg.to_owned()));
                     }
                 }
             }

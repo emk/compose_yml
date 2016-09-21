@@ -41,14 +41,14 @@ pub enum InterpolationError {
 
 impl fmt::Display for InterpolationError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        match self {
-            &InterpolationError::InvalidSyntax(ref input) =>
+        match *self {
+            InterpolationError::InvalidSyntax(ref input) =>
                 write!(f, "{}: <{}>", self.description(), input),
-            &InterpolationError::UnparsableValue(ref err) =>
+            InterpolationError::UnparsableValue(ref err) =>
                 write!(f, "{}: {}", self.description(), err),
-            &InterpolationError::UndefinedVariable(ref var) =>
+            InterpolationError::UndefinedVariable(ref var) =>
                 write!(f, "{}: {}", self.description(), var),
-            &InterpolationError::InterpolationDisabled(ref input) =>
+            InterpolationError::InterpolationDisabled(ref input) =>
                 write!(f, "{}: <{}>", self.description(), input),
         }
     }
@@ -56,21 +56,21 @@ impl fmt::Display for InterpolationError {
 
 impl error::Error for InterpolationError {
     fn description(&self) -> &str {
-        match self {
-            &InterpolationError::InvalidSyntax(_) =>
+        match *self {
+            InterpolationError::InvalidSyntax(_) =>
                 "invalid interpolation syntax",
-            &InterpolationError::UnparsableValue(_) =>
+            InterpolationError::UnparsableValue(_) =>
                 "cannot escape invalid value",
-            &InterpolationError::UndefinedVariable(_) =>
+            InterpolationError::UndefinedVariable(_) =>
                 "undefined environment variable in interpolation",
-            &InterpolationError::InterpolationDisabled(_) =>
+            InterpolationError::InterpolationDisabled(_) =>
                 "cannot parse without interpolating environment variables",
         }
     }
 
     fn cause(&self) -> Option<&Error> {
-        match self {
-            &InterpolationError::UnparsableValue(ref err) => Some(err),
+        match *self {
+            InterpolationError::UnparsableValue(ref err) => Some(err),
             _ => None,
         }
     }
@@ -118,7 +118,7 @@ fn interpolate_helper(input: &str, mode: Mode) ->
         } else if mode == Mode::Unescape {
             // If we're not allowed to interpolate, bail now.
             err = Some(InterpolationError::InterpolationDisabled(input.to_owned()));
-            return "".to_owned();
+            "".to_owned()
         } else {
             // Handle actual interpolations.
             let var = caps.at(1).or_else(|| caps.at(2)).unwrap();
@@ -344,8 +344,8 @@ impl<'a, T> fmt::Display for DisplayInterpolatableValue<'a, T>
     where T: InterpolatableValue
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        match self {
-            &DisplayInterpolatableValue(val) => val.fmt_iv(f),
+        match *self {
+            DisplayInterpolatableValue(val) => val.fmt_iv(f),
         }
     }
 }
@@ -473,12 +473,12 @@ impl<T> RawOr<T>
     /// assert_eq!(bridge.value().unwrap(), &dc::NetworkMode::Bridge);
     /// ```
     pub fn value(&self) -> Result<&T, InterpolationError> {
-        match self {
-            &RawOr(RawOrValue::Value(ref val)) => Ok(val),
+        match *self {
+            RawOr(RawOrValue::Value(ref val)) => Ok(val),
             // Because of invariants on RawOrValue, we know `unescape_str`
             // should always return an error.
-            &RawOr(RawOrValue::Raw(ref raw)) =>
-                Err(unescape_str(&raw).unwrap_err()),
+            RawOr(RawOrValue::Raw(ref raw)) =>
+                Err(unescape_str(raw).unwrap_err()),
         }
     }
 
@@ -493,12 +493,12 @@ impl<T> RawOr<T>
     /// assert_eq!(mode.value_mut().unwrap(), &dc::NetworkMode::Host);
     /// ```
     pub fn value_mut(&mut self) -> Result<&mut T, InterpolationError> {
-        match self {
-            &mut RawOr(RawOrValue::Value(ref mut val)) => Ok(val),
+        match *self {
+            RawOr(RawOrValue::Value(ref mut val)) => Ok(val),
             // Because of invariants on RawOrValue, we know `unescape_str`
             // should always return an error.
-            &mut RawOr(RawOrValue::Raw(ref raw)) =>
-                Err(unescape_str(&raw).unwrap_err()),
+            RawOr(RawOrValue::Raw(ref raw)) =>
+                Err(unescape_str(raw).unwrap_err()),
         }
     }
 
@@ -525,7 +525,7 @@ impl<T> RawOr<T>
     /// assert_eq!("host", mode.to_string());
     /// ```
     pub fn interpolate(&mut self) -> Result<&mut T, InterpolationError> {
-        let &mut RawOr(ref mut inner) = self;
+        let RawOr(ref mut inner) = *self;
 
         // We have to very careful about how we destructure this value to
         // avoid winding up with two `mut` references to `self`, and
@@ -534,18 +534,18 @@ impl<T> RawOr<T>
         //
         // This is one of those fairly rare circumstances where we actually
         // work around the borrow checker in a non-obvious way.
-        if let &mut RawOrValue::Value(ref mut val) = inner {
+        if let RawOrValue::Value(ref mut val) = *inner {
             // We already have a parsed value, so just return that.
             Ok(val)
         } else {
             let new_val =
-                if let &mut RawOrValue::Raw(ref raw) = inner {
+                if let RawOrValue::Raw(ref raw) = *inner {
                     try!(InterpolatableValue::iv_from_str(&try!(interpolate_env(raw))))
                 } else {
                     unreachable!()
                 };
             *inner = RawOrValue::Value(new_val);
-            if let &mut RawOrValue::Value(ref mut val) = inner {
+            if let RawOrValue::Value(ref mut val) = *inner {
                 Ok(val)
             } else {
                 unreachable!()
@@ -558,9 +558,9 @@ impl<T> fmt::Display for RawOr<T>
     where T: InterpolatableValue
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        match self {
-            &RawOr(RawOrValue::Raw(ref raw)) => write!(f, "{}", raw),
-            &RawOr(RawOrValue::Value(ref value)) => {
+        match *self {
+            RawOr(RawOrValue::Raw(ref raw)) => write!(f, "{}", raw),
+            RawOr(RawOrValue::Value(ref value)) => {
                 let s = format!("{}", DisplayInterpolatableValue(value));
                 write!(f, "{}", escape_str(&s))
             }
@@ -628,7 +628,7 @@ impl<T> InterpolateAll for PhantomData<T> {}
 
 impl<T: InterpolateAll> InterpolateAll for Option<T> {
     fn interpolate_all(&mut self) -> Result<(), InterpolationError> {
-        if let &mut Some(ref mut v) = self {
+        if let Some(ref mut v) = *self {
             try!(v.interpolate_all());
         }
         Ok(())

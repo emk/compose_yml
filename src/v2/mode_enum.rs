@@ -86,9 +86,9 @@ macro_rules! mode_enum {
         // Set up serialization to strings.
         impl fmt::Display for $name {
             fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-                match self {
-                    $( &$name::$item0 => write!(f, $tag0), )*
-                    $( &$name::$item1(ref name) =>
+                match *self {
+                    $( $name::$item0 => write!(f, $tag0), )*
+                    $( $name::$item1(ref name) =>
                            write!(f, "{}:{}", $tag1, name), )*
                 }
             }
@@ -215,13 +215,13 @@ impl_interpolatable_value!(RestartMode);
 // Set up serialization to strings.
 impl fmt::Display for RestartMode {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        match self {
-            &RestartMode::No => write!(f, "no"),
-            &RestartMode::OnFailure(None) => write!(f, "on-failure"),
-            &RestartMode::OnFailure(Some(retries)) =>
+        match *self {
+            RestartMode::No => write!(f, "no"),
+            RestartMode::OnFailure(None) => write!(f, "on-failure"),
+            RestartMode::OnFailure(Some(retries)) =>
                 write!(f, "on-failure:{}", retries),
-            &RestartMode::Always => write!(f, "always"),
-            &RestartMode::UnlessStopped => write!(f, "unless-stopped"),
+            RestartMode::Always => write!(f, "always"),
+            RestartMode::UnlessStopped => write!(f, "unless-stopped"),
         }
     }
 }

@@ -113,14 +113,14 @@ pub fn serialize_opt_true_or_struct<T, S>(value: &Option<T>,
         fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
             where S: Serializer
         {
-            match self {
-                &Wrap(v) => serialize_true_or_struct(v, serializer),
+            match *self {
+                Wrap(v) => serialize_true_or_struct(v, serializer),
             }
         }
     }
 
-    match value {
-        &None => serializer.serialize_none(),
-        &Some(ref v) => serializer.serialize_some(Wrap(v)),
+    match *value {
+        None => serializer.serialize_none(),
+        Some(ref v) => serializer.serialize_some(Wrap(v)),
     }
 }
