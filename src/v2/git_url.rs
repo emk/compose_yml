@@ -57,16 +57,13 @@ impl GitUrl {
                         Regex::new(r#"^(?:git@([^:]+):(.*))|(github\.com/.*)"#)
                             .unwrap();
                 }
-                let caps = try!(URL_PARSE.captures(&self.url).ok_or_else(|| {
-                    err!("expected a git URL: {}", &self.url)
-                }));
-                let new =
-                    if caps.at(1).is_some() {
-                        format!("git://git@{}/{}", caps.at(1).unwrap(),
-                                caps.at(2).unwrap())
-                    } else {
-                        format!("https://{}", caps.at(3).unwrap())
-                    };
+                let caps = try!(URL_PARSE.captures(&self.url)
+                    .ok_or_else(|| err!("expected a git URL: {}", &self.url)));
+                let new = if caps.at(1).is_some() {
+                    format!("git://git@{}/{}", caps.at(1).unwrap(), caps.at(2).unwrap())
+                } else {
+                    format!("https://{}", caps.at(3).unwrap())
+                };
                 Ok(try!(Url::parse(&new)))
             }
         }
@@ -109,24 +106,21 @@ impl From<GitUrl> for OsString {
 fn to_url_converts_git_urls_to_real_ones() {
     // Example URLs from http://stackoverflow.com/a/34120821/12089,
     // originally from `docker-compose` source code.
-    let regular_urls =
-        &["git://github.com/docker/docker",
-          "https://github.com/docker/docker.git",
-          "http://github.com/docker/docker.git"];
+    let regular_urls = &["git://github.com/docker/docker",
+                         "https://github.com/docker/docker.git",
+                         "http://github.com/docker/docker.git"];
     for &url in regular_urls {
-        assert_eq!(GitUrl::new(url).unwrap().to_url().unwrap().to_string(),
-                   url);
+        assert_eq!(GitUrl::new(url).unwrap().to_url().unwrap().to_string(), url);
     }
 
     // According to http://stackoverflow.com/a/34120821/12089, we also need
     // to special-case `git@` and `github.com/` prefixes.
-    let fake_urls =
-        &[("git@github.com:docker/docker.git",
-           "git://git@github.com/docker/docker.git"),
-          ("git@bitbucket.org:atlassianlabs/atlassian-docker.git",
-           "git://git@bitbucket.org/atlassianlabs/atlassian-docker.git"),
-          ("github.com/docker/docker.git",
-           "https://github.com/docker/docker.git")];
+    let fake_urls = &[("git@github.com:docker/docker.git",
+                       "git://git@github.com/docker/docker.git"),
+                      ("git@bitbucket.org:atlassianlabs/atlassian-docker.git",
+                       "git://git@bitbucket.org/atlassianlabs/atlassian-docker.git"),
+                      ("github.com/docker/docker.git",
+                       "https://github.com/docker/docker.git")];
     for &(fake_url, real_url) in fake_urls {
         assert_eq!(GitUrl::new(fake_url).unwrap().to_url().unwrap().to_string(),
                    real_url);

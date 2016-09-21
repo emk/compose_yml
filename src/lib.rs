@@ -58,7 +58,8 @@
 #![cfg_attr(feature = "serde_macros", feature(plugin, custom_derive))]
 #![cfg_attr(feature = "serde_macros", plugin(serde_macros))]
 
-#[macro_use] extern crate lazy_static;
+#[macro_use]
+extern crate lazy_static;
 extern crate regex;
 extern crate serde;
 extern crate serde_yaml;
@@ -71,4 +72,4 @@ pub mod v2;
 
 /// An error manipulating a `docker-compose.yml` file.  For now, we use a
 /// generic, catch-all error type, but this may change.
-pub type Error = Box<error::Error+Send+Sync>;
+pub type Error = Box<error::Error + Send + Sync>;

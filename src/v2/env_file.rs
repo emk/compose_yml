@@ -29,11 +29,12 @@ impl EnvFile {
                     Regex::new(r#"^([_A-Za-z][_A-Za-z0-9]*)=(.*)"#).unwrap();
             }
 
-            if BLANK.is_match(&line) { continue; }
+            if BLANK.is_match(&line) {
+                continue;
+            }
 
-            let caps = try!(VAR.captures(&line).ok_or_else(|| {
-                err!("can't parse env var declaration: <{}>", &line)
-            }));
+            let caps = try!(VAR.captures(&line)
+                .ok_or_else(|| err!("can't parse env var declaration: <{}>", &line)));
             vars.insert(caps.at(1).unwrap().to_owned(),
                         caps.at(2).unwrap().to_owned());
         }
@@ -42,9 +43,8 @@ impl EnvFile {
 
     /// Load an `EnvFile` from the disk.
     pub fn load(path: &Path) -> Result<EnvFile, Error> {
-        EnvFile::read(try!(fs::File::open(path).map_err(|e| {
-            err!("can't read {}: {}", path.display(), e)
-        })))
+        EnvFile::read(try!(fs::File::open(path)
+            .map_err(|e| err!("can't read {}: {}", path.display(), e))))
     }
 
     /// The variable mappings as simple BTreeMap.

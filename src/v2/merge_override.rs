@@ -44,9 +44,9 @@ impl<T: MergeOverride> MergeOverride for Option<T> {
     fn merge_override(&self, ovr: &Self) -> Self {
         match (self, ovr) {
             (&Some(ref x), &Some(ref y)) => Some(x.merge_override(y)),
-            (&Some(ref x), &None)        => Some(x.to_owned()),
-            (&None,        &Some(ref y)) => Some(y.to_owned()),
-            (&None,        &None)        => None,
+            (&Some(ref x), &None) => Some(x.to_owned()),
+            (&None, &Some(ref y)) => Some(y.to_owned()),
+            (&None, &None) => None,
         }
     }
 }
@@ -78,7 +78,7 @@ fn vec_appends_new_values() {
     assert_merge!(Vec<bool>, vec!(false), vec!(true), vec!(false, true));
 }
 
-impl<K: Ord+Clone, T: MergeOverride> MergeOverride for BTreeMap<K, T> {
+impl<K: Ord + Clone, T: MergeOverride> MergeOverride for BTreeMap<K, T> {
     /// Merges `ovr` into `self`, recursively merging values if present in
     /// both, and returns a new `BTreeMap`.
     fn merge_override(&self, ovr: &Self) -> Self {

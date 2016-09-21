@@ -42,14 +42,18 @@ pub enum InterpolationError {
 impl fmt::Display for InterpolationError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match *self {
-            InterpolationError::InvalidSyntax(ref input) =>
-                write!(f, "{}: <{}>", self.description(), input),
-            InterpolationError::UnparsableValue(ref err) =>
-                write!(f, "{}: {}", self.description(), err),
-            InterpolationError::UndefinedVariable(ref var) =>
-                write!(f, "{}: {}", self.description(), var),
-            InterpolationError::InterpolationDisabled(ref input) =>
-                write!(f, "{}: <{}>", self.description(), input),
+            InterpolationError::InvalidSyntax(ref input) => {
+                write!(f, "{}: <{}>", self.description(), input)
+            }
+            InterpolationError::UnparsableValue(ref err) => {
+                write!(f, "{}: {}", self.description(), err)
+            }
+            InterpolationError::UndefinedVariable(ref var) => {
+                write!(f, "{}: {}", self.description(), var)
+            }
+            InterpolationError::InterpolationDisabled(ref input) => {
+                write!(f, "{}: <{}>", self.description(), input)
+            }
         }
     }
 }
@@ -57,14 +61,14 @@ impl fmt::Display for InterpolationError {
 impl error::Error for InterpolationError {
     fn description(&self) -> &str {
         match *self {
-            InterpolationError::InvalidSyntax(_) =>
-                "invalid interpolation syntax",
-            InterpolationError::UnparsableValue(_) =>
-                "cannot escape invalid value",
-            InterpolationError::UndefinedVariable(_) =>
-                "undefined environment variable in interpolation",
-            InterpolationError::InterpolationDisabled(_) =>
-                "cannot parse without interpolating environment variables",
+            InterpolationError::InvalidSyntax(_) => "invalid interpolation syntax",
+            InterpolationError::UnparsableValue(_) => "cannot escape invalid value",
+            InterpolationError::UndefinedVariable(_) => {
+                "undefined environment variable in interpolation"
+            }
+            InterpolationError::InterpolationDisabled(_) => {
+                "cannot parse without interpolating environment variables"
+            }
         }
     }
 
@@ -97,9 +101,7 @@ enum Mode {
 /// An internal function which handles interpolating, unescaping and
 /// validating interpolation strings.  We use a single function for all
 /// three to prevent the risk of divergent code paths.
-fn interpolate_helper(input: &str, mode: Mode) ->
-    Result<String, InterpolationError>
-{
+fn interpolate_helper(input: &str, mode: Mode) -> Result<String, InterpolationError> {
     lazy_static! {
         static ref VAR: Regex =
             Regex::new(r#"\$(?:([A-Za-z_][A-Za-z0-9_]+)|\{([A-Za-z_][A-Za-z0-9_]+)\}|(\$)|(.))"#).unwrap();
@@ -240,9 +242,7 @@ pub trait IntoInvalidValueError: Error + Sized {
     /// Consume an `Error` and return an `InvalidValueError`.  This is the
     /// default implementation for when an `impl` doesn't override it with
     /// something more specific.
-    fn into_invalid_value_error(self, wanted: &str, input: &str) ->
-        InvalidValueError
-    {
+    fn into_invalid_value_error(self, wanted: &str, input: &str) -> InvalidValueError {
         InvalidValueError::new(wanted, input)
     }
 }
@@ -337,8 +337,7 @@ impl InterpolatableValue for PathBuf {
 }
 
 /// A wrapper type to make `format!` call `fmt_iv` instead of `fmt`.
-struct DisplayInterpolatableValue<'a, V>(&'a V)
-    where V: 'a + InterpolatableValue;
+struct DisplayInterpolatableValue<'a, V>(&'a V) where V: 'a + InterpolatableValue;
 
 impl<'a, T> fmt::Display for DisplayInterpolatableValue<'a, T>
     where T: InterpolatableValue
@@ -412,8 +411,7 @@ enum RawOrValue<T>
 /// assert!(dc::raw::<dc::NetworkMode, _>("invalid").is_err());
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RawOr<T>(RawOrValue<T>)
-    where T: InterpolatableValue;
+pub struct RawOr<T>(RawOrValue<T>) where T: InterpolatableValue;
 
 /// `InterpolatableValue` is basically just a string that we parse for
 /// internal use, so we can merge it as though it were a simple string,
@@ -477,8 +475,7 @@ impl<T> RawOr<T>
             RawOr(RawOrValue::Value(ref val)) => Ok(val),
             // Because of invariants on RawOrValue, we know `unescape_str`
             // should always return an error.
-            RawOr(RawOrValue::Raw(ref raw)) =>
-                Err(unescape_str(raw).unwrap_err()),
+            RawOr(RawOrValue::Raw(ref raw)) => Err(unescape_str(raw).unwrap_err()),
         }
     }
 
@@ -497,8 +494,7 @@ impl<T> RawOr<T>
             RawOr(RawOrValue::Value(ref mut val)) => Ok(val),
             // Because of invariants on RawOrValue, we know `unescape_str`
             // should always return an error.
-            RawOr(RawOrValue::Raw(ref raw)) =>
-                Err(unescape_str(raw).unwrap_err()),
+            RawOr(RawOrValue::Raw(ref raw)) => Err(unescape_str(raw).unwrap_err()),
         }
     }
 
@@ -538,12 +534,11 @@ impl<T> RawOr<T>
             // We already have a parsed value, so just return that.
             Ok(val)
         } else {
-            let new_val =
-                if let RawOrValue::Raw(ref raw) = *inner {
-                    try!(InterpolatableValue::iv_from_str(&try!(interpolate_env(raw))))
-                } else {
-                    unreachable!()
-                };
+            let new_val = if let RawOrValue::Raw(ref raw) = *inner {
+                try!(InterpolatableValue::iv_from_str(&try!(interpolate_env(raw))))
+            } else {
+                unreachable!()
+            };
             *inner = RawOrValue::Value(new_val);
             if let RawOrValue::Value(ref mut val) = *inner {
                 Ok(val)
@@ -604,9 +599,7 @@ impl<T> Deserialize for RawOr<T>
         where D: Deserializer
     {
         let string = try!(String::deserialize(deserializer));
-        Self::from_str(&string).map_err(|err| {
-            de::Error::custom(format!("{}", err))
-        })
+        Self::from_str(&string).map_err(|err| de::Error::custom(format!("{}", err)))
     }
 }
 
@@ -644,7 +637,7 @@ impl<T: InterpolateAll> InterpolateAll for Vec<T> {
     }
 }
 
-impl<K: Ord+Clone, T: InterpolateAll> InterpolateAll for BTreeMap<K, T> {
+impl<K: Ord + Clone, T: InterpolateAll> InterpolateAll for BTreeMap<K, T> {
     fn interpolate_all(&mut self) -> Result<(), InterpolationError> {
         for (_k, v) in self.iter_mut() {
             try!(v.interpolate_all());

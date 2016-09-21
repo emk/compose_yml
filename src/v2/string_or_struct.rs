@@ -20,13 +20,13 @@ use std::str::FromStr;
 pub fn deserialize_string_or_struct<T, D>(d: &mut D) -> Result<T, D::Error>
     where T: Deserialize + FromStr,
           <T as FromStr>::Err: Display,
-          D: Deserializer,
+          D: Deserializer
 {
     struct StringOrStruct<T>(PhantomData<T>);
 
     impl<T> de::Visitor for StringOrStruct<T>
         where T: Deserialize + FromStr,
-              <T as FromStr>::Err: Display,
+              <T as FromStr>::Err: Display
     {
         type Value = T;
 
@@ -57,17 +57,16 @@ pub fn deserialize_string_or_struct<T, D>(d: &mut D) -> Result<T, D::Error>
 /// We could probably make this more generic, supporting underlying
 /// functions other than `string_or_struct`, but that's a project for
 /// another day.
-pub fn deserialize_opt_string_or_struct<T, D>(d: &mut D) ->
-    Result<Option<T>, D::Error>
+pub fn deserialize_opt_string_or_struct<T, D>(d: &mut D) -> Result<Option<T>, D::Error>
     where T: Deserialize + FromStr,
           <T as FromStr>::Err: Display,
-          D: Deserializer,
+          D: Deserializer
 {
     struct OptStringOrStruct<T>(PhantomData<T>);
 
     impl<T> de::Visitor for OptStringOrStruct<T>
         where T: Deserialize + FromStr,
-              <T as FromStr>::Err: Display,
+              <T as FromStr>::Err: Display
     {
         type Value = Option<T>;
 
@@ -77,8 +76,9 @@ pub fn deserialize_opt_string_or_struct<T, D>(d: &mut D) ->
             Ok(None)
         }
 
-        fn visit_some<D>(&mut self, deserializer: &mut D) ->
-            Result<Self::Value, D::Error>
+        fn visit_some<D>(&mut self,
+                         deserializer: &mut D)
+                         -> Result<Self::Value, D::Error>
             where D: Deserializer
         {
             deserialize_string_or_struct(deserializer).map(Some)
@@ -93,15 +93,17 @@ pub fn deserialize_opt_string_or_struct<T, D>(d: &mut D) ->
 pub trait SerializeStringOrStruct: Serialize {
     /// Serialize either a string representation of this struct, or a full
     /// struct if the object cannot be represented as a string.
-    fn serialize_string_or_struct<S>(&self, serializer: &mut S) ->
-        Result<(), S::Error>
+    fn serialize_string_or_struct<S>(&self,
+                                     serializer: &mut S)
+                                     -> Result<(), S::Error>
         where S: Serializer;
 }
 
 /// Serialize the specified value as a string if we can, and a struct
 /// otherwise.
-pub fn serialize_string_or_struct<T, S>(value: &T, serializer: &mut S) ->
-    Result<(), S::Error>
+pub fn serialize_string_or_struct<T, S>(value: &T,
+                                        serializer: &mut S)
+                                        -> Result<(), S::Error>
     where T: SerializeStringOrStruct,
           S: Serializer
 {
@@ -110,8 +112,8 @@ pub fn serialize_string_or_struct<T, S>(value: &T, serializer: &mut S) ->
 
 /// Like `serialize_string_or_struct`, but can also handle missing values.
 pub fn serialize_opt_string_or_struct<T, S>(value: &Option<T>,
-                                            serializer: &mut S) ->
-    Result<(), S::Error>
+                                            serializer: &mut S)
+                                            -> Result<(), S::Error>
     where T: SerializeStringOrStruct,
           S: Serializer
 {
@@ -123,7 +125,9 @@ pub fn serialize_opt_string_or_struct<T, S>(value: &Option<T>,
     // how a trait is applied to a class.
     struct Wrap<'a, T>(&'a T) where T: 'a + SerializeStringOrStruct;
 
-    impl<'a, T> Serialize for Wrap<'a, T> where T: 'a + SerializeStringOrStruct {
+    impl<'a, T> Serialize for Wrap<'a, T>
+        where T: 'a + SerializeStringOrStruct
+    {
         fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
             where S: Serializer
         {

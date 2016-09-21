@@ -95,8 +95,9 @@ pub fn normalize_yaml(yaml: &str) -> String {
 ///     pub args: BTreeMap<String, String>,
 /// }
 /// ```
-pub fn deserialize_map_or_key_value_list<D>(deserializer: &mut D) ->
-    Result<BTreeMap<String, String>, D::Error>
+pub fn deserialize_map_or_key_value_list<D>
+    (deserializer: &mut D)
+     -> Result<BTreeMap<String, String>, D::Error>
     where D: Deserializer
 {
     struct MapOrKeyValueListVisitor;
@@ -118,7 +119,9 @@ pub fn deserialize_map_or_key_value_list<D>(deserializer: &mut D) ->
                 //
                 // TODO BLOCKED: Apply a better fix for error messages.
                 match visitor.visit_value::<String>() {
-                    Ok(val) => { map.insert(key, val); },
+                    Ok(val) => {
+                        map.insert(key, val);
+                    }
                     Err(_) => {
                         let msg = "Expected string value in key/value map";
                         return Err(<V::Error as Error>::custom(msg.to_owned()));
@@ -164,12 +167,13 @@ pub fn deserialize_map_or_key_value_list<D>(deserializer: &mut D) ->
 /// Given a map, deserialize it normally.  But if we have a list of string
 /// values, deserialize it as a map keyed with those strings, and with
 /// `Default::default()` used as the value.
-pub fn deserialize_map_or_default_list<T, D>(deserializer: &mut D) ->
-    Result<BTreeMap<String, T>, D::Error>
-    where T: Default + Deserialize, D: Deserializer
+pub fn deserialize_map_or_default_list<T, D>
+    (deserializer: &mut D)
+     -> Result<BTreeMap<String, T>, D::Error>
+    where T: Default + Deserialize,
+          D: Deserializer
 {
-    struct MapOrDefaultListVisitor<T>(PhantomData<T>)
-        where T: Default + Deserialize;
+    struct MapOrDefaultListVisitor<T>(PhantomData<T>) where T: Default + Deserialize;
 
     impl<T: Default + Deserialize> Visitor for MapOrDefaultListVisitor<T> {
         type Value = BTreeMap<String, T>;
@@ -197,14 +201,14 @@ pub fn deserialize_map_or_default_list<T, D>(deserializer: &mut D) ->
 }
 
 /// Deserialize either list or a single bare string as a list.
-pub fn deserialize_item_or_list<T, D>(deserializer: &mut D) ->
-    Result<Vec<RawOr<T>>, D::Error>
-    where T: InterpolatableValue, D: Deserializer
+pub fn deserialize_item_or_list<T, D>(deserializer: &mut D)
+                                      -> Result<Vec<RawOr<T>>, D::Error>
+    where T: InterpolatableValue,
+          D: Deserializer
 {
     // Our Visitor type, tagged with a 0-size PhantomData value so that it can
     // carry type information.
-    struct StringOrListVisitor<T>(PhantomData<T>)
-        where T: InterpolatableValue;
+    struct StringOrListVisitor<T>(PhantomData<T>) where T: InterpolatableValue;
 
     impl<T> Visitor for StringOrListVisitor<T>
         where T: InterpolatableValue
@@ -215,27 +219,23 @@ pub fn deserialize_item_or_list<T, D>(deserializer: &mut D) ->
         fn visit_str<E>(&mut self, value: &str) -> Result<Self::Value, E>
             where E: de::Error
         {
-            let v = try!(raw(value).map_err(|err| {
-                E::custom(format!("{}", err))
-            }));
-            Ok(vec!(v))
+            let v = try!(raw(value).map_err(|err| E::custom(format!("{}", err))));
+            Ok(vec![v])
         }
 
         // Handle a list of items.
         fn visit_seq<V>(&mut self, mut visitor: V) -> Result<Self::Value, V::Error>
             where V: SeqVisitor
         {
-            let mut items: Vec<RawOr<T>> = vec!();
+            let mut items: Vec<RawOr<T>> = vec![];
             while let Some(item) = try!(visitor.visit::<String>()) {
-                let v = try!(raw(item).map_err(|err| {
-                    <V::Error as Error>::custom(format!("{}", err))
-                }));
+                let v = try!(raw(item)
+                    .map_err(|err| <V::Error as Error>::custom(format!("{}", err))));
                 items.push(v);
             }
             try!(visitor.end());
             Ok(items)
         }
-
     }
 
     deserializer.deserialize(StringOrListVisitor(PhantomData))
@@ -247,9 +247,9 @@ pub fn check_version<D>(deserializer: &mut D) -> Result<String, D::Error>
 {
     let version = try!(String::deserialize(deserializer));
     if &version != "2" {
-        let msg =
-            format!("Can only deserialize docker-compose.yml version 2, found {}",
-                    version);
+        let msg = format!("Can only deserialize docker-compose.yml version 2, found \
+                           {}",
+                          version);
         return Err(<D::Error as Error>::custom(msg));
     }
     Ok(version)

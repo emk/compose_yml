@@ -197,7 +197,6 @@ pub enum RestartMode {
     // This looks very much like a mode_enum, but the `on-failure` takes an
     // _optional_ argument.  Rather than trying to complicate our macro
     // above with another special case, we just implement it manually.
-
     /// Don't restart the container.
     No,
     /// Restart the container if it exits with a non-zero status, with an
@@ -218,8 +217,9 @@ impl fmt::Display for RestartMode {
         match *self {
             RestartMode::No => write!(f, "no"),
             RestartMode::OnFailure(None) => write!(f, "on-failure"),
-            RestartMode::OnFailure(Some(retries)) =>
-                write!(f, "on-failure:{}", retries),
+            RestartMode::OnFailure(Some(retries)) => {
+                write!(f, "on-failure:{}", retries)
+            }
             RestartMode::Always => write!(f, "always"),
             RestartMode::UnlessStopped => write!(f, "unless-stopped"),
         }
@@ -242,15 +242,13 @@ impl FromStr for RestartMode {
             "always" => Ok(RestartMode::Always),
             "unless-stopped" => Ok(RestartMode::UnlessStopped),
             _ => {
-                let caps = try!(COMPOUND.captures(s).ok_or_else(|| {
-                    InvalidValueError::new("restart-mode", s)
-                }));
+                let caps = try!(COMPOUND.captures(s)
+                    .ok_or_else(|| InvalidValueError::new("restart-mode", s)));
                 let valstr = caps.at(2).unwrap();
                 match caps.at(1).unwrap() {
                     "on-failure" => {
-                        let value = try!(FromStr::from_str(valstr).map_err(|_| {
-                            InvalidValueError::new("restart mode", valstr)
-                        }));
+                        let value = try!(FromStr::from_str(valstr)
+                            .map_err(|_| InvalidValueError::new("restart mode", valstr)));
                         Ok(RestartMode::OnFailure(Some(value)))
                     }
                     _ => Err(InvalidValueError::new("restart mode", s)),
