@@ -60,7 +60,9 @@ impl GitUrl {
                 let caps = try!(URL_PARSE.captures(&self.url)
                     .ok_or_else(|| err!("expected a git URL: {}", &self.url)));
                 let new = if caps.at(1).is_some() {
-                    format!("git://git@{}/{}", caps.at(1).unwrap(), caps.at(2).unwrap())
+                    format!("git://git@{}/{}",
+                            caps.at(1).unwrap(),
+                            caps.at(2).unwrap())
                 } else {
                     format!("https://{}", caps.at(3).unwrap())
                 };
