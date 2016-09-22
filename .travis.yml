@@ -17,13 +17,6 @@ matrix:
     rust: beta
   - os: linux
     rust: nightly
-addons:
-  apt:
-    packages:
-    - libcurl4-openssl-dev
-    - libelf-dev
-    - libdw-dev
-    - binutils-dev
 before_script:
 - |
   (cargo install rustfmt || true) &&
@@ -41,7 +34,6 @@ script:
   travis-cargo doc $EXTRA_ARGS
 after_success:
 - travis-cargo --only nightly doc-upload
-- travis-cargo coveralls
 env:
   global:
   - secure: jiwqg50Pek+Y8amADzzQ250vASCqBXG854+QuPlf/kmHahXcr5ThwbOOOM6HEDLrFCrTmdlgIv0ELLMoIApLD2ctS1tJ1BA4dNIP2h3Hr8yumWh2m7ThGd09hsfDLK5qelMY5TZe/CFObJcAGXRc/LDaC9Nv8Eaq50YRXNEL43BuWWHHXoO31zN1ZcsU8oixL4bn9kPknt16zePmrctuiD8HE3WzY4dvBgBFhhU1NoKlRzQP/7MskD1Rv7+PvLI/lHFBf39kETPxqlqymSEPc9k9Khrfq0pB9lFfLS1fj4da7Z6HT8LMIni7GX2FSgQzIJT92cj6IU+SVJEQtvdpK1yuLvcAK7nHW4qjF6M4gDY6ZmQiyZu4Z/mUckPMFRgROJLdmkv6qRJ+3zbhY3vLckiAyViWLbait6jHgpKAABQHNEo3CxBNKjni7TeHS2MLM9aV4p1PtegL8s3CmoEw0lZRIvRk7l8JKIg4e7YEmVsyuV9FMS9VAdCBy3hjnHMEgCrtt9H21WuSaIOiTSWIkmeT4X36qQfnLZPN6f+Th0E5PKyy96lXGm1/m7zLbYQqkLjK+iPyAaJmPJ0i49qYfA4ZnD1xl+ApzfUPOgJLG3ANzwlE0rDYisqzY0xRVYUUOM4yKgxwjIhwrjuvcL31BtRz1Z5lIQdu6IN5ZyFiVL0=
