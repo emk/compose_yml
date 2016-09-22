@@ -1,11 +1,25 @@
 language: rust
+cache:
+  apt: true
+  cargo: true
+  pip: true
+  directories:
+  - "$TRAVIS_BUILD_DIR/target"
 sudo: required
 rust:
 - stable
 - beta
 - nightly
+addons:
+  apt:
+    packages:
+    - libcurl4-openssl-dev
+    - libelf-dev
+    - libdw-dev
+    - binutils-dev
 before_script:
 - |
+  (cargo install rustfmt || true) &&
   pip install 'travis-cargo<0.2' --user &&
   export PATH=$HOME/.local/bin:$PATH
 script:
@@ -15,6 +29,7 @@ script:
   fi &&
   travis-cargo build $EXTRA_ARGS &&
   travis-cargo test $EXTRA_ARGS &&
+  cargo fmt -- --write-mode=diff &&
   travis-cargo bench $EXTRA_ARGS &&
   travis-cargo doc $EXTRA_ARGS
 after_success:
