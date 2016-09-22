@@ -28,7 +28,7 @@ before_script:
 - |
   (cargo install rustfmt || true) &&
   pip install 'travis-cargo<0.2' --user &&
-  export PATH=$HOME/.local/bin:$PATH
+  export PATH=$HOME/.local/bin:$HOME/.cargo/bin:$PATH
 script:
 - |
   if [[ "$TRAVIS_RUST_VERSION" == nightly ]]; then
