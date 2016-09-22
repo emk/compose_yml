@@ -60,6 +60,7 @@ impl FromStr for Ports {
 
 /// Specify how to map container ports to the host.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(missing_copy_implementations)]
 pub struct PortMapping {
     /// An optional host address on which to listen.  Defaults to all host
     /// addresses.  If this field is specified, then `host_ports` must also

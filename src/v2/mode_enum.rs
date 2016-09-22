@@ -193,6 +193,7 @@ mode_enum! {
 
 /// What should Docker do when the container stops running?
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(missing_copy_implementations)]
 pub enum RestartMode {
     // This looks very much like a mode_enum, but the `on-failure` takes an
     // _optional_ argument.  Rather than trying to complicate our macro

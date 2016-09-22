@@ -10,6 +10,7 @@ use super::Error;
 
 /// A file pointed to by an `env_file:` field.
 pub struct EnvFile {
+    /// The variables found in our env file.
     vars: BTreeMap<String, String>,
 }
 

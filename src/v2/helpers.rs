@@ -2,7 +2,6 @@
 //! several common, annoying patterns in the `docker-compose.yml` format.
 
 use regex::Regex;
-use serde::Error;
 use serde::de;
 use serde::de::{Deserialize, Deserializer, MapVisitor, SeqVisitor, Visitor};
 use std::collections::BTreeMap;
@@ -15,7 +14,9 @@ use super::interpolation::{InterpolatableValue, RawOr, raw};
 /// An error parsing a string in a Dockerfile.
 #[derive(Debug)]
 pub struct InvalidValueError {
+    /// A semi-human-readable description of type of data we wanted.
     wanted: String,
+    /// The actual input data we received.
     input: String,
 }
 
@@ -89,7 +90,7 @@ pub fn normalize_yaml(yaml: &str) -> String {
 ///
 /// To expand these, you should (theoretically) be able to use:
 ///
-/// ```rust,ignore
+/// ```text
 /// struct Example {
 ///     #[serde(deserialize_with = "deserialize_hash_or_key_value_list")]
 ///     pub args: BTreeMap<String, String>,
@@ -100,6 +101,7 @@ pub fn deserialize_map_or_key_value_list<D>
      -> Result<BTreeMap<String, String>, D::Error>
     where D: Deserializer
 {
+    /// Declare an internal visitor type to handle our input.
     struct MapOrKeyValueListVisitor;
 
     impl Visitor for MapOrKeyValueListVisitor {
@@ -113,7 +115,7 @@ pub fn deserialize_map_or_key_value_list<D>
             while let Some(key) = try!(visitor.visit_key::<String>()) {
                 if map.contains_key(&key) {
                     let msg = format!("duplicate map key: {}", &key);
-                    return Err(<V::Error as Error>::custom(msg));
+                    return Err(<V::Error as de::Error>::custom(msg));
                 }
                 // Work around https://github.com/serde-rs/serde/issues/528
                 //
@@ -124,7 +126,7 @@ pub fn deserialize_map_or_key_value_list<D>
                     }
                     Err(_) => {
                         let msg = "Expected string value in key/value map";
-                        return Err(<V::Error as Error>::custom(msg.to_owned()));
+                        return Err(<V::Error as de::Error>::custom(msg.to_owned()));
                     }
                 }
             }
@@ -146,13 +148,13 @@ pub fn deserialize_map_or_key_value_list<D>
             while let Some(key_value) = try!(visitor.visit::<String>()) {
                 let caps = try!(KEY_VALUE.captures(&key_value).ok_or_else(|| {
                     let msg = format!("expected KEY=value, got: <{}>", &key_value);
-                    <V::Error as Error>::custom(msg)
+                    <V::Error as de::Error>::custom(msg)
                 }));
                 let key = caps.at(1).unwrap();
                 let value = caps.at(2).unwrap();
                 if map.contains_key(key) {
                     let msg = format!("duplicate map key: {}", key);
-                    return Err(<V::Error as Error>::custom(msg));
+                    return Err(<V::Error as de::Error>::custom(msg));
                 }
                 map.insert(key.to_owned(), value.to_owned());
             }
@@ -173,13 +175,14 @@ pub fn deserialize_map_or_default_list<T, D>
     where T: Default + Deserialize,
           D: Deserializer
 {
+    /// Declare an internal visitor type to handle our input.
     struct MapOrDefaultListVisitor<T>(PhantomData<T>) where T: Default + Deserialize;
 
     impl<T: Default + Deserialize> Visitor for MapOrDefaultListVisitor<T> {
         type Value = BTreeMap<String, T>;
 
         fn visit_map<M>(&mut self, visitor: M) -> Result<Self::Value, M::Error>
-            where M: de::MapVisitor
+            where M: MapVisitor
         {
             let mut mvd = de::value::MapVisitorDeserializer::new(visitor);
             Deserialize::deserialize(&mut mvd)
@@ -206,8 +209,8 @@ pub fn deserialize_item_or_list<T, D>(deserializer: &mut D)
     where T: InterpolatableValue,
           D: Deserializer
 {
-    // Our Visitor type, tagged with a 0-size PhantomData value so that it can
-    // carry type information.
+    /// Our Visitor type, tagged with a 0-size `PhantomData` value so that it
+    /// can carry type information.
     struct StringOrListVisitor<T>(PhantomData<T>) where T: InterpolatableValue;
 
     impl<T> Visitor for StringOrListVisitor<T>
@@ -229,8 +232,9 @@ pub fn deserialize_item_or_list<T, D>(deserializer: &mut D)
         {
             let mut items: Vec<RawOr<T>> = vec![];
             while let Some(item) = try!(visitor.visit::<String>()) {
-                let v = try!(raw(item)
-                    .map_err(|err| <V::Error as Error>::custom(format!("{}", err))));
+                let v = try!(raw(item).map_err(|err| {
+                    <V::Error as de::Error>::custom(format!("{}", err))
+                }));
                 items.push(v);
             }
             try!(visitor.end());
@@ -250,7 +254,7 @@ pub fn check_version<D>(deserializer: &mut D) -> Result<String, D::Error>
         let msg = format!("Can only deserialize docker-compose.yml version 2, found \
                            {}",
                           version);
-        return Err(<D::Error as Error>::custom(msg));
+        return Err(<D::Error as de::Error>::custom(msg));
     }
     Ok(version)
 }

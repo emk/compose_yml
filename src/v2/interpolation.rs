@@ -5,7 +5,7 @@ use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 use std::collections::BTreeMap;
 use std::env;
-use std::error::{self, Error};
+use std::error::Error;
 use std::fmt::{self, Display};
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
@@ -39,7 +39,7 @@ pub enum InterpolationError {
     InterpolationDisabled(String),
 }
 
-impl fmt::Display for InterpolationError {
+impl Display for InterpolationError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match *self {
             InterpolationError::InvalidSyntax(ref input) => {
@@ -58,7 +58,7 @@ impl fmt::Display for InterpolationError {
     }
 }
 
-impl error::Error for InterpolationError {
+impl Error for InterpolationError {
     fn description(&self) -> &str {
         match *self {
             InterpolationError::InvalidSyntax(_) => "invalid interpolation syntax",
@@ -269,7 +269,9 @@ impl IntoInvalidValueError for Void {
 /// variable interpolations.  We require a custom `parse` implementation,
 /// because we want to handle types that are not necessarily `FromStr`.
 pub trait InterpolatableValue: Clone + Eq {
+    /// Our equivalent of `from_str`.
     fn iv_from_str(s: &str) -> Result<Self, InvalidValueError>;
+    /// Our equivalent of `fmt`.
     fn fmt_iv(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error>;
 }
 
@@ -339,7 +341,7 @@ impl InterpolatableValue for PathBuf {
 /// A wrapper type to make `format!` call `fmt_iv` instead of `fmt`.
 struct DisplayInterpolatableValue<'a, V>(&'a V) where V: 'a + InterpolatableValue;
 
-impl<'a, T> fmt::Display for DisplayInterpolatableValue<'a, T>
+impl<'a, T> Display for DisplayInterpolatableValue<'a, T>
     where T: InterpolatableValue
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
@@ -549,7 +551,7 @@ impl<T> RawOr<T>
     }
 }
 
-impl<T> fmt::Display for RawOr<T>
+impl<T> Display for RawOr<T>
     where T: InterpolatableValue
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {

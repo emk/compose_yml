@@ -31,6 +31,7 @@ impl MergeOverride for String {}
 impl<T> MergeOverride for PhantomData<T> {}
 
 #[test]
+#[allow(trivial_numeric_casts)]
 fn simple_types_are_replaced() {
     assert_merge!(u16, 1, 2, 2);
     assert_merge!(bool, false, true, true);

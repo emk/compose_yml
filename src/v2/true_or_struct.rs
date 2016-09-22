@@ -14,6 +14,7 @@ pub fn deserialize_true_or_struct<T, D>(d: &mut D) -> Result<T, D::Error>
     where T: Deserialize + Default,
           D: Deserializer
 {
+    /// Declare an internal visitor type to handle our input.
     struct TrueOrStruct<T>(PhantomData<T>);
 
     impl<T> de::Visitor for TrueOrStruct<T>
@@ -52,6 +53,7 @@ pub fn deserialize_opt_true_or_struct<T, D>(d: &mut D) -> Result<Option<T>, D::E
     where T: Deserialize + Default,
           D: Deserializer
 {
+    /// Declare an internal visitor type to handle our input.
     struct OptTrueOrStruct<T>(PhantomData<T>);
 
     impl<T> de::Visitor for OptTrueOrStruct<T>
@@ -102,12 +104,12 @@ pub fn serialize_opt_true_or_struct<T, S>(value: &Option<T>,
     where T: Serialize + Default + Eq,
           S: Serializer
 {
-    // A fun little trick: We need to pass `value` to to `serialize_some`,
-    // but we don't want `serialize_some` to call the normal `serialize`
-    // method on it.  So we define a local wrapper type that overrides the
-    // serialization.  This is one of the more subtle tricks of generic
-    // programming in Rust: using a "newtype" wrapper struct to override
-    // how a trait is applied to a class.
+    /// A fun little trick: We need to pass `value` to to `serialize_some`,
+    /// but we don't want `serialize_some` to call the normal `serialize`
+    /// method on it.  So we define a local wrapper type that overrides the
+    /// serialization.  This is one of the more subtle tricks of generic
+    /// programming in Rust: using a "newtype" wrapper struct to override
+    /// how a trait is applied to a class.
     struct Wrap<'a, T>(&'a T) where T: 'a + Serialize + Default + Eq;
 
     impl<'a, T> Serialize for Wrap<'a, T>

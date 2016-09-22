@@ -20,6 +20,7 @@ use super::Error;
 /// of conversions, plus `Ord` so we can be used as a key in a `BTreeMap`.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct GitUrl {
+    /// Our URL.
     url: String,
 }
 
