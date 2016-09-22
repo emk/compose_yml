@@ -104,7 +104,24 @@ enum Mode {
 fn interpolate_helper(input: &str, mode: Mode) -> Result<String, InterpolationError> {
     lazy_static! {
         static ref VAR: Regex =
-            Regex::new(r#"\$(?:([A-Za-z_][A-Za-z0-9_]+)|\{([A-Za-z_][A-Za-z0-9_]+)\}|(\$)|(.))"#).unwrap();
+            Regex::new(r#"(?x)
+# We found a '$',
+\$
+# ...but what follows it?
+(?:
+   # A variable like $FOO
+   ([A-Za-z_][A-Za-z0-9_]+)
+   |
+   # A variable like ${FOO}
+   \{([A-Za-z_][A-Za-z0-9_]+)\}
+   |
+   # An escaped dollar sign?
+   (\$)
+   |
+   # Something else?  In this case, we want to fail.
+   (.|$)
+)
+"#).unwrap();
     }
     let mut err = None;
     let result = VAR.replace_all(input, |caps: &Captures| {
@@ -160,7 +177,9 @@ fn interpolate_env_interpolates_env_vars() {
 
 #[test]
 fn interpolate_env_returns_an_error_if_input_is_invalid() {
-    // See https://github.com/docker/compose/blob/85e2fb63b3309280a602f1f76d77d3a82e53b6c2/tests/unit/interpolation_test.py
+    // See https://github.com/docker/compose/blob/master/
+    // tests/unit/interpolation_test.py
+    assert!(interpolate_env("$").is_err());
     assert!(interpolate_env("${").is_err());
     assert!(interpolate_env("$}").is_err());
     assert!(interpolate_env("${}").is_err());
@@ -222,7 +241,8 @@ fn validate_tests_interpolation_strings() {
     assert!(validate("$FOO").is_ok());
     assert!(validate("${FOO}").is_ok());
 
-    // See https://github.com/docker/compose/blob/85e2fb63b3309280a602f1f76d77d3a82e53b6c2/tests/unit/interpolation_test.py
+    // See https://github.com/docker/compose/blob/master/
+    // tests/unit/interpolation_test.py
     assert!(validate("${").is_err());
     assert!(validate("$}").is_err());
     assert!(validate("${}").is_err());
