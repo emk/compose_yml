@@ -6,10 +6,17 @@ cache:
   directories:
   - "$TRAVIS_BUILD_DIR/target"
 sudo: required
+os:
+- linux
+- osx
 rust:
 - stable
-- beta
-- nightly
+matrix:
+  include:
+  - os: linux
+    rust: beta
+  - os: linux
+    rust: nightly
 addons:
   apt:
     packages:
