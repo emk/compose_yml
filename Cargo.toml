@@ -1,6 +1,6 @@
 [package]
 name = "docker_compose"
-version = "0.3.6"
+version = "0.3.7"
 authors = ["Eric Kidd <git@randomhacks.net>"]
 build = "build.rs"
 
@@ -19,7 +19,7 @@ glob = { version = "0.2.11", optional = true }
 serde_codegen = { version = "0.8", optional = true }
 
 [dependencies]
-clippy = { version = "*", optional = true }
+clippy = { version = "0.0.90", optional = true }
 lazy_static = "0.2.1"
 log = "0.3.6"
 regex = "0.1.73"
