@@ -86,6 +86,36 @@ impl From<InvalidValueError> for InterpolationError {
     }
 }
 
+/// A source of environment variable values.
+pub trait Environment {
+    /// Fetch a variable from this environment.  Similar to
+    /// `std::env::var`.
+    fn var(&self, key: &str) -> Result<String, env::VarError>;
+}
+
+/// Fetches environment variables from `std::env`.
+#[derive(Debug, Default)]
+pub struct OsEnvironment {
+    /// A placeholder to prevent this struct from being directly
+    /// constructed.
+    _phantom: PhantomData<()>,
+}
+
+impl OsEnvironment {
+    /// Create a new `OsEnvironment`.
+    pub fn new() -> OsEnvironment {
+        Default::default()
+    }
+}
+
+impl Environment for OsEnvironment {
+    fn var(&self, key: &str) -> Result<String, env::VarError> {
+        let result = env::var(key);
+        trace!("Read env var {}: {:?}", key, &result);
+        result
+    }
+}
+
 /// Different modes in which we can run `interpolation_helper`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Mode {
@@ -101,7 +131,10 @@ enum Mode {
 /// An internal function which handles interpolating, unescaping and
 /// validating interpolation strings.  We use a single function for all
 /// three to prevent the risk of divergent code paths.
-fn interpolate_helper(input: &str, mode: Mode) -> Result<String, InterpolationError> {
+fn interpolate_helper(input: &str,
+                      mode: Mode,
+                      env: &Environment)
+                      -> Result<String, InterpolationError> {
     lazy_static! {
         static ref VAR: Regex =
             Regex::new(r#"(?x)
@@ -141,7 +174,7 @@ fn interpolate_helper(input: &str, mode: Mode) -> Result<String, InterpolationEr
         } else {
             // Handle actual interpolations.
             let var = caps.at(1).or_else(|| caps.at(2)).unwrap();
-            match env::var(var) {
+            match env.var(var) {
                 _ if mode == Mode::Validate => "".to_owned(),
                 Ok(val) => val,
                 Err(_) => {
@@ -159,42 +192,49 @@ fn interpolate_helper(input: &str, mode: Mode) -> Result<String, InterpolationEr
 
 /// Interpolate environment variables into a string using the same rules as
 /// `docker-compose.yml`.
-fn interpolate_env(input: &str) -> Result<String, InterpolationError> {
-    interpolate_helper(input, Mode::Interpolate)
+fn interpolate_env(input: &str,
+                   env: &Environment)
+                   -> Result<String, InterpolationError> {
+    interpolate_helper(input, Mode::Interpolate, env)
 }
 
 #[test]
 fn interpolate_env_interpolates_env_vars() {
     env::set_var("FOO", "foo");
+    let env = OsEnvironment::new();
 
-    assert_eq!("foo", interpolate_env("$FOO").unwrap());
-    assert_eq!("foo", interpolate_env("${FOO}").unwrap());
-    assert_eq!("foo foo", interpolate_env("$FOO $FOO").unwrap());
-    assert_eq!("plain", interpolate_env("plain").unwrap());
-    assert_eq!("$escaped", interpolate_env("$$escaped").unwrap());
-    assert_eq!("${escaped}", interpolate_env("$${escaped}").unwrap());
+    assert_eq!("foo", interpolate_env("$FOO", &env).unwrap());
+    assert_eq!("foo", interpolate_env("${FOO}", &env).unwrap());
+    assert_eq!("foo foo", interpolate_env("$FOO $FOO", &env).unwrap());
+    assert_eq!("plain", interpolate_env("plain", &env).unwrap());
+    assert_eq!("$escaped", interpolate_env("$$escaped", &env).unwrap());
+    assert_eq!("${escaped}", interpolate_env("$${escaped}", &env).unwrap());
 }
 
 #[test]
 fn interpolate_env_returns_an_error_if_input_is_invalid() {
+    let env = OsEnvironment::new();
+
     // See https://github.com/docker/compose/blob/master/
     // tests/unit/interpolation_test.py
-    assert!(interpolate_env("$").is_err());
-    assert!(interpolate_env("${").is_err());
-    assert!(interpolate_env("$}").is_err());
-    assert!(interpolate_env("${}").is_err());
-    assert!(interpolate_env("${ }").is_err());
-    assert!(interpolate_env("${ foo}").is_err());
-    assert!(interpolate_env("${foo }").is_err());
-    assert!(interpolate_env("${foo!}").is_err());
+    assert!(interpolate_env("$", &env).is_err());
+    assert!(interpolate_env("${", &env).is_err());
+    assert!(interpolate_env("$}", &env).is_err());
+    assert!(interpolate_env("${}", &env).is_err());
+    assert!(interpolate_env("${ }", &env).is_err());
+    assert!(interpolate_env("${ foo}", &env).is_err());
+    assert!(interpolate_env("${foo }", &env).is_err());
+    assert!(interpolate_env("${foo!}", &env).is_err());
 }
 
 #[test]
 fn interpolate_env_returns_an_error_if_variable_is_undefined() {
+    let env = OsEnvironment::new();
+
     // This behavior differs from `docker-compose`, which treats undefined
     // env variables as empty strings.
     env::remove_var("NOSUCH");
-    assert!(interpolate_env("$NOSUCH").is_err());
+    assert!(interpolate_env("$NOSUCH", &env).is_err());
 }
 
 /// Escape interpolation sequences in a string literal.
@@ -212,7 +252,9 @@ fn escape_str_escapes_dollar_signs() {
 /// require an environment variable.  This is used for manipulating
 /// `docker-compose.yml` files without expanding any environment variables.
 fn unescape_str(input: &str) -> Result<String, InterpolationError> {
-    interpolate_helper(input, Mode::Unescape)
+    // We can use any `env` we want here; it will be ignored.
+    let env = OsEnvironment::new();
+    interpolate_helper(input, Mode::Unescape, &env)
 }
 
 #[test]
@@ -230,7 +272,9 @@ fn unescape_str_unescapes_without_interpolating() {
 /// Validate an interpolation string, making sure all interpolations look
 /// syntactically valid.
 fn validate(input: &str) -> Result<(), InterpolationError> {
-    interpolate_helper(input, Mode::Validate).map(|_| ())
+    // We can use any `env` we want here; it will be ignored.
+    let env = OsEnvironment::new();
+    interpolate_helper(input, Mode::Validate, &env).map(|_| ())
 }
 
 #[test]
@@ -521,8 +565,44 @@ impl<T> RawOr<T>
     }
 
     /// Return a `&mut T` for this `RawOr<T>`, performing any necessary
-    /// environment variable interpolations and updating the value in
-    /// place.
+    /// environment variable interpolations using the supplied `env` object
+    /// and updating the value in place.
+    pub fn interpolate_env(&mut self,
+                           env: &Environment)
+                           -> Result<&mut T, InterpolationError> {
+
+        let RawOr(ref mut inner) = *self;
+
+        // We have to very careful about how we destructure this value to
+        // avoid winding up with two `mut` references to `self`, and
+        // thereby making the borrow checker sad.  This means our code
+        // looks very weird.  There may be a way to simplify it.
+        //
+        // This is one of those fairly rare circumstances where we actually
+        // work around the borrow checker in a non-obvious way.
+        if let RawOrValue::Value(ref mut val) = *inner {
+            // We already have a parsed value, so just return that.
+            Ok(val)
+        } else {
+            let new_val = if let RawOrValue::Raw(ref raw) = *inner {
+                let interpolated = try!(interpolate_env(raw, env));
+                try!(InterpolatableValue::iv_from_str(&interpolated))
+            } else {
+                unreachable!()
+            };
+            *inner = RawOrValue::Value(new_val);
+            if let RawOrValue::Value(ref mut val) = *inner {
+                Ok(val)
+            } else {
+                unreachable!()
+            }
+        }
+
+    }
+
+    /// Return a `&mut T` for this `RawOr<T>`, performing any necessary
+    /// environment variable interpolations using the system environment
+    /// and updating the value in place.
     ///
     /// ```
     /// use std::env;
@@ -543,31 +623,8 @@ impl<T> RawOr<T>
     /// assert_eq!("host", mode.to_string());
     /// ```
     pub fn interpolate(&mut self) -> Result<&mut T, InterpolationError> {
-        let RawOr(ref mut inner) = *self;
-
-        // We have to very careful about how we destructure this value to
-        // avoid winding up with two `mut` references to `self`, and
-        // thereby making the borrow checker sad.  This means our code
-        // looks very weird.  There may be a way to simplify it.
-        //
-        // This is one of those fairly rare circumstances where we actually
-        // work around the borrow checker in a non-obvious way.
-        if let RawOrValue::Value(ref mut val) = *inner {
-            // We already have a parsed value, so just return that.
-            Ok(val)
-        } else {
-            let new_val = if let RawOrValue::Raw(ref raw) = *inner {
-                try!(InterpolatableValue::iv_from_str(&try!(interpolate_env(raw))))
-            } else {
-                unreachable!()
-            };
-            *inner = RawOrValue::Value(new_val);
-            if let RawOrValue::Value(ref mut val) = *inner {
-                Ok(val)
-            } else {
-                unreachable!()
-            }
-        }
+        let env = OsEnvironment::new();
+        self.interpolate_env(&env)
     }
 }
 

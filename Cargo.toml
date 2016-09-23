@@ -21,6 +21,7 @@ serde_codegen = { version = "0.8", optional = true }
 [dependencies]
 clippy = { version = "*", optional = true }
 lazy_static = "0.2.1"
+log = "0.3.6"
 regex = "0.1.73"
 serde = "0.8"
 serde_macros = { version = "0.8", optional = true }
