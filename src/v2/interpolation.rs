@@ -95,6 +95,7 @@ pub trait Environment {
 
 /// Fetches environment variables from `std::env`.
 #[derive(Debug, Default)]
+#[allow(missing_copy_implementations)]
 pub struct OsEnvironment {
     /// A placeholder to prevent this struct from being directly
     /// constructed.
