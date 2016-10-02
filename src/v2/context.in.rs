@@ -18,7 +18,7 @@ impl Context {
     /// local path or a remote git repository.
     ///
     /// ```
-    /// use docker_compose::v2 as dc;
+    /// use compose_yml::v2 as dc;
     /// dc::Context::new("https://github.com/docker/docker.git");
     /// dc::Context::new("src/myapp");
     /// ```

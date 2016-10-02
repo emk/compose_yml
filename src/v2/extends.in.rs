@@ -32,7 +32,7 @@ impl Extends {
     /// Create a new `Extends` by specifying the service name.
     ///
     /// ```
-    /// use docker_compose::v2 as dc;
+    /// use compose_yml::v2 as dc;
     /// dc::Extends::new("webdefaults");
     /// ```
     pub fn new<S: Into<String>>(service: S) -> Extends {

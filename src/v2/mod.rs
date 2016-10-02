@@ -28,7 +28,7 @@ use self::string_or_struct::*;
 use self::true_or_struct::*;
 
 // Re-export this from the submodule for people who only `use
-// docker_compose::v2 as dc` so they can use it as `dc::Error`.
+// compose_yml::v2 as dc` so they can use it as `dc::Error`.
 pub use super::Error;
 
 #[macro_use]

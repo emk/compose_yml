@@ -86,7 +86,7 @@ impl PortMapping {
     /// map port ranges.
     ///
     /// ```
-    /// use docker_compose::v2 as dc;
+    /// use compose_yml::v2 as dc;
     ///
     /// let mapping = dc::PortMapping::new(80, 3000);
     /// assert_eq!(mapping.host_address, None);
@@ -111,7 +111,7 @@ impl PortMapping {
     /// Can also be used with a port range.
     ///
     /// ```
-    /// use docker_compose::v2 as dc;
+    /// use compose_yml::v2 as dc;
     ///
     /// let mapping = dc::PortMapping::any_to(3000);
     /// assert_eq!(mapping.host_address, None);

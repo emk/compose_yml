@@ -36,7 +36,7 @@ impl Build {
     /// can use struct notation.
     ///
     /// ```
-    /// use docker_compose::v2 as dc;
+    /// use compose_yml::v2 as dc;
     ///
     /// dc::Build::new(dc::Context::new("app"));
     ///

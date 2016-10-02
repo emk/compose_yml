@@ -35,7 +35,7 @@ impl VolumesFrom {
     /// this `docker-compose.yml` file.
     ///
     /// ```
-    /// use docker_compose::v2 as dc;
+    /// use compose_yml::v2 as dc;
     /// let vf = dc::VolumesFrom::service("myservice");
     /// assert_eq!(vf.source,
     ///            dc::ServiceOrContainer::Service("myservice".to_owned()));
@@ -58,7 +58,7 @@ impl VolumesFrom {
     /// container defined elsewhere.
     ///
     /// ```
-    /// use docker_compose::v2 as dc;
+    /// use compose_yml::v2 as dc;
     /// let vf = dc::VolumesFrom::container("mycontainer");
     /// assert_eq!(vf.source,
     ///            dc::ServiceOrContainer::Container("mycontainer".to_owned()));

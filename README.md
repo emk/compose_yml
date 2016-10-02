@@ -1,11 +1,11 @@
-# `docker_compose-rs`: Support for working with `docker-compose.yml` files
+# `compose_yml`: Support for working with `docker-compose.yml` files
 
-[![Latest version](https://img.shields.io/crates/v/docker_compose.svg)](https://crates.io/crates/docker_compose) [![License](https://img.shields.io/crates/l/docker_compose.svg)](https://creativecommons.org/publicdomain/zero/1.0/) [![Build Status](https://travis-ci.org/emk/docker_compose-rs.svg?branch=master)](https://travis-ci.org/emk/docker_compose-rs)
+[![Latest version](https://img.shields.io/crates/v/compose_yml.svg)](https://crates.io/crates/compose_yml) [![License](https://img.shields.io/crates/l/compose_yml.svg)](https://creativecommons.org/publicdomain/zero/1.0/) [![Build Status](https://travis-ci.org/emk/compose_yml.svg?branch=master)](https://travis-ci.org/emk/compose_yml)
 
 **This is a work in progress!** Most of `services:` is supported, but I'm
 still refining the APIs as higher-level tools get build around this.
 
-[API Documention](http://docs.randomhacks.net/docker_compose-rs/)
+[API Documention](http://docs.randomhacks.net/compose_yml/)
 
 ## Goals
 
@@ -41,11 +41,11 @@ rustup run nightly cargo test --no-default-features --features unstable
 src="http://cdn2.hubspot.net/hubfs/515497/img/logo.svg" alt="Faraday
 logo"/></a>
 
-Part of the work on [`docker_compose-rs`][docker_compose-rs] has been
+Part of the work on [`compose_yml`][compose_yml] has been
 generously sponsored by [Faraday][] for use in
 their [`conductor`][conductor] tool, which orchestrates `docker-compose`
 for large, multi-pod apps.
 
 [Faraday]: http://www.faraday.io/
 [conductor]: https://github.com/faradayio/conductor
-[docker_compose-rs]: https://github.com/emk/docker_compose-rs
+[compose_yml]: https://github.com/emk/compose_yml

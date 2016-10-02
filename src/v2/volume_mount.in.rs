@@ -91,7 +91,7 @@ impl VolumeMount {
     /// Map a host path to a container path.
     ///
     /// ```
-    /// use docker_compose::v2 as dc;
+    /// use compose_yml::v2 as dc;
     /// dc::VolumeMount::host("./src", "/app");
     /// ```
     pub fn host<P1, P2>(host: P1, container: P2) -> VolumeMount
@@ -108,7 +108,7 @@ impl VolumeMount {
     /// Map a named volume to a container path.
     ///
     /// ```
-    /// use docker_compose::v2 as dc;
+    /// use compose_yml::v2 as dc;
     /// dc::VolumeMount::named("pgvolume", "/app");
     /// ```
     pub fn named<S, P>(name: S, container: P) -> VolumeMount

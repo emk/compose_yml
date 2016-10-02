@@ -5,10 +5,10 @@
 //! minicondutor docker-compose.in.yml docker-compose.yml
 //! ```
 
-extern crate docker_compose;
+extern crate compose_yml;
 extern crate regex;
 
-use docker_compose::v2 as dc;
+use compose_yml::v2 as dc;
 use regex::Regex;
 use std::env;
 use std::io::{self, Write};

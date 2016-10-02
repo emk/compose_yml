@@ -449,7 +449,7 @@ enum RawOrValue<T>
 ///
 /// ```
 /// use std::string::ToString;
-/// use docker_compose::v2 as dc;
+/// use compose_yml::v2 as dc;
 ///
 /// // We can call `escape`, `value` and `raw` with explicit type
 /// // parameters using the following syntax.
@@ -532,7 +532,7 @@ impl<T> RawOr<T>
     /// parsing the value would require performing interpolation.
     ///
     /// ```
-    /// use docker_compose::v2 as dc;
+    /// use compose_yml::v2 as dc;
     ///
     /// let bridge = dc::value(dc::NetworkMode::Bridge);
     /// assert_eq!(bridge.value().unwrap(), &dc::NetworkMode::Bridge);
@@ -550,7 +550,7 @@ impl<T> RawOr<T>
     /// error if parsing the value would require performing interpolation.
     ///
     /// ```
-    /// use docker_compose::v2 as dc;
+    /// use compose_yml::v2 as dc;
     ///
     /// let mut mode = dc::value(dc::NetworkMode::Bridge);
     /// *mode.value_mut().unwrap() = dc::NetworkMode::Host;
@@ -608,7 +608,7 @@ impl<T> RawOr<T>
     /// ```
     /// use std::env;
     /// use std::str::FromStr;
-    /// use docker_compose::v2 as dc;
+    /// use compose_yml::v2 as dc;
     ///
     /// env::set_var("NETWORK_MODE", "host");
     /// let mut mode: dc::RawOr<dc::NetworkMode> =
