@@ -62,13 +62,13 @@ macro_rules! assert_roundtrip {
 /// the source code using serde_codegen if necessary.
 ///
 /// We generate as much of our (de)serialization code as possible using
-/// serde, either in `serde_macros` mode (with nightly Rust) or in
+/// serde, either in `serde_derive` mode (with nightly Rust) or in
 /// `serde_codegen` mode called by `build.rs` (with stable Rust).
 macro_rules! serde_include {
     ( $basename:expr ) => {
         // This code is run if we have a nightly build of Rust, and hence
         // compiler plugins.
-        #[cfg(feature = "serde_macros")]
+        #[cfg(feature = "serde_derive")]
         include!(concat!($basename, ".in.rs"));
 
         // This code is run if we have a stable build of Rust.  The

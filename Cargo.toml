@@ -1,6 +1,6 @@
 [package]
 name = "compose_yml"
-version = "0.0.41"
+version = "0.0.42"
 authors = ["Eric Kidd <git@randomhacks.net>"]
 build = "build.rs"
 
@@ -12,7 +12,7 @@ repository = "https://github.com/emk/compose_yml"
 
 [features]
 default = ["glob", "serde_codegen"]
-unstable = ["serde_macros", "clippy"]
+unstable = ["serde_derive", "clippy"]
 
 [build-dependencies]
 glob = { version = "0.2.11", optional = true }
@@ -25,7 +25,7 @@ lazy_static = "0.2.1"
 log = "0.3.6"
 regex = "0.1.73"
 serde = "0.8"
-serde_macros = { version = "0.8", optional = true }
+serde_derive = { version = "0.8", optional = true }
 serde_yaml = "0.4.0"
 yaml-rust = "0.3.3"
 url = "1.2.0"

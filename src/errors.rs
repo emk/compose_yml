@@ -7,6 +7,7 @@
 
 // Sadly, this macro does not generate complete documentation.
 #![allow(missing_docs)]
+#![cfg_attr(feature="clippy", allow(redundant_closure))]
 
 use serde_yaml;
 use std::path::PathBuf;
