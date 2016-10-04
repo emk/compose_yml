@@ -63,10 +63,7 @@ enum Mode {
 /// An internal function which handles interpolating, unescaping and
 /// validating interpolation strings.  We use a single function for all
 /// three to prevent the risk of divergent code paths.
-fn interpolate_helper(input: &str,
-                      mode: Mode,
-                      env: &Environment)
-                      -> Result<String> {
+fn interpolate_helper(input: &str, mode: Mode, env: &Environment) -> Result<String> {
     lazy_static! {
         static ref VAR: Regex =
             Regex::new(r#"(?x)
@@ -110,7 +107,8 @@ fn interpolate_helper(input: &str,
                 _ if mode == Mode::Validate => "".to_owned(),
                 Ok(val) => val,
                 Err(_) => {
-                    err = Some(ErrorKind::InterpolateUndefinedVariable(var.to_owned()));
+                    err =
+                        Some(ErrorKind::InterpolateUndefinedVariable(var.to_owned()));
                     "".to_owned()
                 }
             }

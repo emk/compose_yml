@@ -87,7 +87,9 @@ error_chain! {
 impl Error {
     /// Create an error reporting an invalid value.
     pub fn invalid_value<S1, S2>(wanted: S1, input: S2) -> Error
-        where S1: Into<String>, S2: Into<String> {
+        where S1: Into<String>,
+              S2: Into<String>
+    {
         ErrorKind::InvalidValue(wanted.into(), input.into()).into()
     }
 }
