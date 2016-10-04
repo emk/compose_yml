@@ -1,6 +1,6 @@
 [package]
 name = "compose_yml"
-version = "0.0.40"
+version = "0.0.41"
 authors = ["Eric Kidd <git@randomhacks.net>"]
 build = "build.rs"
 
