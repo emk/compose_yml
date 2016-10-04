@@ -39,13 +39,13 @@ impl_interpolatable_value!(Context);
 impl FromStr for Context {
     type Err = Void;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
         Ok(Context::new(s))
     }
 }
 
 impl fmt::Display for Context {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             &Context::Dir(ref path) => write!(f, "{}", path.display()),
             &Context::GitUrl(ref url) => write!(f, "{}", url),

@@ -75,7 +75,7 @@ impl VolumesFrom {
 impl_interpolatable_value!(VolumesFrom);
 
 impl fmt::Display for VolumesFrom {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // We serialize service names without the `service:` here, but most
         // other places include the label.
         match &self.source {
@@ -94,7 +94,7 @@ impl fmt::Display for VolumesFrom {
 impl FromStr for VolumesFrom {
     type Err = InvalidValueError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
         lazy_static! {
             static ref FROM: Regex =
                 Regex::new("^(container:)?([^:]+)(?::([^:]+))?$").unwrap();

@@ -13,7 +13,7 @@ pub struct RegistryHost {
 }
 
 impl fmt::Display for RegistryHost {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(f, "{}", &self.host));
         if let Some(port) = self.port {
             try!(write!(f, ":{}", port));
@@ -42,7 +42,7 @@ pub struct Image {
 
 impl Image {
     /// Build an image from an image string.
-    pub fn new<S: AsRef<str>>(s: S) -> Result<Image, Error> {
+    pub fn new<S: AsRef<str>>(s: S) -> Result<Image> {
         Ok(try!(FromStr::from_str(s.as_ref())))
     }
 
@@ -56,7 +56,7 @@ impl Image {
 }
 
 impl fmt::Display for Image {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if let Some(ref registry_host) = self.registry_host {
             try!(write!(f, "{}/", registry_host));
         }
@@ -74,7 +74,7 @@ impl fmt::Display for Image {
 impl FromStr for Image {
     type Err = InvalidValueError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
         lazy_static! {
             static ref IMAGE: Regex =
                 Regex::new(r#"^(?:([^/:.]+\.[^/:]+)(?::([0-9]+))?/)?(?:([^/:.]+)/)?([^/:]+)(?::([^/:]+))?$"#).unwrap();

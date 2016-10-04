@@ -6,7 +6,7 @@ use std::fs;
 use std::io::{self, BufRead};
 use std::path::Path;
 
-use super::Error;
+use errors::*;
 
 /// A file pointed to by an `env_file:` field.
 pub struct EnvFile {
@@ -16,11 +16,11 @@ pub struct EnvFile {
 
 impl EnvFile {
     /// Read an `EnvFile` from a stream.
-    pub fn read<R: io::Read>(input: R) -> Result<EnvFile, Error> {
+    pub fn read<R: io::Read>(input: R) -> Result<EnvFile> {
         let mut vars: BTreeMap<String, String> = BTreeMap::new();
         let reader = io::BufReader::new(input);
         for line_result in reader.lines() {
-            let line = try!(line_result);
+            let line = try!(line_result.chain_err(|| "I/O error"));
 
             lazy_static! {
                 static ref BLANK: Regex =
@@ -35,7 +35,7 @@ impl EnvFile {
             }
 
             let caps = try!(VAR.captures(&line)
-                .ok_or_else(|| err!("can't parse env var declaration: <{}>", &line)));
+                .ok_or_else(|| ErrorKind::ParseEnv(line.clone())));
             vars.insert(caps.at(1).unwrap().to_owned(),
                         caps.at(2).unwrap().to_owned());
         }
@@ -43,9 +43,9 @@ impl EnvFile {
     }
 
     /// Load an `EnvFile` from the disk.
-    pub fn load(path: &Path) -> Result<EnvFile, Error> {
-        EnvFile::read(try!(fs::File::open(path)
-            .map_err(|e| err!("can't read {}: {}", path.display(), e))))
+    pub fn load(path: &Path) -> Result<EnvFile> {
+        let mkerr = || ErrorKind::ReadFile(path.to_owned());
+        EnvFile::read(try!(fs::File::open(path).chain_err(&mkerr))).chain_err(&mkerr)
     }
 
     /// The variable mappings as simple BTreeMap.

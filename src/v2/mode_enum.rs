@@ -3,9 +3,10 @@
 
 use regex::Regex;
 use std::fmt;
+use std::result;
 use std::str::FromStr;
 
-use super::helpers::*;
+use errors::*;
 
 /// This big, bad macro is in charge of implementing serializable enums
 /// with entries like:
@@ -85,7 +86,7 @@ macro_rules! mode_enum {
 
         // Set up serialization to strings.
         impl fmt::Display for $name {
-            fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 match *self {
                     $( $name::$item0 => write!(f, $tag0), )*
                     $( $name::$item1(ref name) =>
@@ -98,7 +99,7 @@ macro_rules! mode_enum {
         impl FromStr for $name {
             type Err = InvalidValueError;
 
-            fn from_str(s: &str) -> Result<Self, Self::Err> {
+            fn from_str(s: &str) -> result::Result<Self, Self::Err> {
                 lazy_static! {
                     static ref COMPOUND: Regex =
                         Regex::new("^([-a-z]+):(.+)$").unwrap();
@@ -214,7 +215,7 @@ impl_interpolatable_value!(RestartMode);
 
 // Set up serialization to strings.
 impl fmt::Display for RestartMode {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             RestartMode::No => write!(f, "no"),
             RestartMode::OnFailure(None) => write!(f, "on-failure"),
@@ -231,7 +232,7 @@ impl fmt::Display for RestartMode {
 impl FromStr for RestartMode {
     type Err = InvalidValueError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
         lazy_static! {
             static ref COMPOUND: Regex =
                 Regex::new("^([-a-z]+):(.+)$").unwrap();

@@ -39,7 +39,7 @@ impl MemorySize {
 impl_interpolatable_value!(MemorySize);
 
 impl fmt::Display for MemorySize {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let bytes = self.to_bytes();
         if bytes == 0 {
             // Just print 0 without any units, because anything else looks
@@ -61,7 +61,7 @@ impl fmt::Display for MemorySize {
 impl FromStr for MemorySize {
     type Err = InvalidValueError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
         lazy_static! {
             static ref MEM_SIZE: Regex =
                 Regex::new("^([0-9]+)([bkmg])?$").unwrap();

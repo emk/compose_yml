@@ -20,6 +20,7 @@ serde_codegen = { version = "0.8", optional = true }
 
 [dependencies]
 clippy = { version = "0.*", optional = true }
+error-chain = "0.5.0"
 lazy_static = "0.2.1"
 log = "0.3.6"
 regex = "0.1.73"

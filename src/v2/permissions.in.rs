@@ -24,7 +24,7 @@ impl Default for DevicePermissions {
 }
 
 impl fmt::Display for DevicePermissions {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.read {
             try!(write!(f, "r"))
         }
@@ -41,7 +41,7 @@ impl fmt::Display for DevicePermissions {
 impl FromStr for DevicePermissions {
     type Err = InvalidValueError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
         lazy_static! {
             static ref PERMS: Regex =
                 Regex::new("^(r)?(w)?(m)?").unwrap();
@@ -87,7 +87,7 @@ impl Default for VolumePermissions {
 }
 
 impl fmt::Display for VolumePermissions {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             &VolumePermissions::ReadWrite => write!(f, "rw"),
             &VolumePermissions::ReadOnly => write!(f, "ro"),
@@ -98,7 +98,7 @@ impl fmt::Display for VolumePermissions {
 impl FromStr for VolumePermissions {
     type Err = InvalidValueError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
         match s {
             "rw" => Ok(VolumePermissions::ReadWrite),
             "ro" => Ok(VolumePermissions::ReadOnly),

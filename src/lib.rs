@@ -86,6 +86,11 @@
 #![cfg_attr(feature = "serde_macros", feature(plugin, custom_derive))]
 #![cfg_attr(feature = "serde_macros", plugin(serde_macros))]
 
+// The `error_chain` documentation says we need this.
+#![recursion_limit = "1024"]
+
+#[macro_use]
+extern crate error_chain;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
@@ -96,10 +101,5 @@ extern crate serde_yaml;
 extern crate url;
 extern crate void;
 
-use std::error;
-
+pub mod errors;
 pub mod v2;
-
-/// An error manipulating a `docker-compose.yml` file.  For now, we use a
-/// generic, catch-all error type, but this may change.
-pub type Error = Box<error::Error + Send + Sync>;

@@ -22,7 +22,7 @@ impl From<u16> for Ports {
 }
 
 impl fmt::Display for Ports {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             &Ports::Port(port) => write!(f, "{}", port),
             &Ports::Range(first, last) => write!(f, "{}-{}", first, last),
@@ -33,7 +33,7 @@ impl fmt::Display for Ports {
 impl FromStr for Ports {
     type Err = InvalidValueError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
         lazy_static! {
             static ref PORTS: Regex =
                 Regex::new("^([0-9]+)(?:-([0-9]+))?$").unwrap();
@@ -44,7 +44,7 @@ impl FromStr for Ports {
 
         // Convert a regex capture group to a string.  Only call if the
         // specified capture group is known to be valid.
-        let port_from_str = |i: usize| -> Result<u16, InvalidValueError> {
+        let port_from_str = |i: usize| -> result::Result<u16, InvalidValueError> {
             FromStr::from_str(caps.at(i).unwrap()).map_err(|_| {
                 InvalidValueError::new("port", s)
             })
@@ -133,7 +133,7 @@ impl PortMapping {
 impl_interpolatable_value!(PortMapping);
 
 impl fmt::Display for PortMapping {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // We can't serialize a host_address without host_ports.
         if self.host_address.is_some() && self.host_ports.is_none() {
             return Err(fmt::Error);
@@ -152,7 +152,7 @@ impl fmt::Display for PortMapping {
 impl FromStr for PortMapping {
     type Err = InvalidValueError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
         // Split backwards from the end of the string, in case the first
         // address field is an IPv6 address with embedded colons.  Hey,
         // it's not specified _never_ to happen.  Note that `fields` will

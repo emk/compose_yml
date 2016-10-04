@@ -17,7 +17,7 @@ pub enum HostVolume {
 }
 
 impl fmt::Display for HostVolume {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             &HostVolume::Path(ref path) => {
                 let p = try!(path.to_str().ok_or(fmt::Error));
@@ -47,7 +47,7 @@ impl fmt::Display for HostVolume {
 impl FromStr for HostVolume {
     type Err = InvalidValueError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
         lazy_static! {
             static ref HOST_VOLUME: Regex =
                 Regex::new(r#"^(\.{0,2}/.*)|~/(.+)|([^./~].*)$"#).unwrap();
@@ -139,7 +139,7 @@ impl VolumeMount {
 impl_interpolatable_value!(VolumeMount);
 
 impl fmt::Display for VolumeMount {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // We can't have permissions on a purely internal volume, if I'm
         // reading this correctly.
         if self.host.is_none() && self.permissions != Default::default() {
@@ -165,7 +165,7 @@ impl fmt::Display for VolumeMount {
 impl FromStr for VolumeMount {
     type Err = InvalidValueError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
         let items = s.split(":").collect::<Vec<_>>();
         match items.len() {
             1 => {

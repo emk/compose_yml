@@ -26,36 +26,40 @@ derive_standard_impls_for!(File, {
 
 impl File {
     /// Read a file from an input stream containing YAML.
-    pub fn read<R>(r: R) -> Result<Self, Error>
+    pub fn read<R>(r: R) -> Result<Self>
         where R: io::Read
     {
         Ok(try!(serde_yaml::from_reader(r)))
     }
 
     /// Write a file to an output stream as YAML.
-    pub fn write<W>(&self, w: &mut W) -> Result<(), Error>
+    pub fn write<W>(&self, w: &mut W) -> Result<()>
         where W: io::Write
     {
         Ok(try!(serde_yaml::to_writer(w, self)))
     }
 
     /// Read a file from the specified path.
-    pub fn read_from_path<P>(path: P) -> Result<Self, Error>
+    pub fn read_from_path<P>(path: P) -> Result<Self>
         where P: AsRef<Path>
     {
-        Self::read(try!(fs::File::open(path)))
+        let path = path.as_ref();
+        let mkerr = || ErrorKind::ReadFile(path.to_owned());
+        Self::read(try!(fs::File::open(path).chain_err(&mkerr))).chain_err(&mkerr)
     }
 
     /// Write a file to the specified path.
-    pub fn write_to_path<P>(&self, path: P) -> Result<(), Error>
+    pub fn write_to_path<P>(&self, path: P) -> Result<()>
         where P: AsRef<Path>
     {
-        self.write(&mut try!(fs::File::create(path)))
+        let path = path.as_ref();
+        let mkerr = || ErrorKind::WriteFile(path.to_owned());
+        self.write(&mut try!(fs::File::create(path).chain_err(&mkerr))).chain_err(&mkerr)
     }
 
     /// Inline all our external resources, such as `env_files`, looking up
     /// paths relative to `base`.
-    pub fn inline_all(&mut self, base: &Path) -> Result<(), Error> {
+    pub fn inline_all(&mut self, base: &Path) -> Result<()> {
         for service in self.services.values_mut() {
             try!(service.inline_all(base));
         }
@@ -65,7 +69,7 @@ impl File {
     /// Convert this file to a standalone file, with no dependencies on the
     /// current environment or any external files.  This does _not_ lock
     /// down the image versions used in this file.
-    pub fn make_standalone(&mut self, base: &Path) -> Result<(), Error> {
+    pub fn make_standalone(&mut self, base: &Path) -> Result<()> {
         // We need to interpolate first, in case there are environment
         // variables being used to construct the paths to `env_files`
         // entries.
@@ -87,7 +91,7 @@ impl Default for File {
 impl FromStr for File {
     type Err = serde_yaml::Error;
 
-    fn from_str(s: &str) -> Result<File, Self::Err> {
+    fn from_str(s: &str) -> result::Result<File, Self::Err> {
         serde_yaml::from_str(&s)
     }
 }

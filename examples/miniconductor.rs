@@ -21,7 +21,7 @@ macro_rules! err {
 }
 
 // Given a build context, ensure that it points to a local directory.
-fn git_to_local(ctx: &dc::Context) -> Result<PathBuf, dc::Error> {
+fn git_to_local(ctx: &dc::Context) -> dc::Result<PathBuf> {
     match ctx {
         &dc::Context::GitUrl(ref url) => {
             // Simulate a local checkout of the remote Git repository
@@ -40,8 +40,7 @@ fn git_to_local(ctx: &dc::Context) -> Result<PathBuf, dc::Error> {
 }
 
 /// Get the local build directory that we'll use for a service.
-fn service_build_dir(service: &dc::Service) ->
-    Result<Option<PathBuf>, dc::Error>
+fn service_build_dir(service: &dc::Service) -> dc::Result<Option<PathBuf>>
 {
     if let Some(ref build) = service.build {
         let mut path = Path::new("src").to_owned();
@@ -53,7 +52,7 @@ fn service_build_dir(service: &dc::Service) ->
 }
 
 /// Update a `docker-compose.yml` file in place.
-fn update(file: &mut dc::File) -> Result<(), dc::Error> {
+fn update(file: &mut dc::File) -> dc::Result<()> {
     // Iterate over each name/server pair in the file using `iter_mut`, so
     // we can modify the services.
     for (_name, service) in file.services.iter_mut() {
@@ -81,7 +80,7 @@ fn update(file: &mut dc::File) -> Result<(), dc::Error> {
 /// all the real logic in a function that returns `Result` so that we can
 /// use `try!` to handle errors, and we reserve `main` just for error
 /// handling.
-fn run() -> Result<(), dc::Error> {
+fn run() -> dc::Result<()> {
     // Parse arguments.
     let args: Vec<_> = env::args().collect();
     if args.len() != 3 {

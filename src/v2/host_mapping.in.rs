@@ -24,7 +24,7 @@ impl HostMapping {
 impl_interpolatable_value!(HostMapping);
 
 impl fmt::Display for HostMapping {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}:{}", &self.hostname, &self.address)
     }
 }
@@ -32,7 +32,7 @@ impl fmt::Display for HostMapping {
 impl FromStr for HostMapping {
     type Err = InvalidValueError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
         lazy_static! {
             static ref HOST_ADDRESS: Regex =
                 Regex::new("^([^:]+):(.+)$").unwrap();

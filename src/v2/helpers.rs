@@ -5,48 +5,9 @@ use regex::Regex;
 use serde::de;
 use serde::de::{Deserialize, Deserializer, MapVisitor, SeqVisitor, Visitor};
 use std::collections::BTreeMap;
-use std::error;
-use std::fmt;
 use std::marker::PhantomData;
 
 use super::interpolation::{InterpolatableValue, RawOr, raw};
-
-/// An error parsing a string in a Dockerfile.
-#[derive(Debug)]
-pub struct InvalidValueError {
-    /// A semi-human-readable description of type of data we wanted.
-    wanted: String,
-    /// The actual input data we received.
-    input: String,
-}
-
-impl InvalidValueError {
-    /// Create an error, specifying the type we wanted, and the value we
-    /// actually got.
-    pub fn new(wanted: &str, input: &str) -> InvalidValueError {
-        InvalidValueError {
-            wanted: wanted.to_owned(),
-            input: input.to_owned(),
-        }
-    }
-}
-
-impl fmt::Display for InvalidValueError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "Invalid {}: <{}>", &self.wanted, &self.input)
-    }
-}
-
-impl error::Error for InvalidValueError {
-    fn description(&self) -> &str {
-        "Invalid value"
-    }
-}
-
-/// Create an error using a format string and arguments.
-macro_rules! err {
-    ($( $e:expr ),*) => ($crate::Error::from(format!($( $e ),*)));
-}
 
 /// Test whether a value is false.  Used to determine when to serialize
 /// things.

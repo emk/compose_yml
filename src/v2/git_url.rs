@@ -8,7 +8,7 @@ use std::ffi::{OsStr, OsString};
 use std::fmt;
 use url::Url;
 
-use super::Error;
+use errors::*;
 
 /// URL of a Git repository.  Git repositories may be specified as either
 /// ordinary `http` or `https` URLs, or as `scp`-style remote directory
@@ -39,17 +39,18 @@ impl GitUrl {
 
     /// Create a `GitUrl` from the specified string.  Will only return an
     /// error if `should_treat_as_url` returns false.
-    pub fn new<S: Into<String>>(url: S) -> Result<GitUrl, Error> {
+    pub fn new<S: Into<String>>(url: S) -> Result<GitUrl> {
         let url = url.into();
         if GitUrl::should_treat_as_url(&url) {
             Ok(GitUrl { url: url })
         } else {
-            Err(err!("Not a docker-compatible GitHub URL: {}", &url))
+            Err(ErrorKind::ParseGitUrl(url.clone()).into())
         }
     }
 
     /// Convert a `GitUrl` to a regular `url::Url` object.
-    pub fn to_url(&self) -> Result<Url, Error> {
+    pub fn to_url(&self) -> Result<Url> {
+        let mkerr = || ErrorKind::ParseGitUrl(self.url.clone());
         match Url::parse(&self.url) {
             Ok(url) => Ok(url),
             Err(_) => {
@@ -58,8 +59,7 @@ impl GitUrl {
                         Regex::new(r#"^(?:git@([^:]+):(.*))|(github\.com/.*)"#)
                             .unwrap();
                 }
-                let caps = try!(URL_PARSE.captures(&self.url)
-                    .ok_or_else(|| err!("expected a git URL: {}", &self.url)));
+                let caps = try!(URL_PARSE.captures(&self.url).ok_or_else(&mkerr));
                 let new = if caps.at(1).is_some() {
                     format!("git://git@{}/{}",
                             caps.at(1).unwrap(),
@@ -67,14 +67,14 @@ impl GitUrl {
                 } else {
                     format!("https://{}", caps.at(3).unwrap())
                 };
-                Ok(try!(Url::parse(&new)))
+                Url::parse(&new).chain_err(&mkerr)
             }
         }
     }
 }
 
 impl fmt::Display for GitUrl {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.url.fmt(f)
     }
 }

@@ -17,7 +17,7 @@ pub struct AliasedName {
 impl AliasedName {
     /// Create a new AliasedName from a name and option alias.
     pub fn new(name: &str, alias: Option<&str>) ->
-        Result<AliasedName, InvalidValueError>
+        result::Result<AliasedName, InvalidValueError>
     {
         let result = AliasedName {
             name: name.to_owned(),
@@ -28,7 +28,7 @@ impl AliasedName {
     }
 
     /// (Internal.) Validate an aliased name is safely serializeable.
-    fn validate(&self) -> Result<(), InvalidValueError> {
+    fn validate(&self) -> result::Result<(), InvalidValueError> {
         let bad_name = self.name.contains(":");
         let bad_alias = self.alias.as_ref()
             .map(|a| a.contains(":")).unwrap_or(false);
@@ -43,7 +43,7 @@ impl AliasedName {
 impl_interpolatable_value!(AliasedName);
 
 impl fmt::Display for AliasedName {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match &self.alias {
             &Some(ref alias) => write!(f, "{}:{}", &self.name, alias),
             &None => write!(f, "{}", &self.name),
@@ -54,7 +54,7 @@ impl fmt::Display for AliasedName {
 impl FromStr for AliasedName {
     type Err = InvalidValueError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
         lazy_static! {
             static ref ALIASED_NAME: Regex =
                 Regex::new("^([^:]+)(?::([^:]+))?$").unwrap();

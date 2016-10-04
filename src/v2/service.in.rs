@@ -288,7 +288,7 @@ derive_standard_impls_for!(Service, {
 impl Service {
     /// Inline all our external resources, such as `env_files`, looking up
     /// paths relative to `base`.
-    pub fn inline_all(&mut self, base: &Path) -> Result<(), Error> {
+    pub fn inline_all(&mut self, base: &Path) -> Result<()> {
         let mut new_env = BTreeMap::new();
         for rel_path in &self.env_files {
             let env_file = try!(EnvFile::load(&base.join(&try!(rel_path.value()))));

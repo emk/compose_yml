@@ -5,15 +5,17 @@ use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 use std::collections::BTreeMap;
 use std::env;
-use std::error::Error;
+use std::error;
+use std::error::Error as StdError;
 use std::fmt::{self, Display};
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
+use std::result;
 use std::str::FromStr;
 use std::string;
 use void::Void;
 
-use super::helpers::InvalidValueError;
+use errors::*;
 use super::merge_override::MergeOverride;
 
 /// An error interpolating environment variables in a `docker-compose.yml`
@@ -40,7 +42,7 @@ pub enum InterpolationError {
 }
 
 impl Display for InterpolationError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             InterpolationError::InvalidSyntax(ref input) => {
                 write!(f, "{}: <{}>", self.description(), input)
@@ -58,7 +60,7 @@ impl Display for InterpolationError {
     }
 }
 
-impl Error for InterpolationError {
+impl error::Error for InterpolationError {
     fn description(&self) -> &str {
         match *self {
             InterpolationError::InvalidSyntax(_) => "invalid interpolation syntax",
@@ -72,7 +74,7 @@ impl Error for InterpolationError {
         }
     }
 
-    fn cause(&self) -> Option<&Error> {
+    fn cause(&self) -> Option<&error::Error> {
         match *self {
             InterpolationError::UnparsableValue(ref err) => Some(err),
             _ => None,
@@ -90,7 +92,7 @@ impl From<InvalidValueError> for InterpolationError {
 pub trait Environment {
     /// Fetch a variable from this environment.  Similar to
     /// `std::env::var`.
-    fn var(&self, key: &str) -> Result<String, env::VarError>;
+    fn var(&self, key: &str) -> result::Result<String, env::VarError>;
 }
 
 /// Fetches environment variables from `std::env`.
@@ -110,7 +112,7 @@ impl OsEnvironment {
 }
 
 impl Environment for OsEnvironment {
-    fn var(&self, key: &str) -> Result<String, env::VarError> {
+    fn var(&self, key: &str) -> result::Result<String, env::VarError> {
         let result = env::var(key);
         trace!("Read env var {}: {:?}", key, &result);
         result
@@ -135,7 +137,7 @@ enum Mode {
 fn interpolate_helper(input: &str,
                       mode: Mode,
                       env: &Environment)
-                      -> Result<String, InterpolationError> {
+                      -> result::Result<String, InterpolationError> {
     lazy_static! {
         static ref VAR: Regex =
             Regex::new(r#"(?x)
@@ -195,7 +197,7 @@ fn interpolate_helper(input: &str,
 /// `docker-compose.yml`.
 fn interpolate_env(input: &str,
                    env: &Environment)
-                   -> Result<String, InterpolationError> {
+                   -> result::Result<String, InterpolationError> {
     interpolate_helper(input, Mode::Interpolate, env)
 }
 
@@ -252,7 +254,7 @@ fn escape_str_escapes_dollar_signs() {
 /// with an error if we encounter an actual interpolation that would
 /// require an environment variable.  This is used for manipulating
 /// `docker-compose.yml` files without expanding any environment variables.
-fn unescape_str(input: &str) -> Result<String, InterpolationError> {
+fn unescape_str(input: &str) -> result::Result<String, InterpolationError> {
     // We can use any `env` we want here; it will be ignored.
     let env = OsEnvironment::new();
     interpolate_helper(input, Mode::Unescape, &env)
@@ -272,7 +274,7 @@ fn unescape_str_unescapes_without_interpolating() {
 
 /// Validate an interpolation string, making sure all interpolations look
 /// syntactically valid.
-fn validate(input: &str) -> Result<(), InterpolationError> {
+fn validate(input: &str) -> result::Result<(), InterpolationError> {
     // We can use any `env` we want here; it will be ignored.
     let env = OsEnvironment::new();
     interpolate_helper(input, Mode::Validate, &env).map(|_| ())
@@ -303,7 +305,7 @@ fn validate_tests_interpolation_strings() {
 /// writing C++.
 ///
 /// This will show up as an instance method on all affected types.
-pub trait IntoInvalidValueError: Error + Sized {
+pub trait IntoInvalidValueError: error::Error + Sized {
     /// Consume an `Error` and return an `InvalidValueError`.  This is the
     /// default implementation for when an `impl` doesn't override it with
     /// something more specific.
@@ -335,9 +337,9 @@ impl IntoInvalidValueError for Void {
 /// because we want to handle types that are not necessarily `FromStr`.
 pub trait InterpolatableValue: Clone + Eq {
     /// Our equivalent of `from_str`.
-    fn iv_from_str(s: &str) -> Result<Self, InvalidValueError>;
+    fn iv_from_str(s: &str) -> result::Result<Self, InvalidValueError>;
     /// Our equivalent of `fmt`.
-    fn fmt_iv(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error>;
+    fn fmt_iv(&self, f: &mut fmt::Formatter) -> fmt::Result;
 }
 
 /// Provide a default implementation of InterpolatableValue that works for
@@ -354,13 +356,14 @@ pub trait InterpolatableValue: Clone + Eq {
 ///     where T: FromStr<Err = E> + Display + Clone + Eq,
 ///           E: IntoInvalidValueError
 /// {
-///     default fn iv_from_str(s: &str) -> Result<Self, InvalidValueError> {
+///     default fn iv_from_str(s: &str)
+///                            -> std::result::Result<Self, InvalidValueError> {
 ///         FromStr::from_str(s).map_err(|err| {
 ///             err.into_invalid_value_error("???", s)
 ///         })
 ///     }
 ///
-///     default fn fmt_iv(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+///     default fn fmt_iv(&self, f: &mut fmt::Formatter) -> std::fmt::Result {
 ///         self.fmt(f)
 ///     }
 /// }
@@ -369,7 +372,7 @@ macro_rules! impl_interpolatable_value {
     ($ty:ty) => {
         impl $crate::v2::interpolation::InterpolatableValue for $ty {
             fn iv_from_str(s: &str) ->
-                Result<Self, $crate::v2::helpers::InvalidValueError>
+                $crate::std::result::Result<Self, $crate::errors::InvalidValueError>
             {
                 use $crate::v2::interpolation::IntoInvalidValueError;
                 fn convert_err<E>(err: E, input: &str) -> InvalidValueError
@@ -382,7 +385,7 @@ macro_rules! impl_interpolatable_value {
                     .map_err(|err| convert_err(err, s))
             }
 
-            fn fmt_iv(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+            fn fmt_iv(&self, f: &mut fmt::Formatter) -> $crate::std::fmt::Result {
                 use std::fmt::Display;
                 self.fmt(f)
             }
@@ -394,11 +397,11 @@ impl_interpolatable_value!(String);
 
 /// This can be parsed and formatted, but not using the usual APIs.
 impl InterpolatableValue for PathBuf {
-    fn iv_from_str(s: &str) -> Result<Self, InvalidValueError> {
+    fn iv_from_str(s: &str) -> result::Result<Self, InvalidValueError> {
         Ok(Path::new(s).to_owned())
     }
 
-    fn fmt_iv(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt_iv(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.display().fmt(f)
     }
 }
@@ -409,7 +412,7 @@ struct DisplayInterpolatableValue<'a, V>(&'a V) where V: 'a + InterpolatableValu
 impl<'a, T> Display for DisplayInterpolatableValue<'a, T>
     where T: InterpolatableValue
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             DisplayInterpolatableValue(val) => val.fmt_iv(f),
         }
@@ -489,7 +492,7 @@ impl<T: InterpolatableValue> MergeOverride for RawOr<T> {}
 
 /// Convert a raw string containing variable interpolations into a
 /// `RawOr<T>` value.  See `RawOr<T>` for examples of how to use this API.
-pub fn raw<T, S>(s: S) -> Result<RawOr<T>, InterpolationError>
+pub fn raw<T, S>(s: S) -> result::Result<RawOr<T>, InterpolationError>
     where T: InterpolatableValue,
           S: Into<String>
 {
@@ -509,7 +512,7 @@ pub fn raw<T, S>(s: S) -> Result<RawOr<T>, InterpolationError>
 
 /// Escape a string and convert it into a `RawOr<T>` value.  See `RawOr<T>`
 /// for examples of how to use this API.
-pub fn escape<T, S>(s: S) -> Result<RawOr<T>, InterpolationError>
+pub fn escape<T, S>(s: S) -> result::Result<RawOr<T>, InterpolationError>
     where T: InterpolatableValue,
           S: AsRef<str>
 {
@@ -537,7 +540,7 @@ impl<T> RawOr<T>
     /// let bridge = dc::value(dc::NetworkMode::Bridge);
     /// assert_eq!(bridge.value().unwrap(), &dc::NetworkMode::Bridge);
     /// ```
-    pub fn value(&self) -> Result<&T, InterpolationError> {
+    pub fn value(&self) -> result::Result<&T, InterpolationError> {
         match *self {
             RawOr(RawOrValue::Value(ref val)) => Ok(val),
             // Because of invariants on RawOrValue, we know `unescape_str`
@@ -556,7 +559,7 @@ impl<T> RawOr<T>
     /// *mode.value_mut().unwrap() = dc::NetworkMode::Host;
     /// assert_eq!(mode.value_mut().unwrap(), &dc::NetworkMode::Host);
     /// ```
-    pub fn value_mut(&mut self) -> Result<&mut T, InterpolationError> {
+    pub fn value_mut(&mut self) -> result::Result<&mut T, InterpolationError> {
         match *self {
             RawOr(RawOrValue::Value(ref mut val)) => Ok(val),
             // Because of invariants on RawOrValue, we know `unescape_str`
@@ -570,7 +573,7 @@ impl<T> RawOr<T>
     /// and updating the value in place.
     pub fn interpolate_env(&mut self,
                            env: &Environment)
-                           -> Result<&mut T, InterpolationError> {
+                           -> result::Result<&mut T, InterpolationError> {
 
         let RawOr(ref mut inner) = *self;
 
@@ -623,7 +626,7 @@ impl<T> RawOr<T>
     /// // After interpolation.
     /// assert_eq!("host", mode.to_string());
     /// ```
-    pub fn interpolate(&mut self) -> Result<&mut T, InterpolationError> {
+    pub fn interpolate(&mut self) -> result::Result<&mut T, InterpolationError> {
         let env = OsEnvironment::new();
         self.interpolate_env(&env)
     }
@@ -632,7 +635,7 @@ impl<T> RawOr<T>
 impl<T> Display for RawOr<T>
     where T: InterpolatableValue
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             RawOr(RawOrValue::Raw(ref raw)) => write!(f, "{}", raw),
             RawOr(RawOrValue::Value(ref value)) => {
@@ -646,7 +649,7 @@ impl<T> Display for RawOr<T>
 impl<T> Serialize for RawOr<T>
     where T: InterpolatableValue
 {
-    fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
+    fn serialize<S>(&self, serializer: &mut S) -> result::Result<(), S::Error>
         where S: Serializer
     {
         serializer.serialize_str(&self.to_string())
@@ -658,7 +661,7 @@ impl<T> FromStr for RawOr<T>
 {
     type Err = InvalidValueError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
         raw(s).map_err(|err| {
             match err {
                 // Pass through underlying InvalidValueError.
@@ -675,7 +678,7 @@ impl<T> FromStr for RawOr<T>
 impl<T> Deserialize for RawOr<T>
     where T: InterpolatableValue
 {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: &mut D) -> result::Result<Self, D::Error>
         where D: Deserializer
     {
         let string = try!(String::deserialize(deserializer));
@@ -688,7 +691,7 @@ pub trait InterpolateAll {
     /// Recursively walk over this type, interpolating all `RawOr` values
     /// containing references to the environment.  The default
     /// implementation leaves a value unchanged.
-    fn interpolate_all(&mut self) -> Result<(), InterpolationError> {
+    fn interpolate_all(&mut self) -> result::Result<(), InterpolationError> {
         Ok(())
     }
 }
@@ -700,7 +703,7 @@ impl InterpolateAll for String {}
 impl<T> InterpolateAll for PhantomData<T> {}
 
 impl<T: InterpolateAll> InterpolateAll for Option<T> {
-    fn interpolate_all(&mut self) -> Result<(), InterpolationError> {
+    fn interpolate_all(&mut self) -> result::Result<(), InterpolationError> {
         if let Some(ref mut v) = *self {
             try!(v.interpolate_all());
         }
@@ -709,7 +712,7 @@ impl<T: InterpolateAll> InterpolateAll for Option<T> {
 }
 
 impl<T: InterpolateAll> InterpolateAll for Vec<T> {
-    fn interpolate_all(&mut self) -> Result<(), InterpolationError> {
+    fn interpolate_all(&mut self) -> result::Result<(), InterpolationError> {
         for v in self.iter_mut() {
             try!(v.interpolate_all());
         }
@@ -718,7 +721,7 @@ impl<T: InterpolateAll> InterpolateAll for Vec<T> {
 }
 
 impl<K: Ord + Clone, T: InterpolateAll> InterpolateAll for BTreeMap<K, T> {
-    fn interpolate_all(&mut self) -> Result<(), InterpolationError> {
+    fn interpolate_all(&mut self) -> result::Result<(), InterpolationError> {
         for (_k, v) in self.iter_mut() {
             try!(v.interpolate_all());
         }
@@ -727,7 +730,7 @@ impl<K: Ord + Clone, T: InterpolateAll> InterpolateAll for BTreeMap<K, T> {
 }
 
 impl<T: InterpolatableValue> InterpolateAll for RawOr<T> {
-    fn interpolate_all(&mut self) -> Result<(), InterpolationError> {
+    fn interpolate_all(&mut self) -> result::Result<(), InterpolationError> {
         try!(self.interpolate());
         Ok(())
     }
@@ -740,7 +743,7 @@ macro_rules! derive_interpolate_all_for {
         /// Recursive merge all fields in the structure.
         impl $crate::v2::interpolation::InterpolateAll for $ty {
             fn interpolate_all(&mut self) ->
-                Result<(), $crate::v2::interpolation::InterpolationError>
+                result::Result<(), $crate::v2::interpolation::InterpolationError>
             {
                 $( try!(self.$field.interpolate_all()); )+
                 Ok(())

@@ -19,7 +19,7 @@ impl MergeOverride for CommandLine {}
 impl InterpolateAll for CommandLine {}
 
 impl Serialize for CommandLine {
-    fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
+    fn serialize<S>(&self, serializer: &mut S) -> result::Result<(), S::Error>
         where S: Serializer
     {
         match self {
@@ -30,7 +30,7 @@ impl Serialize for CommandLine {
 }
 
 impl Deserialize for CommandLine {
-    fn deserialize<D>(deserializer: &mut D) -> Result<CommandLine, D::Error>
+    fn deserialize<D>(deserializer: &mut D) -> result::Result<CommandLine, D::Error>
         where D: Deserializer
     {
         struct CommandLineVisitor;
@@ -39,7 +39,7 @@ impl Deserialize for CommandLine {
             type Value = CommandLine;
 
             // The deserializer found a string, so handle it.
-            fn visit_str<E>(&mut self, value: &str) -> Result<CommandLine, E>
+            fn visit_str<E>(&mut self, value: &str) -> result::Result<CommandLine, E>
                 where E: de::Error
             {
                 Ok(CommandLine::ShellCode(try!(raw(value).map_err(|err| {
@@ -49,7 +49,7 @@ impl Deserialize for CommandLine {
 
             // The deserializer found a sequence.
             fn visit_seq<V>(&mut self, mut visitor: V) ->
-                Result<Self::Value, V::Error>
+                result::Result<Self::Value, V::Error>
                 where V: SeqVisitor
             {
                 let mut args: Vec<RawOr<String>> = vec!();

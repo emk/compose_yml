@@ -4,15 +4,9 @@
 extern crate compose_yml;
 
 use compose_yml::v2 as dc;
-use std::error;
 use std::io::{self, Write};
 
-/// A catch-all error type to which any other error may be coerced by
-/// `try!` (provided it implements `Send` and `Sync`, which most types
-/// do).
-pub type Error = Box<error::Error+Send+Sync>;
-
-fn normalize() -> Result<(), Error> {
+fn normalize() -> dc::Result<()> {
     let file = try!(dc::File::read(io::stdin()));
     try!(file.write(&mut io::stdout()));
     Ok(())

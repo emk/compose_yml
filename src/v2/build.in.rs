@@ -59,14 +59,14 @@ impl FromStr for Build {
     // We never return an error, so specify `Void` as our error type.
     type Err = Void;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
         Ok(Build::new(Context::new(s)))
     }
 }
 
 impl SerializeStringOrStruct for Build {
     fn serialize_string_or_struct<S>(&self, serializer: &mut S) ->
-        Result<(), S::Error>
+        result::Result<(), S::Error>
         where S: Serializer
     {
         if self.dockerfile.is_none() && self.args.is_empty() {

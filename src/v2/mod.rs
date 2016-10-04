@@ -5,6 +5,7 @@ use serde;
 use serde::de::{self, Deserialize, Deserializer, SeqVisitor, Visitor};
 use serde::ser::{Serialize, Serializer};
 use serde_yaml;
+use std::borrow::ToOwned;
 use std::collections::BTreeMap;
 use std::convert::Into;
 use std::default::Default;
@@ -14,6 +15,7 @@ use std::io;
 use std::marker::PhantomData;
 use std::net::IpAddr;
 use std::path::{Path, PathBuf};
+use std::result;
 use std::str::FromStr;
 use void::Void;
 
@@ -27,11 +29,10 @@ pub use self::mode_enum::*;
 use self::string_or_struct::*;
 use self::true_or_struct::*;
 
-// Re-export this from the submodule for people who only `use
-// compose_yml::v2 as dc` so they can use it as `dc::Error`.
-pub use super::Error;
+// Re-export errors here so that people can use them by including `use
+// compose_yml::v2`.
+pub use errors::*;
 
-#[macro_use]
 mod helpers;
 mod env_file;
 mod git_url;
