@@ -39,15 +39,15 @@ impl fmt::Display for DevicePermissions {
 }
 
 impl FromStr for DevicePermissions {
-    type Err = InvalidValueError;
+    type Err = Error;
 
-    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         lazy_static! {
             static ref PERMS: Regex =
                 Regex::new("^(r)?(w)?(m)?").unwrap();
         }
         let caps = try!(PERMS.captures(s).ok_or_else(|| {
-            InvalidValueError::new("restart-mode", s)
+            Error::invalid_value("restart-mode", s)
         }));
         Ok(DevicePermissions {
             read: caps.at(1).is_some(),
@@ -96,13 +96,13 @@ impl fmt::Display for VolumePermissions {
 }
 
 impl FromStr for VolumePermissions {
-    type Err = InvalidValueError;
+    type Err = Error;
 
-    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         match s {
             "rw" => Ok(VolumePermissions::ReadWrite),
             "ro" => Ok(VolumePermissions::ReadOnly),
-            _ => Err(InvalidValueError::new("volume permissions", s)),
+            _ => Err(Error::invalid_value("volume permissions", s)),
         }
     }
 }

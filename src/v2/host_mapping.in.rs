@@ -30,19 +30,19 @@ impl fmt::Display for HostMapping {
 }
 
 impl FromStr for HostMapping {
-    type Err = InvalidValueError;
+    type Err = Error;
 
-    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         lazy_static! {
             static ref HOST_ADDRESS: Regex =
                 Regex::new("^([^:]+):(.+)$").unwrap();
         }
         let caps = try!(HOST_ADDRESS.captures(s).ok_or_else(|| {
-            InvalidValueError::new("host mapping", s)
+            Error::invalid_value("host mapping", s)
         }));
         let addr: IpAddr =
             try!(FromStr::from_str(caps.at(2).unwrap()).map_err(|_| {
-                InvalidValueError::new("IP address", s)
+                Error::invalid_value("IP address", s)
             }));
         Ok(HostMapping::new(caps.at(1).unwrap(), &addr))
     }

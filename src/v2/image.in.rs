@@ -72,15 +72,15 @@ impl fmt::Display for Image {
 }
 
 impl FromStr for Image {
-    type Err = InvalidValueError;
+    type Err = Error;
 
-    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         lazy_static! {
             static ref IMAGE: Regex =
                 Regex::new(r#"^(?:([^/:.]+\.[^/:]+)(?::([0-9]+))?/)?(?:([^/:.]+)/)?([^/:]+)(?::([^/:]+))?$"#).unwrap();
         }
         let caps = try!(IMAGE.captures(s).ok_or_else(|| {
-            InvalidValueError::new("image", s)
+            Error::invalid_value("image", s)
         }));
         // This could use a good refactoring.
         let registry_host =
@@ -90,7 +90,7 @@ impl FromStr for Image {
                 let port =
                     if caps.at(2).is_some() {
                         Some(try!(FromStr::from_str(caps.at(2).unwrap()).map_err(|_| {
-                            InvalidValueError::new("image", s)
+                            Error::invalid_value("image", s)
                         })))
                     } else {
                         None

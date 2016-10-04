@@ -45,15 +45,15 @@ impl fmt::Display for HostVolume {
 }
 
 impl FromStr for HostVolume {
-    type Err = InvalidValueError;
+    type Err = Error;
 
-    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         lazy_static! {
             static ref HOST_VOLUME: Regex =
                 Regex::new(r#"^(\.{0,2}/.*)|~/(.+)|([^./~].*)$"#).unwrap();
         }
         let caps = try!(HOST_VOLUME.captures(s).ok_or_else(|| {
-            InvalidValueError::new("host volume", s)
+            Error::invalid_value("host volume", s)
         }));
         if let Some(path) = caps.at(1) {
             Ok(HostVolume::Path(Path::new(path).to_owned()))
@@ -163,9 +163,9 @@ impl fmt::Display for VolumeMount {
 }
 
 impl FromStr for VolumeMount {
-    type Err = InvalidValueError;
+    type Err = Error;
 
-    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         let items = s.split(":").collect::<Vec<_>>();
         match items.len() {
             1 => {
@@ -192,7 +192,7 @@ impl FromStr for VolumeMount {
                     _phantom: PhantomData,
                 })
             }
-            _ => Err(InvalidValueError::new("volume", s)),
+            _ => Err(Error::invalid_value("volume", s)),
         }
     }
 }

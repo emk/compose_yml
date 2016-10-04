@@ -59,15 +59,15 @@ impl fmt::Display for MemorySize {
 }
 
 impl FromStr for MemorySize {
-    type Err = InvalidValueError;
+    type Err = Error;
 
-    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         lazy_static! {
             static ref MEM_SIZE: Regex =
                 Regex::new("^([0-9]+)([bkmg])?$").unwrap();
         }
         let caps = try!(MEM_SIZE.captures(s).ok_or_else(|| {
-            InvalidValueError::new("memory size", s)
+            Error::invalid_value("memory size", s)
         }));
         let value: usize = caps.at(1).unwrap().parse().unwrap();
         match caps.at(2) {

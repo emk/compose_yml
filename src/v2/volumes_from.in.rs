@@ -92,15 +92,15 @@ impl fmt::Display for VolumesFrom {
 }
 
 impl FromStr for VolumesFrom {
-    type Err = InvalidValueError;
+    type Err = Error;
 
-    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         lazy_static! {
             static ref FROM: Regex =
                 Regex::new("^(container:)?([^:]+)(?::([^:]+))?$").unwrap();
         }
         let caps = try!(FROM.captures(s).ok_or_else(|| {
-            InvalidValueError::new("volumes_from", s)
+            Error::invalid_value("volumes_from", s)
         }));
 
         let name = caps.at(2).unwrap().to_owned();

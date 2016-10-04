@@ -31,22 +31,22 @@ impl fmt::Display for Ports {
 }
 
 impl FromStr for Ports {
-    type Err = InvalidValueError;
+    type Err = Error;
 
-    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         lazy_static! {
             static ref PORTS: Regex =
                 Regex::new("^([0-9]+)(?:-([0-9]+))?$").unwrap();
         }
         let caps = try!(PORTS.captures(s).ok_or_else(|| {
-            InvalidValueError::new("ports", s)
+            Error::invalid_value("ports", s)
         }));
 
         // Convert a regex capture group to a string.  Only call if the
         // specified capture group is known to be valid.
-        let port_from_str = |i: usize| -> result::Result<u16, InvalidValueError> {
+        let port_from_str = |i: usize| -> Result<u16> {
             FromStr::from_str(caps.at(i).unwrap()).map_err(|_| {
-                InvalidValueError::new("port", s)
+                Error::invalid_value("port", s)
             })
         };
 
@@ -150,9 +150,9 @@ impl fmt::Display for PortMapping {
 }
 
 impl FromStr for PortMapping {
-    type Err = InvalidValueError;
+    type Err = Error;
 
-    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         // Split backwards from the end of the string, in case the first
         // address field is an IPv6 address with embedded colons.  Hey,
         // it's not specified _never_ to happen.  Note that `fields` will
@@ -178,7 +178,7 @@ impl FromStr for PortMapping {
             3 => {
                 let addr: IpAddr =
                     try!(FromStr::from_str(fields[2]).map_err(|_| {
-                        InvalidValueError::new("IP address", s)
+                        Error::invalid_value("IP address", s)
                     }));
                 Ok(PortMapping {
                     host_address: Some(addr),
@@ -188,7 +188,7 @@ impl FromStr for PortMapping {
                 })
             }
             _ => {
-                Err(InvalidValueError::new("port mapping", s))
+                Err(Error::invalid_value("port mapping", s))
             }
         }
     }

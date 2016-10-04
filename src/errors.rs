@@ -9,21 +9,12 @@
 #![allow(missing_docs)]
 
 use serde_yaml;
-use std::error;
-use std::fmt;
 use std::path::PathBuf;
-
-use v2::InterpolationError;
 
 error_chain! {
     // These are external, non-`error_chain` error types that we can
     // automatically wrap.
     foreign_links {
-        // Something went wrong interpolationg environment variables into
-        // a string.
-        InterpolationError, Interpolation;
-        // A string value in a `docker-compose.yml` file could not be parsed.
-        InvalidValueError, InvalidValue;
         // The YAML structure in a `docker-compose.yml` file could not be
         // parsed.
         serde_yaml::Error, Yaml;
@@ -31,6 +22,40 @@ error_chain! {
 
     // These are our "native" error types.
     errors {
+        /// The interpolation syntax in the specified string was invalid.
+        InterpolateInvalidSyntax(s: String) {
+            description("invalid interpolation syntax")
+            display("invalid interpolation syntax '{}'", &s)
+        }
+
+        /// The string contains an undefined environment variable.  This is not
+        /// an error for `docker-compose` (which treats undefined variables as
+        /// empty), but it is an error for us because we're a
+        /// `docker-compose.yml` parsing and transforming library, and we
+        /// try not to hide errors.
+        InterpolateUndefinedVariable(s: String) {
+            description("undefined environment variable in interpolation")
+            display("undefined environment variable in interpolation '{}'", &s)
+        }
+
+        /// We tried to parse a string that requires environment variable
+        /// interpolation, but in a context where we've been asked not to
+        /// access the environment.  This is typical when transforming
+        /// `docker-compose.yml` files that we want to interpolate at a later
+        /// time.
+        InterpolationDisabled(s: String) {
+            description("cannot parse without interpolating environment variables")
+            display("cannot parse without interpolating environment variables '{}'",
+                    &s)
+        }
+
+        /// A string value in a `docker-compose.yml` file could not be
+        /// parsed.
+        InvalidValue(wanted: String, input: String) {
+            description("invalid value")
+            display("invalid {} '{}'", &wanted, &input)
+        }
+
         /// An `.env` file could not be parsed.
         ParseEnv(line: String) {
             description("cannot parse env variable declaration")
@@ -58,34 +83,10 @@ error_chain! {
     }
 }
 
-/// An error parsing a string in a Dockerfile.
-#[derive(Debug)]
-pub struct InvalidValueError {
-    /// A semi-human-readable description of type of data we wanted.
-    wanted: String,
-    /// The actual input data we received.
-    input: String,
-}
-
-impl InvalidValueError {
-    /// Create an error, specifying the type we wanted, and the value we
-    /// actually got.
-    pub fn new(wanted: &str, input: &str) -> InvalidValueError {
-        InvalidValueError {
-            wanted: wanted.to_owned(),
-            input: input.to_owned(),
-        }
-    }
-}
-
-impl fmt::Display for InvalidValueError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Invalid {}: <{}>", &self.wanted, &self.input)
-    }
-}
-
-impl error::Error for InvalidValueError {
-    fn description(&self) -> &str {
-        "Invalid value"
+impl Error {
+    /// Create an error reporting an invalid value.
+    pub fn invalid_value<S1, S2>(wanted: S1, input: S2) -> Error
+        where S1: Into<String>, S2: Into<String> {
+        ErrorKind::InvalidValue(wanted.into(), input.into()).into()
     }
 }

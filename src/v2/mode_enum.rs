@@ -3,7 +3,6 @@
 
 use regex::Regex;
 use std::fmt;
-use std::result;
 use std::str::FromStr;
 
 use errors::*;
@@ -97,9 +96,9 @@ macro_rules! mode_enum {
 
         // Set up deserialization from strings.
         impl FromStr for $name {
-            type Err = InvalidValueError;
+            type Err = Error;
 
-            fn from_str(s: &str) -> result::Result<Self, Self::Err> {
+            fn from_str(s: &str) -> Result<Self> {
                 lazy_static! {
                     static ref COMPOUND: Regex =
                         Regex::new("^([-a-z]+):(.+)$").unwrap();
@@ -109,18 +108,17 @@ macro_rules! mode_enum {
                     $( $tag0 => Ok($name::$item0), )*
                     _ => {
                         let caps = try!(COMPOUND.captures(s).ok_or_else(|| {
-                            InvalidValueError::new(stringify!($name), s)
+                            Error::invalid_value(stringify!($name), s)
                         }));
                         let valstr = caps.at(2).unwrap();
                         match caps.at(1).unwrap() {
                             $( $tag1 => {
                                let value = try!(FromStr::from_str(valstr).map_err(|_| {
-                                   InvalidValueError::new(stringify!($name),
-                                                          valstr)
+                                   Error::invalid_value(stringify!($name), valstr)
                                }));
                                Ok($name::$item1(value))
                             })*
-                            _ => Err(InvalidValueError::new(stringify!($name), s))
+                            _ => Err(Error::invalid_value(stringify!($name), s))
                         }
                     }
                 }
@@ -230,9 +228,9 @@ impl fmt::Display for RestartMode {
 
 // Set up deserialization from strings.
 impl FromStr for RestartMode {
-    type Err = InvalidValueError;
+    type Err = Error;
 
-    fn from_str(s: &str) -> result::Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         lazy_static! {
             static ref COMPOUND: Regex =
                 Regex::new("^([-a-z]+):(.+)$").unwrap();
@@ -245,16 +243,16 @@ impl FromStr for RestartMode {
             "unless-stopped" => Ok(RestartMode::UnlessStopped),
             _ => {
                 let caps = try!(COMPOUND.captures(s)
-                    .ok_or_else(|| InvalidValueError::new("restart-mode", s)));
+                    .ok_or_else(|| Error::invalid_value("restart-mode", s)));
                 let valstr = caps.at(2).unwrap();
                 match caps.at(1).unwrap() {
                     "on-failure" => {
                         let value = try!(FromStr::from_str(valstr).map_err(|_| {
-                                InvalidValueError::new("restart mode", valstr)
+                                Error::invalid_value("restart mode", valstr)
                             }));
                         Ok(RestartMode::OnFailure(Some(value)))
                     }
-                    _ => Err(InvalidValueError::new("restart mode", s)),
+                    _ => Err(Error::invalid_value("restart mode", s)),
                 }
             }
         }
