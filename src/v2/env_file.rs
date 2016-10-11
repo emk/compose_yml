@@ -45,7 +45,8 @@ impl EnvFile {
     /// Load an `EnvFile` from the disk.
     pub fn load(path: &Path) -> Result<EnvFile> {
         let mkerr = || ErrorKind::ReadFile(path.to_owned());
-        EnvFile::read(try!(fs::File::open(path).chain_err(&mkerr))).chain_err(&mkerr)
+        let f = try!(fs::File::open(path).chain_err(&mkerr));
+        EnvFile::read(io::BufReader::new(f)).chain_err(&mkerr)
     }
 
     /// The variable mappings as simple BTreeMap.

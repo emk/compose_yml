@@ -45,7 +45,8 @@ impl File {
     {
         let path = path.as_ref();
         let mkerr = || ErrorKind::ReadFile(path.to_owned());
-        Self::read(try!(fs::File::open(path).chain_err(&mkerr))).chain_err(&mkerr)
+        let f = try!(fs::File::open(path).chain_err(&mkerr));
+        Self::read(io::BufReader::new(f)).chain_err(&mkerr)
     }
 
     /// Write a file to the specified path.
@@ -54,7 +55,8 @@ impl File {
     {
         let path = path.as_ref();
         let mkerr = || ErrorKind::WriteFile(path.to_owned());
-        self.write(&mut try!(fs::File::create(path).chain_err(&mkerr))).chain_err(&mkerr)
+        let f = try!(fs::File::create(path).chain_err(&mkerr));
+        self.write(&mut io::BufWriter::new(f)).chain_err(&mkerr)
     }
 
     /// Inline all our external resources, such as `env_files`, looking up
