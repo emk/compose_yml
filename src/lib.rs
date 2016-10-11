@@ -82,7 +82,7 @@
 
 // rustc_macro-based macros only work with Rust nightly builds, not with
 // stable compilers.  We want to work with both.
-#![cfg_attr(feature = "serde_derive", feature(plugin, rustc_macro))]
+#![cfg_attr(feature = "serde_derive", feature(plugin, proc_macro))]
 
 // The `error_chain` documentation says we need this.
 #![recursion_limit = "1024"]
