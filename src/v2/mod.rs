@@ -90,6 +90,7 @@ serde_include!("image");
 // Basic file structure.
 serde_include!("file");
 serde_include!("service");
+serde_include!("volume");
 serde_include!("network");
 
 // Service-related types.

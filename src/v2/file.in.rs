@@ -13,7 +13,11 @@ pub struct File {
     /// The individual services which make up this app.
     pub services: BTreeMap<String, Service>,
 
-    // TODO MED: volumes
+    /// Named volumes used by this app.
+    ///
+    /// TODO MED: Can we parse just volume names followed by a colon?
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub volumes: BTreeMap<String, Volume>,
 
     /// The networks used by this app.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
@@ -21,7 +25,7 @@ pub struct File {
 }
 
 derive_standard_impls_for!(File, {
-    version, services, networks
+    version, services, volumes, networks
 });
 
 impl File {
@@ -85,6 +89,7 @@ impl Default for File {
         File {
             version: "2".to_owned(),
             services: Default::default(),
+            volumes: Default::default(),
             networks: Default::default(),
         }
     }
@@ -106,6 +111,9 @@ fn file_can_be_converted_from_and_to_yaml() {
   "foo":
     "build": "."
 "version": "2"
+"volumes":
+  "db":
+    "external": true
 "#;
     assert_roundtrip!(File, yaml);
 
