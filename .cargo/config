@@ -1,0 +1,3 @@
+[target.x86_64-pc-windows-gnu]
+# In case we're cross-compiling, specify which linker to use.
+linker = "x86_64-w64-mingw32-gcc"
