@@ -16,11 +16,13 @@ pub struct File {
     /// Named volumes used by this app.
     ///
     /// TODO MED: Can we parse just volume names followed by a colon?
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
+            deserialize_with = "deserialize_map_struct_or_null")]
     pub volumes: BTreeMap<String, Volume>,
 
     /// The networks used by this app.
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
+            deserialize_with = "deserialize_map_struct_or_null")]
     pub networks: BTreeMap<String, Network>,
 }
 
@@ -120,6 +122,25 @@ fn file_can_be_converted_from_and_to_yaml() {
     let file: File = serde_yaml::from_str(&yaml).unwrap();
     let foo = file.services.get("foo").unwrap();
     assert_eq!(foo.build.as_ref().unwrap().context, value(Context::new(".")));
+}
+
+#[test]
+fn file_allows_null_volumes_and_networks() {
+    let yaml = r#"---
+"version": "2"
+"services":
+  "foo":
+    "build": "."
+"volumes":
+  "bar":
+  "foo":
+"networks":
+  "frontend":
+  "internal":
+"#;
+    let file: File = serde_yaml::from_str::<File>(&yaml).unwrap();
+    assert_eq!(file.volumes.len(), 2);
+    assert_eq!(file.networks.len(), 2);
 }
 
 #[test]

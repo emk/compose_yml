@@ -206,6 +206,21 @@ pub fn deserialize_item_or_list<T, D>(deserializer: &mut D)
     deserializer.deserialize(StringOrListVisitor(PhantomData))
 }
 
+/// Deserialize either list or a single bare string as a list.
+pub fn deserialize_map_struct_or_null<T, D>(deserializer: &mut D)
+                                           -> Result<BTreeMap<String, T>, D::Error>
+    where T: Deserialize + Default,
+          D: Deserializer
+{
+    let with_nulls: BTreeMap<String, Option<T>> =
+        try!(Deserialize::deserialize(deserializer));
+    let mut result = BTreeMap::new();
+    for (k,v) in with_nulls {
+        result.insert(k, v.unwrap_or_default());
+    }
+    Ok(result)
+}
+
 /// Make sure that the file conforms to a version we can parse.
 pub fn check_version<D>(deserializer: &mut D) -> Result<String, D::Error>
     where D: Deserializer
