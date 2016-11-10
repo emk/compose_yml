@@ -73,7 +73,7 @@ pub struct Service {
     /// Environment variables and values to supply to the container.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
             deserialize_with = "deserialize_map_or_key_value_list")]
-    pub environment: BTreeMap<String, String>,
+    pub environment: BTreeMap<String, RawOr<String>>,
 
     /// Expose a list of ports to any containers that link to us.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -97,11 +97,9 @@ pub struct Service {
 
     /// Docker labels for this container, specifying various sorts of
     /// custom metadata.
-    ///
-    /// TODO MED: Deal with RawOr in deserialize_map_or_key_value_list.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
             deserialize_with = "deserialize_map_or_key_value_list")]
-    pub labels: BTreeMap<String, String>,
+    pub labels: BTreeMap<String, RawOr<String>>,
 
     /// Links to other services in this file.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -294,7 +292,7 @@ impl Service {
         let mut new_env = BTreeMap::new();
         for rel_path in &self.env_files {
             let env_file = try!(EnvFile::load(&base.join(&try!(rel_path.value()))));
-            new_env.append(&mut env_file.as_map().clone());
+            new_env.append(&mut try!(env_file.to_environment()));
         }
         new_env.append(&mut self.environment.clone());
         self.environment = new_env;

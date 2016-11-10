@@ -9,6 +9,8 @@ use std::borrow::ToOwned;
 use std::collections::BTreeMap;
 use std::convert::Into;
 use std::default::Default;
+#[cfg(test)]
+use std::env;
 use std::fs;
 use std::fmt;
 use std::io;

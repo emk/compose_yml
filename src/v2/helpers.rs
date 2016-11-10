@@ -32,6 +32,52 @@ pub fn normalize_yaml(yaml: &str) -> String {
     NL_EOS.replace_all(&WS_NL.replace_all(yaml, "\n"), "")
 }
 
+/// We use this when the format wants a `String`, but has support for
+/// converting several other types.  Mostly this is so that users can
+/// write `ENV_VAR: 1`, and not get an error about using `1` instead of
+/// `"1"`, and for compatibility with `docker-compose`.
+struct ToStringVisitor;
+
+impl Visitor for ToStringVisitor {
+    type Value = String;
+
+    fn visit_bool<E>(&mut self, v: bool) -> Result<Self::Value, E>
+        where E: de::Error
+    {
+        Ok(format!("{}", v))
+    }
+
+    fn visit_f64<E>(&mut self, v: f64) -> Result<Self::Value, E>
+        where E: de::Error
+    {
+        Ok(format!("{}", v))
+    }
+
+    fn visit_i64<E>(&mut self, v: i64) -> Result<Self::Value, E>
+        where E: de::Error
+    {
+        Ok(format!("{}", v))
+    }
+
+    fn visit_str<E>(&mut self, v: &str) -> Result<Self::Value, E>
+        where E: de::Error
+    {
+        Ok(v.to_owned())
+    }
+}
+
+/// A wrapper type which uses `ToStringVisitor` to deserialize a value,
+/// converting many scalar types to a string.
+struct ConvertToString(String);
+
+impl Deserialize for ConvertToString {
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, D::Error>
+        where D: Deserializer
+    {
+        deserializer.deserialize(ToStringVisitor).map(ConvertToString)
+    }
+}
+
 /// Certain maps in `docker-compose.yml` files may be specified in two
 /// forms.  The first form is an ordinary map:
 ///
@@ -54,42 +100,37 @@ pub fn normalize_yaml(yaml: &str) -> String {
 /// ```text
 /// struct Example {
 ///     #[serde(deserialize_with = "deserialize_hash_or_key_value_list")]
-///     pub args: BTreeMap<String, String>,
+///     pub args: BTreeMap<String, RawOr<String>>,
 /// }
 /// ```
 pub fn deserialize_map_or_key_value_list<D>
     (deserializer: &mut D)
-     -> Result<BTreeMap<String, String>, D::Error>
+     -> Result<BTreeMap<String, RawOr<String>>, D::Error>
     where D: Deserializer
 {
     /// Declare an internal visitor type to handle our input.
     struct MapOrKeyValueListVisitor;
 
     impl Visitor for MapOrKeyValueListVisitor {
-        type Value = BTreeMap<String, String>;
+        type Value = BTreeMap<String, RawOr<String>>;
 
         // We have a real map.
         fn visit_map<V>(&mut self, mut visitor: V) -> Result<Self::Value, V::Error>
             where V: MapVisitor
         {
-            let mut map: BTreeMap<String, String> = BTreeMap::new();
+            let mut map: BTreeMap<String, RawOr<String>> = BTreeMap::new();
             while let Some(key) = try!(visitor.visit_key::<String>()) {
                 if map.contains_key(&key) {
                     let msg = format!("duplicate map key: {}", &key);
                     return Err(<V::Error as de::Error>::custom(msg));
                 }
-                // Work around https://github.com/serde-rs/serde/issues/528
-                //
-                // TODO BLOCKED: Apply a better fix for error messages.
-                match visitor.visit_value::<String>() {
-                    Ok(val) => {
-                        map.insert(key, val);
-                    }
-                    Err(_) => {
-                        let msg = "Expected string value in key/value map";
-                        return Err(<V::Error as de::Error>::custom(msg.to_owned()));
-                    }
-                }
+                let ConvertToString(val) =
+                    try!(visitor.visit_value::<ConvertToString>());
+                let raw_or_value = try!(raw(val)
+                    .map_err(|e| {
+                        <V::Error as de::Error>::custom(format!("{}", e))
+                    }));
+                map.insert(key, raw_or_value);
             }
             try!(visitor.end());
             Ok(map)
@@ -105,7 +146,7 @@ pub fn deserialize_map_or_key_value_list<D>
                     Regex::new("^([^=]+)=(.*)$").unwrap();
             }
 
-            let mut map: BTreeMap<String, String> = BTreeMap::new();
+            let mut map: BTreeMap<String, RawOr<String>> = BTreeMap::new();
             while let Some(key_value) = try!(visitor.visit::<String>()) {
                 let caps = try!(KEY_VALUE.captures(&key_value).ok_or_else(|| {
                     let msg = format!("expected KEY=value, got: <{}>", &key_value);
@@ -117,7 +158,9 @@ pub fn deserialize_map_or_key_value_list<D>
                     let msg = format!("duplicate map key: {}", key);
                     return Err(<V::Error as de::Error>::custom(msg));
                 }
-                map.insert(key.to_owned(), value.to_owned());
+                let raw_or_value = try!(raw(value.to_owned())
+                    .map_err(|e| <V::Error as de::Error>::custom(format!("{}", e))));
+                map.insert(key.to_owned(), raw_or_value);
             }
             try!(visitor.end());
             Ok(map)

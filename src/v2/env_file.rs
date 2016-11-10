@@ -7,6 +7,7 @@ use std::io::{self, BufRead};
 use std::path::Path;
 
 use errors::*;
+use super::interpolation::{RawOr, escape};
 
 /// A file pointed to by an `env_file:` field.
 pub struct EnvFile {
@@ -49,9 +50,14 @@ impl EnvFile {
         EnvFile::read(io::BufReader::new(f)).chain_err(&mkerr)
     }
 
-    /// The variable mappings as simple BTreeMap.
-    pub fn as_map(&self) -> &BTreeMap<String, String> {
-        &self.vars
+    /// Convert this `EnvFile` to the format we use for the `environment`
+    /// member of `Service`.
+    pub fn to_environment(&self) -> Result<BTreeMap<String, RawOr<String>>> {
+        let mut env = BTreeMap::new();
+        for (k, v) in &self.vars {
+            env.insert(k.to_owned(), try!(escape(v)));
+        }
+        Ok(env)
     }
 
     // TODO MED: We'll need this when we fix the type of
@@ -79,8 +85,8 @@ WEIRD="quoted"
 "#;
     let cursor = io::Cursor::new(input);
     let env_file = EnvFile::read(cursor).unwrap();
-    let env = env_file.as_map();
-    assert_eq!(env.get("FOO").unwrap(), "foo");
-    assert_eq!(env.get("BAR").unwrap(), "2");
-    assert_eq!(env.get("WEIRD").unwrap(), "\"quoted\"");
+    let env = env_file.to_environment().unwrap();
+    assert_eq!(env.get("FOO").unwrap().value().unwrap(), "foo");
+    assert_eq!(env.get("BAR").unwrap().value().unwrap(), "2");
+    assert_eq!(env.get("WEIRD").unwrap().value().unwrap(), "\"quoted\"");
 }

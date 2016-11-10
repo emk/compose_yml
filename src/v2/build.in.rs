@@ -16,7 +16,7 @@ pub struct Build {
     /// Build arguments.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
             deserialize_with = "deserialize_map_or_key_value_list")]
-    pub args: BTreeMap<String, String>,
+    pub args: BTreeMap<String, RawOr<String>>,
 
     /// PRIVATE.  Mark this struct as having unknown fields for future
     /// compatibility.  This prevents direct construction and exhaustive
@@ -91,14 +91,43 @@ fn build_may_be_a_struct() {
 "context": "."
 "dockerfile": "Dockerfile"
 "args":
-  "key": "value"
+  "str": "value"
 "#;
     assert_roundtrip!(Build, yaml);
 
     let build: Build = serde_yaml::from_str(yaml).unwrap();
     assert_eq!(build.context, value(Context::new(".")));
     assert_eq!(build.dockerfile, Some(value("Dockerfile".to_owned())));
-    assert_eq!(build.args.get("key").cloned(), Some("value".to_owned()));
+    assert_eq!(build.args.get("str").expect("wanted key 'str'").value().unwrap(),
+               "value");
+}
+
+#[test]
+fn args_support_stringification_and_interpolation() {
+    let yaml = r#"---
+"context": "."
+"args":
+  "bool": true
+  "float": 1.5
+  "int": 1
+  "interp": "$FOO"
+"#;
+    let build: Build = serde_yaml::from_str(yaml).unwrap();
+
+    // Check type conversion.
+    assert_eq!(build.args.get("bool").expect("wanted key 'bool'").value().unwrap(),
+               "true");
+    assert_eq!(build.args.get("float").expect("wanted key 'float'").value().unwrap(),
+               "1.5");
+    assert_eq!(build.args.get("int").expect("wanted key 'int'").value().unwrap(),
+               "1");
+
+    // Check interpolation.
+    let mut interp: RawOr<String> =
+        build.args.get("interp").expect("wanted key 'interp'").to_owned();
+    env::set_var("FOO", "foo");
+    let env = OsEnvironment::new();
+    assert_eq!(interp.interpolate_env(&env).unwrap(), "foo")
 }
 
 #[test]
@@ -109,7 +138,8 @@ args:
   - \"key=value\"
 ";
     let build: Build = serde_yaml::from_str(yaml).unwrap();
-    assert_eq!(build.args.get("key").cloned(), Some("value".to_owned()));
+    assert_eq!(build.args.get("key").expect("should have key").value().unwrap(),
+               "value");
 }
 
 // TODO MED: Implement valueless keys.
