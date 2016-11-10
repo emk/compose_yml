@@ -222,9 +222,11 @@ pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub user: Option<RawOr<String>>,
 
-    /// The working directory to use for this container.
+    /// The working directory to use for this container.  This is a string,
+    /// because on Windows, it will use a different path representation
+    /// than the host OS.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub working_dir: Option<RawOr<PathBuf>>,
+    pub working_dir: Option<RawOr<String>>,
 
     /// PRIVATE.  Mark this struct as having unknown fields for future
     /// compatibility.  This prevents direct construction and exhaustive

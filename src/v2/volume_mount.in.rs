@@ -74,8 +74,9 @@ pub struct VolumeMount {
     /// it?
     pub host: Option<HostVolume>,
     /// Where should we mount this volume in the container?  This must be
-    /// an absolute path.
-    pub container: PathBuf,
+    /// an absolute path.  This is a string, because on Windows, it will
+    /// use a different path representation than the host OS.
+    pub container: String,
     /// What should the permissions of this volume be in the container?
     pub permissions: VolumePermissions,
 
@@ -95,7 +96,7 @@ impl VolumeMount {
     /// dc::VolumeMount::host("./src", "/app");
     /// ```
     pub fn host<P1, P2>(host: P1, container: P2) -> VolumeMount
-        where P1: Into<PathBuf>, P2: Into<PathBuf>
+        where P1: Into<PathBuf>, P2: Into<String>
     {
         VolumeMount {
             host: Some(HostVolume::Path(host.into())),
@@ -112,7 +113,7 @@ impl VolumeMount {
     /// dc::VolumeMount::named("pgvolume", "/app");
     /// ```
     pub fn named<S, P>(name: S, container: P) -> VolumeMount
-        where S: Into<String>, P: Into<PathBuf>
+        where S: Into<String>, P: Into<String>
     {
         VolumeMount {
             host: Some(HostVolume::Name(name.into())),
@@ -125,7 +126,7 @@ impl VolumeMount {
     /// An anonymous persistent volume which will remain associated with
     /// this service when it is recreated.
     pub fn anonymous<P>(container: P) -> VolumeMount
-        where P: Into<PathBuf>
+        where P: Into<String>
     {
         VolumeMount {
             host: None,
@@ -151,8 +152,7 @@ impl fmt::Display for VolumeMount {
             &None => {},
         }
 
-        let containerstr = try!(self.container.to_str().ok_or(fmt::Error));
-        try!(write!(f, "{}", containerstr));
+        try!(write!(f, "{}", &self.container));
 
         if self.permissions != Default::default() {
             try!(write!(f, ":{}", self.permissions))
@@ -171,7 +171,7 @@ impl FromStr for VolumeMount {
             1 => {
                 Ok(VolumeMount {
                     host: None,
-                    container: Path::new(items[0]).to_owned(),
+                    container: items[0].to_owned(),
                     permissions: Default::default(),
                     _phantom: PhantomData,
                 })
@@ -179,7 +179,7 @@ impl FromStr for VolumeMount {
             2 => {
                 Ok(VolumeMount {
                     host: Some(try!(FromStr::from_str(items[0]))),
-                    container: Path::new(items[1]).to_owned(),
+                    container: items[1].to_owned(),
                     permissions: Default::default(),
                     _phantom: PhantomData,
                 })
@@ -187,7 +187,7 @@ impl FromStr for VolumeMount {
             3 => {
                 Ok(VolumeMount {
                     host: Some(try!(FromStr::from_str(items[0]))),
-                    container: Path::new(items[1]).to_owned(),
+                    container: items[1].to_owned(),
                     permissions: try!(FromStr::from_str(items[2])),
                     _phantom: PhantomData,
                 })
