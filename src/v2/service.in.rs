@@ -234,7 +234,7 @@ pub struct Service {
     /// http://stackoverflow.com/q/39277157/12089
     #[doc(hidden)]
     #[serde(default, skip_serializing, skip_deserializing)]
-    pub _phantom: PhantomData<()>,
+    pub _hidden: (),
 }
 
 derive_standard_impls_for!(Service, {
@@ -284,7 +284,7 @@ derive_standard_impls_for!(Service, {
     tty,
     user,
     working_dir,
-    _phantom
+    _hidden
 });
 
 impl Service {

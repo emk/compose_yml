@@ -21,11 +21,11 @@ pub struct Extends {
     /// http://stackoverflow.com/q/39277157/12089
     #[doc(hidden)]
     #[serde(default, skip_serializing, skip_deserializing)]
-    pub _phantom: PhantomData<()>,
+    pub _hidden: (),
 }
 
 derive_standard_impls_for!(Extends, {
-    service, file, _phantom
+    service, file, _hidden
 });
 
 impl Extends {
@@ -39,7 +39,7 @@ impl Extends {
         Extends {
             service: value(service.into()),
             file: Default::default(),
-            _phantom: PhantomData,
+            _hidden: (),
         }
     }
 }

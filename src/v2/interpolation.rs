@@ -7,7 +7,6 @@ use std::collections::BTreeMap;
 use std::env;
 use std::error;
 use std::fmt::{self, Display};
-use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use std::result;
 use std::str::FromStr;
@@ -30,7 +29,7 @@ pub trait Environment {
 pub struct OsEnvironment {
     /// A placeholder to prevent this struct from being directly
     /// constructed.
-    _phantom: PhantomData<()>,
+    _hidden: (),
 }
 
 impl OsEnvironment {
@@ -611,7 +610,7 @@ impl InterpolateAll for u16 {}
 impl InterpolateAll for u32 {}
 impl InterpolateAll for bool {}
 impl InterpolateAll for String {}
-impl<T> InterpolateAll for PhantomData<T> {}
+impl InterpolateAll for () {}
 
 impl<T: InterpolateAll> InterpolateAll for Option<T> {
     fn interpolate_all(&mut self) -> Result<()> {

@@ -17,9 +17,9 @@ pub struct ExternalNetwork {
     /// http://stackoverflow.com/q/39277157/12089
     #[doc(hidden)]
     #[serde(default, skip_serializing, skip_deserializing)]
-    pub _phantom: PhantomData<()>,
+    pub _hidden: (),
 }
 
 derive_standard_impls_for!(ExternalNetwork, {
-    name, _phantom
+    name, _hidden
 });

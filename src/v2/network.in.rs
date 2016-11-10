@@ -33,11 +33,11 @@ pub struct Network {
     /// http://stackoverflow.com/q/39277157/12089
     #[doc(hidden)]
     #[serde(default, skip_serializing, skip_deserializing)]
-    pub _phantom: PhantomData<()>,
+    pub _hidden: (),
 }
 
 derive_standard_impls_for!(Network, {
-    driver, driver_opts, external, _phantom
+    driver, driver_opts, external, _hidden
 });
 
 #[test]

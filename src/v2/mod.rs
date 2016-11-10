@@ -12,7 +12,6 @@ use std::default::Default;
 use std::fs;
 use std::fmt;
 use std::io;
-use std::marker::PhantomData;
 use std::net::IpAddr;
 use std::path::{Path, PathBuf};
 use std::result;

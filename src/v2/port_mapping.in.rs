@@ -78,7 +78,7 @@ pub struct PortMapping {
     /// matching.  This needs to be be public because of
     /// http://stackoverflow.com/q/39277157/12089
     #[doc(hidden)]
-    pub _phantom: PhantomData<()>,
+    pub _hidden: (),
 }
 
 impl PortMapping {
@@ -103,7 +103,7 @@ impl PortMapping {
             host_address: Default::default(),
             host_ports: Some(host_ports.into()),
             container_ports: container_ports.into(),
-            _phantom: PhantomData,
+            _hidden: (),
         }
     }
 
@@ -125,7 +125,7 @@ impl PortMapping {
             host_address: Default::default(),
             host_ports: None,
             container_ports: container_ports.into(),
-            _phantom: PhantomData,
+            _hidden: (),
         }
     }
 }
@@ -164,7 +164,7 @@ impl FromStr for PortMapping {
                     host_address: None,
                     host_ports: None,
                     container_ports: try!(FromStr::from_str(fields[0])),
-                    _phantom: PhantomData,
+                    _hidden: (),
                 })
             }
             2 => {
@@ -172,7 +172,7 @@ impl FromStr for PortMapping {
                     host_address: None,
                     host_ports: Some(try!(FromStr::from_str(fields[1]))),
                     container_ports: try!(FromStr::from_str(fields[0])),
-                    _phantom: PhantomData,
+                    _hidden: (),
                 })
             }
             3 => {
@@ -184,7 +184,7 @@ impl FromStr for PortMapping {
                     host_address: Some(addr),
                     host_ports: Some(try!(FromStr::from_str(fields[1]))),
                     container_ports: try!(FromStr::from_str(fields[0])),
-                    _phantom: PhantomData,
+                    _hidden: (),
                 })
             }
             _ => {

@@ -85,7 +85,7 @@ pub struct VolumeMount {
     /// matching.  This needs to be be public because of
     /// http://stackoverflow.com/q/39277157/12089
     #[doc(hidden)]
-    pub _phantom: PhantomData<()>,
+    pub _hidden: (),
 }
 
 impl VolumeMount {
@@ -102,7 +102,7 @@ impl VolumeMount {
             host: Some(HostVolume::Path(host.into())),
             container: container.into(),
             permissions: Default::default(),
-            _phantom: PhantomData,
+            _hidden: (),
         }
     }
 
@@ -119,7 +119,7 @@ impl VolumeMount {
             host: Some(HostVolume::Name(name.into())),
             container: container.into(),
             permissions: Default::default(),
-            _phantom: PhantomData,
+            _hidden: (),
         }
     }
 
@@ -132,7 +132,7 @@ impl VolumeMount {
             host: None,
             container: container.into(),
             permissions: Default::default(),
-            _phantom: PhantomData,
+            _hidden: (),
         }
     }
 }
@@ -173,7 +173,7 @@ impl FromStr for VolumeMount {
                     host: None,
                     container: items[0].to_owned(),
                     permissions: Default::default(),
-                    _phantom: PhantomData,
+                    _hidden: (),
                 })
             }
             2 => {
@@ -181,7 +181,7 @@ impl FromStr for VolumeMount {
                     host: Some(try!(FromStr::from_str(items[0]))),
                     container: items[1].to_owned(),
                     permissions: Default::default(),
-                    _phantom: PhantomData,
+                    _hidden: (),
                 })
             }
             3 => {
@@ -189,7 +189,7 @@ impl FromStr for VolumeMount {
                     host: Some(try!(FromStr::from_str(items[0]))),
                     container: items[1].to_owned(),
                     permissions: try!(FromStr::from_str(items[2])),
-                    _phantom: PhantomData,
+                    _hidden: (),
                 })
             }
             _ => Err(Error::invalid_value("volume", s)),

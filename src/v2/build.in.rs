@@ -24,11 +24,11 @@ pub struct Build {
     /// http://stackoverflow.com/q/39277157/12089
     #[doc(hidden)]
     #[serde(default, skip_serializing, skip_deserializing)]
-    pub _phantom: PhantomData<()>,
+    pub _hidden: (),
 }
 
 derive_standard_impls_for!(Build, {
-    context, dockerfile, args, _phantom
+    context, dockerfile, args, _hidden
 });
 
 impl Build {
@@ -50,7 +50,7 @@ impl Build {
             context: value(ctx.into()),
             dockerfile: Default::default(),
             args: Default::default(),
-            _phantom: PhantomData,
+            _hidden: (),
         }
     }
 }

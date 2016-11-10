@@ -20,9 +20,9 @@ pub struct Logging {
     /// http://stackoverflow.com/q/39277157/12089
     #[doc(hidden)]
     #[serde(default, skip_serializing, skip_deserializing)]
-    pub _phantom: PhantomData<()>,
+    pub _hidden: (),
 }
 
 derive_standard_impls_for!(Logging, {
-    driver, options, _phantom
+    driver, options, _hidden
 });

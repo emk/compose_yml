@@ -27,7 +27,7 @@ pub struct VolumesFrom {
     /// matching.  This needs to be be public because of
     /// http://stackoverflow.com/q/39277157/12089
     #[doc(hidden)]
-    pub _phantom: PhantomData<()>,
+    pub _hidden: (),
 }
 
 impl VolumesFrom {
@@ -50,7 +50,7 @@ impl VolumesFrom {
         VolumesFrom {
             source: ServiceOrContainer::Service(service.into()),
             permissions: Default::default(),
-            _phantom: PhantomData,
+            _hidden: (),
         }
     }
 
@@ -67,7 +67,7 @@ impl VolumesFrom {
         VolumesFrom {
             source: ServiceOrContainer::Container(container.into()),
             permissions: Default::default(),
-            _phantom: PhantomData,
+            _hidden: (),
         }
     }
 }
@@ -118,7 +118,7 @@ impl FromStr for VolumesFrom {
         Ok(VolumesFrom {
             source: source,
             permissions: permissions,
-            _phantom: PhantomData,
+            _hidden: (),
         })
     }
 }

@@ -2,7 +2,7 @@
 
 use std::collections::BTreeMap;
 use std::collections::btree_map;
-use std::marker::{PhantomData, Sized};
+use std::marker::Sized;
 
 /// This trait is implemented by types that can be merged
 pub trait MergeOverride: Clone + Sized {
@@ -28,7 +28,7 @@ impl MergeOverride for u16 {}
 impl MergeOverride for u32 {}
 impl MergeOverride for bool {}
 impl MergeOverride for String {}
-impl<T> MergeOverride for PhantomData<T> {}
+impl MergeOverride for () {}
 
 #[test]
 #[allow(trivial_numeric_casts)]
