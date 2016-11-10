@@ -12,8 +12,11 @@ pub struct Volume {
 
     /// Key-value options to pass to the volume driver.
     ///
-    /// TODO MED: Allow non-string keys.
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    /// TODO LOW: We probably shouldn't allow the "list" variant here, but
+    /// we're lazy and we want the reset of the machinery provided by
+    /// deserialize_map_or_key_value_list.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
+            deserialize_with = "deserialize_map_or_key_value_list")]
     driver_opts: BTreeMap<String, RawOr<String>>,
 
     /// If this is true, then the volume was created outside of
