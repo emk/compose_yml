@@ -5,7 +5,7 @@ authors = ["Eric Kidd <git@randomhacks.net>"]
 build = "build.rs"
 
 description = "Parse, manipulate and serialize docker-compose.yml in a strongly-typed fashion"
-documentation = "http://docs.randomhacks.net/compose_yml/"
+documentation = "http://docs.rs/compose_yml"
 license = "CC0-1.0"
 readme = "README.md"
 repository = "https://github.com/emk/compose_yml"
