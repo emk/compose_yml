@@ -107,10 +107,10 @@ impl FromStr for File {
 #[cfg_attr(feature="clippy", allow(blacklisted_name))]
 fn file_can_be_converted_from_and_to_yaml() {
     let yaml = r#"---
+"version": "2"
 "services":
   "foo":
     "build": "."
-"version": "2"
 "volumes":
   "db":
     "external": true
@@ -125,10 +125,10 @@ fn file_can_be_converted_from_and_to_yaml() {
 #[test]
 fn file_can_only_load_from_version_2() {
     let yaml = r#"---
+"version": "3"
 "services":
   "foo":
     "build": "."
-"version": "3"
 "#;
     assert!(serde_yaml::from_str::<File>(&yaml).is_err());
 }

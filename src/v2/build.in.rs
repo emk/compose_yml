@@ -88,10 +88,10 @@ fn build_has_a_string_representation() {
 #[test]
 fn build_may_be_a_struct() {
     let yaml = r#"---
-"args":
-  "key": "value"
 "context": "."
 "dockerfile": "Dockerfile"
+"args":
+  "key": "value"
 "#;
     assert_roundtrip!(Build, yaml);
 

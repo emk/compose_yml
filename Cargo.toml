@@ -26,9 +26,7 @@ log = "0.3.6"
 regex = "0.1.73"
 serde = "0.8"
 serde_derive = { version = "0.8", optional = true }
-# See https://github.com/dtolnay/serde-yaml/issues/30 before upgrading to
-# serde_yaml 0.5.x.
-serde_yaml = "0.4.1"
+serde_yaml = "0.5.0"
 yaml-rust = "0.3.3"
 url = "1.2.0"
 void = "1.0.2"
