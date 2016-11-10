@@ -1,11 +1,9 @@
 # `compose_yml`: Support for working with `docker-compose.yml` files
 
-[![Latest version](https://img.shields.io/crates/v/compose_yml.svg)](https://crates.io/crates/compose_yml) [![License](https://img.shields.io/crates/l/compose_yml.svg)](https://creativecommons.org/publicdomain/zero/1.0/) [![Build Status](https://travis-ci.org/emk/compose_yml.svg?branch=master)](https://travis-ci.org/emk/compose_yml)
+[![Latest version](https://img.shields.io/crates/v/compose_yml.svg)](https://crates.io/crates/compose_yml) [![License](https://img.shields.io/crates/l/compose_yml.svg)](https://creativecommons.org/publicdomain/zero/1.0/) [![Build Status](https://travis-ci.org/emk/compose_yml.svg?branch=master)](https://travis-ci.org/emk/compose_yml) [![Build status](https://ci.appveyor.com/api/projects/status/ltvu7d7qb1iw7dh6/branch/master?svg=true)](https://ci.appveyor.com/project/emk/compose-yml/branch/master) [![Documentation](https://img.shields.io/badge/documentation-docs.rs-yellow.svg)](https://docs.rs/compose_yml/) [![Gitter](https://badges.gitter.im/faradayio/cage.svg)](https://gitter.im/faradayio/cage?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 **This is a work in progress!** Most of `services:` is supported, but I'm
 still refining the APIs as higher-level tools get build around this.
-
-[API Documention](http://docs.randomhacks.net/compose_yml/)
 
 ## Goals
 
