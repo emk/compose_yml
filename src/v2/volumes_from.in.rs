@@ -80,12 +80,12 @@ impl fmt::Display for VolumesFrom {
         // other places include the label.
         match &self.source {
             &ServiceOrContainer::Service(ref name) =>
-                try!(write!(f, "{}", name)),
+                write!(f, "{}", name)?,
             &ServiceOrContainer::Container(ref name) =>
-                try!(write!(f, "container:{}", name)),
+                write!(f, "container:{}", name)?,
         }
         if self.permissions != Default::default() {
-            try!(write!(f, ":{}", self.permissions))
+            write!(f, ":{}", self.permissions)?
         }
         Ok(())
     }
@@ -99,9 +99,9 @@ impl FromStr for VolumesFrom {
             static ref FROM: Regex =
                 Regex::new("^(container:)?([^:]+)(?::([^:]+))?$").unwrap();
         }
-        let caps = try!(FROM.captures(s).ok_or_else(|| {
+        let caps = FROM.captures(s).ok_or_else(|| {
             Error::invalid_value("volumes_from", s)
-        }));
+        })?;
 
         let name = caps.at(2).unwrap().to_owned();
         let source =
@@ -113,7 +113,7 @@ impl FromStr for VolumesFrom {
         let permissions =
             match caps.at(3) {
                 None => Default::default(),
-                Some(permstr) => try!(FromStr::from_str(permstr)),
+                Some(permstr) => FromStr::from_str(permstr)?,
             };
         Ok(VolumesFrom {
             source: source,

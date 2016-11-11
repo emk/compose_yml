@@ -37,13 +37,13 @@ impl FromStr for HostMapping {
             static ref HOST_ADDRESS: Regex =
                 Regex::new("^([^:]+):(.+)$").unwrap();
         }
-        let caps = try!(HOST_ADDRESS.captures(s).ok_or_else(|| {
+        let caps = HOST_ADDRESS.captures(s).ok_or_else(|| {
             Error::invalid_value("host mapping", s)
-        }));
+        })?;
         let addr: IpAddr =
-            try!(FromStr::from_str(caps.at(2).unwrap()).map_err(|_| {
+            FromStr::from_str(caps.at(2).unwrap()).map_err(|_| {
                 Error::invalid_value("IP address", s)
-            }));
+            })?;
         Ok(HostMapping::new(caps.at(1).unwrap(), &addr))
     }
 }

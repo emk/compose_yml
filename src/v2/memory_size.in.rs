@@ -66,9 +66,9 @@ impl FromStr for MemorySize {
             static ref MEM_SIZE: Regex =
                 Regex::new("^([0-9]+)([bkmg])?$").unwrap();
         }
-        let caps = try!(MEM_SIZE.captures(s).ok_or_else(|| {
+        let caps = MEM_SIZE.captures(s).ok_or_else(|| {
             Error::invalid_value("memory size", s)
-        }));
+        })?;
         let value: usize = caps.at(1).unwrap().parse().unwrap();
         match caps.at(2) {
             None | Some("b") => Ok(MemorySize::bytes(value)),

@@ -44,7 +44,7 @@ fn service_build_dir(service: &dc::Service) -> dc::Result<Option<PathBuf>>
 {
     if let Some(ref build) = service.build {
         let mut path = Path::new("src").to_owned();
-        path.push(try!(git_to_local(try!(build.context.value()))));
+        path.push(git_to_local(build.context.value()?)?);
         Ok(Some(path))
     } else {
         Ok(None)
@@ -57,11 +57,11 @@ fn update(file: &mut dc::File) -> dc::Result<()> {
     // we can modify the services.
     for (_name, service) in file.services.iter_mut() {
         // Insert standard env_file entries.
-        service.env_files.insert(0, try!(dc::escape("pods/common.env")));
-        service.env_files.insert(1, try!(dc::raw("pods/overrides/$ENV/common.env")));
+        service.env_files.insert(0, dc::escape("pods/common.env")?);
+        service.env_files.insert(1, dc::raw("pods/overrides/$ENV/common.env")?);
 
         // Figure out where we'll keep the local checkout, if any.
-        let build_dir = try!(service_build_dir(service));
+        let build_dir = service_build_dir(service)?;
 
         // If we have a local build directory, update the service to use it.
         if let Some(ref dir) = build_dir {
@@ -78,7 +78,7 @@ fn update(file: &mut dc::File) -> dc::Result<()> {
 
 /// Our real `main` function.  This is a standard wrapper pattern: we put
 /// all the real logic in a function that returns `Result` so that we can
-/// use `try!` to handle errors, and we reserve `main` just for error
+/// use `?` to handle errors, and we reserve `main` just for error
 /// handling.
 fn run() -> dc::Result<()> {
     // Parse arguments.
@@ -90,9 +90,9 @@ fn run() -> dc::Result<()> {
     let out_path = Path::new(&args[2]);
 
     // Transform our file.
-    let mut file = try!(dc::File::read_from_path(in_path));
-    try!(update(&mut file));
-    try!(file.write_to_path(out_path));
+    let mut file = dc::File::read_from_path(in_path)?;
+    update(&mut file)?;
+    file.write_to_path(out_path)?;
 
     Ok(())
 }

@@ -59,7 +59,7 @@ impl GitUrl {
                         Regex::new(r#"^(?:git@([^:]+):(.*))|(github\.com/.*)"#)
                             .unwrap();
                 }
-                let caps = try!(URL_PARSE.captures(&self.url).ok_or_else(&mkerr));
+                let caps = URL_PARSE.captures(&self.url).ok_or_else(&mkerr)?;
                 let new = if caps.at(1).is_some() {
                     format!("git://git@{}/{}",
                             caps.at(1).unwrap(),

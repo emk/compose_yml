@@ -38,9 +38,9 @@ impl FromStr for Ports {
             static ref PORTS: Regex =
                 Regex::new("^([0-9]+)(?:-([0-9]+))?$").unwrap();
         }
-        let caps = try!(PORTS.captures(s).ok_or_else(|| {
+        let caps = PORTS.captures(s).ok_or_else(|| {
             Error::invalid_value("ports", s)
-        }));
+        })?;
 
         // Convert a regex capture group to a string.  Only call if the
         // specified capture group is known to be valid.
@@ -51,9 +51,9 @@ impl FromStr for Ports {
         };
 
         if caps.at(2).is_none() {
-            Ok(Ports::Port(try!(port_from_str(1))))
+            Ok(Ports::Port(port_from_str(1)?))
         } else {
-            Ok(Ports::Range(try!(port_from_str(1)), try!(port_from_str(2))))
+            Ok(Ports::Range(port_from_str(1)?, port_from_str(2)?))
         }
     }
 }
@@ -140,10 +140,10 @@ impl fmt::Display for PortMapping {
         }
 
         if let Some(ref addr) = self.host_address {
-            try!(write!(f, "{}:", addr));
+            write!(f, "{}:", addr)?;
         }
         if let Some(ports) = self.host_ports {
-            try!(write!(f, "{}:", ports));
+            write!(f, "{}:", ports)?;
         }
         write!(f, "{}", self.container_ports)
     }
@@ -163,27 +163,27 @@ impl FromStr for PortMapping {
                 Ok(PortMapping {
                     host_address: None,
                     host_ports: None,
-                    container_ports: try!(FromStr::from_str(fields[0])),
+                    container_ports: FromStr::from_str(fields[0])?,
                     _hidden: (),
                 })
             }
             2 => {
                 Ok(PortMapping {
                     host_address: None,
-                    host_ports: Some(try!(FromStr::from_str(fields[1]))),
-                    container_ports: try!(FromStr::from_str(fields[0])),
+                    host_ports: Some(FromStr::from_str(fields[1])?),
+                    container_ports: FromStr::from_str(fields[0])?,
                     _hidden: (),
                 })
             }
             3 => {
                 let addr: IpAddr =
-                    try!(FromStr::from_str(fields[2]).map_err(|_| {
+                    FromStr::from_str(fields[2]).map_err(|_| {
                         Error::invalid_value("IP address", s)
-                    }));
+                    })?;
                 Ok(PortMapping {
                     host_address: Some(addr),
-                    host_ports: Some(try!(FromStr::from_str(fields[1]))),
-                    container_ports: try!(FromStr::from_str(fields[0])),
+                    host_ports: Some(FromStr::from_str(fields[1])?),
+                    container_ports: FromStr::from_str(fields[0])?,
                     _hidden: (),
                 })
             }

@@ -14,9 +14,9 @@ pub struct RegistryHost {
 
 impl fmt::Display for RegistryHost {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "{}", &self.host));
+        write!(f, "{}", &self.host)?;
         if let Some(port) = self.port {
-            try!(write!(f, ":{}", port));
+            write!(f, ":{}", port)?;
         }
         Ok(())
     }
@@ -43,7 +43,7 @@ pub struct Image {
 impl Image {
     /// Build an image from an image string.
     pub fn new<S: AsRef<str>>(s: S) -> Result<Image> {
-        Ok(try!(FromStr::from_str(s.as_ref())))
+        Ok(FromStr::from_str(s.as_ref())?)
     }
 
     /// Return the `Image` with the tag removed.
@@ -58,14 +58,14 @@ impl Image {
 impl fmt::Display for Image {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if let Some(ref registry_host) = self.registry_host {
-            try!(write!(f, "{}/", registry_host));
+            write!(f, "{}/", registry_host)?;
         }
         if let Some(ref user_name) = self.user_name {
-            try!(write!(f, "{}/", user_name));
+            write!(f, "{}/", user_name)?;
         }
-        try!(write!(f, "{}", &self.name));
+        write!(f, "{}", &self.name)?;
         if let Some(ref tag) = self.tag {
-            try!(write!(f, ":{}", tag));
+            write!(f, ":{}", tag)?;
         }
         Ok(())
     }
@@ -79,9 +79,9 @@ impl FromStr for Image {
             static ref IMAGE: Regex =
                 Regex::new(r#"^(?:([^/:.]+\.[^/:]+)(?::([0-9]+))?/)?(?:([^/:.]+)/)?([^/:]+)(?::([^/:]+))?$"#).unwrap();
         }
-        let caps = try!(IMAGE.captures(s).ok_or_else(|| {
+        let caps = IMAGE.captures(s).ok_or_else(|| {
             Error::invalid_value("image", s)
-        }));
+        })?;
         // This could use a good refactoring.
         let registry_host =
             if caps.at(1).is_some() {
@@ -89,9 +89,9 @@ impl FromStr for Image {
                 // which might fail?
                 let port =
                     if caps.at(2).is_some() {
-                        Some(try!(FromStr::from_str(caps.at(2).unwrap()).map_err(|_| {
+                        Some(FromStr::from_str(caps.at(2).unwrap()).map_err(|_| {
                             Error::invalid_value("image", s)
-                        })))
+                        })?)
                     } else {
                         None
                     };

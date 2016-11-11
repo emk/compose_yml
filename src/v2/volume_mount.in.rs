@@ -20,7 +20,7 @@ impl fmt::Display for HostVolume {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             &HostVolume::Path(ref path) => {
-                let p = try!(path.to_str().ok_or(fmt::Error));
+                let p = path.to_str().ok_or(fmt::Error)?;
                 if path.is_absolute() {
                     write!(f, "{}", p)
                 } else if p.starts_with("./") || p.starts_with("../") {
@@ -31,7 +31,7 @@ impl fmt::Display for HostVolume {
                 }
             }
             &HostVolume::UserRelativePath(ref path) => {
-                let p = try!(path.to_str().ok_or(fmt::Error));
+                let p = path.to_str().ok_or(fmt::Error)?;
                 if path.is_absolute() {
                     return Err(fmt::Error);
                 }
@@ -52,9 +52,9 @@ impl FromStr for HostVolume {
             static ref HOST_VOLUME: Regex =
                 Regex::new(r#"^(\.{0,2}/.*)|~/(.+)|([^./~].*)$"#).unwrap();
         }
-        let caps = try!(HOST_VOLUME.captures(s).ok_or_else(|| {
+        let caps = HOST_VOLUME.captures(s).ok_or_else(|| {
             Error::invalid_value("host volume", s)
-        }));
+        })?;
         if let Some(path) = caps.at(1) {
             Ok(HostVolume::Path(Path::new(path).to_owned()))
         } else if let Some(path) = caps.at(2) {
@@ -148,14 +148,14 @@ impl fmt::Display for VolumeMount {
         }
 
         match &self.host {
-            &Some(ref host) => try!(write!(f, "{}:", host)),
+            &Some(ref host) => write!(f, "{}:", host)?,
             &None => {},
         }
 
-        try!(write!(f, "{}", &self.container));
+        write!(f, "{}", &self.container)?;
 
         if self.permissions != Default::default() {
-            try!(write!(f, ":{}", self.permissions))
+            write!(f, ":{}", self.permissions)?
         }
 
         Ok(())
@@ -178,7 +178,7 @@ impl FromStr for VolumeMount {
             }
             2 => {
                 Ok(VolumeMount {
-                    host: Some(try!(FromStr::from_str(items[0]))),
+                    host: Some(FromStr::from_str(items[0])?),
                     container: items[1].to_owned(),
                     permissions: Default::default(),
                     _hidden: (),
@@ -186,9 +186,9 @@ impl FromStr for VolumeMount {
             }
             3 => {
                 Ok(VolumeMount {
-                    host: Some(try!(FromStr::from_str(items[0]))),
+                    host: Some(FromStr::from_str(items[0])?),
                     container: items[1].to_owned(),
-                    permissions: try!(FromStr::from_str(items[2])),
+                    permissions: FromStr::from_str(items[2])?,
                     _hidden: (),
                 })
             }

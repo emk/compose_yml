@@ -107,15 +107,15 @@ macro_rules! mode_enum {
                 match s {
                     $( $tag0 => Ok($name::$item0), )*
                     _ => {
-                        let caps = try!(COMPOUND.captures(s).ok_or_else(|| {
+                        let caps = COMPOUND.captures(s).ok_or_else(|| {
                             Error::invalid_value(stringify!($name), s)
-                        }));
+                        })?;
                         let valstr = caps.at(2).unwrap();
                         match caps.at(1).unwrap() {
                             $( $tag1 => {
-                               let value = try!(FromStr::from_str(valstr).map_err(|_| {
+                               let value = FromStr::from_str(valstr).map_err(|_| {
                                    Error::invalid_value(stringify!($name), valstr)
-                               }));
+                               })?;
                                Ok($name::$item1(value))
                             })*
                             _ => Err(Error::invalid_value(stringify!($name), s))
@@ -242,14 +242,14 @@ impl FromStr for RestartMode {
             "always" => Ok(RestartMode::Always),
             "unless-stopped" => Ok(RestartMode::UnlessStopped),
             _ => {
-                let caps = try!(COMPOUND.captures(s)
-                    .ok_or_else(|| Error::invalid_value("restart-mode", s)));
+                let caps = COMPOUND.captures(s)
+                    .ok_or_else(|| Error::invalid_value("restart-mode", s))?;
                 let valstr = caps.at(2).unwrap();
                 match caps.at(1).unwrap() {
                     "on-failure" => {
-                        let value = try!(FromStr::from_str(valstr).map_err(|_| {
+                        let value = FromStr::from_str(valstr).map_err(|_| {
                                 Error::invalid_value("restart mode", valstr)
-                            }));
+                            })?;
                         Ok(RestartMode::OnFailure(Some(value)))
                     }
                     _ => Err(Error::invalid_value("restart mode", s)),

@@ -21,7 +21,7 @@ impl EnvFile {
         let mut vars: BTreeMap<String, String> = BTreeMap::new();
         let reader = io::BufReader::new(input);
         for line_result in reader.lines() {
-            let line = try!(line_result.chain_err(|| "I/O error"));
+            let line = line_result.chain_err(|| "I/O error")?;
 
             lazy_static! {
                 static ref BLANK: Regex =
@@ -35,8 +35,8 @@ impl EnvFile {
                 continue;
             }
 
-            let caps = try!(VAR.captures(&line)
-                .ok_or_else(|| ErrorKind::ParseEnv(line.clone())));
+            let caps = VAR.captures(&line)
+                .ok_or_else(|| ErrorKind::ParseEnv(line.clone()))?;
             vars.insert(caps.at(1).unwrap().to_owned(),
                         caps.at(2).unwrap().to_owned());
         }
@@ -46,7 +46,7 @@ impl EnvFile {
     /// Load an `EnvFile` from the disk.
     pub fn load(path: &Path) -> Result<EnvFile> {
         let mkerr = || ErrorKind::ReadFile(path.to_owned());
-        let f = try!(fs::File::open(path).chain_err(&mkerr));
+        let f = fs::File::open(path).chain_err(&mkerr)?;
         EnvFile::read(io::BufReader::new(f)).chain_err(&mkerr)
     }
 
@@ -55,7 +55,7 @@ impl EnvFile {
     pub fn to_environment(&self) -> Result<BTreeMap<String, RawOr<String>>> {
         let mut env = BTreeMap::new();
         for (k, v) in &self.vars {
-            env.insert(k.to_owned(), try!(escape(v)));
+            env.insert(k.to_owned(), escape(v)?);
         }
         Ok(env)
     }

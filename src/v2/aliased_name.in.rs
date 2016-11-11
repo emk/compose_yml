@@ -22,7 +22,7 @@ impl AliasedName {
             name: name.to_owned(),
             alias: alias.map(|v| v.to_owned()),
         };
-        try!(result.validate());
+        result.validate()?;
         Ok(result)
     }
 
@@ -58,9 +58,9 @@ impl FromStr for AliasedName {
             static ref ALIASED_NAME: Regex =
                 Regex::new("^([^:]+)(?::([^:]+))?$").unwrap();
         }
-        let caps = try!(ALIASED_NAME.captures(s).ok_or_else(|| {
+        let caps = ALIASED_NAME.captures(s).ok_or_else(|| {
             Error::invalid_value("aliased name", s)
-        }));
+        })?;
         Ok(AliasedName {
             name: caps.at(1).unwrap().to_owned(),
             alias: caps.at(2).map(|v| v.to_owned()),

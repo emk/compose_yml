@@ -418,11 +418,11 @@ pub fn raw<T, S>(s: S) -> Result<RawOr<T>>
           S: Into<String>
 {
     let raw: String = s.into();
-    try!(validate(&raw));
+    validate(&raw)?;
     match unescape_str(&raw) {
         // We can unescape it, so either parse it or fail.
         Ok(unescaped) => {
-            let parsed: T = try!(InterpolatableValue::iv_from_str(&unescaped));
+            let parsed: T = InterpolatableValue::iv_from_str(&unescaped)?;
             Ok(RawOr(RawOrValue::Value(parsed)))
         }
         // It's valid but we can't unescape it, which means that it contains
@@ -437,7 +437,7 @@ pub fn escape<T, S>(s: S) -> Result<RawOr<T>>
     where T: InterpolatableValue,
           S: AsRef<str>
 {
-    let value: T = try!(InterpolatableValue::iv_from_str(s.as_ref()));
+    let value: T = InterpolatableValue::iv_from_str(s.as_ref())?;
     Ok(RawOr(RawOrValue::Value(value)))
 }
 
@@ -508,8 +508,8 @@ impl<T> RawOr<T>
             Ok(val)
         } else {
             let new_val = if let RawOrValue::Raw(ref raw) = *inner {
-                let interpolated = try!(interpolate_env(raw, env));
-                try!(InterpolatableValue::iv_from_str(&interpolated))
+                let interpolated = interpolate_env(raw, env)?;
+                InterpolatableValue::iv_from_str(&interpolated)?
             } else {
                 unreachable!()
             };
@@ -591,7 +591,7 @@ impl<T> Deserialize for RawOr<T>
     fn deserialize<D>(deserializer: &mut D) -> result::Result<Self, D::Error>
         where D: Deserializer
     {
-        let string = try!(String::deserialize(deserializer));
+        let string = String::deserialize(deserializer)?;
         Self::from_str(&string).map_err(|err| de::Error::custom(format!("{}", err)))
     }
 }
@@ -615,7 +615,7 @@ impl InterpolateAll for () {}
 impl<T: InterpolateAll> InterpolateAll for Option<T> {
     fn interpolate_all(&mut self) -> Result<()> {
         if let Some(ref mut v) = *self {
-            try!(v.interpolate_all());
+            v.interpolate_all()?;
         }
         Ok(())
     }
@@ -624,7 +624,7 @@ impl<T: InterpolateAll> InterpolateAll for Option<T> {
 impl<T: InterpolateAll> InterpolateAll for Vec<T> {
     fn interpolate_all(&mut self) -> Result<()> {
         for v in self.iter_mut() {
-            try!(v.interpolate_all());
+            v.interpolate_all()?;
         }
         Ok(())
     }
@@ -633,7 +633,7 @@ impl<T: InterpolateAll> InterpolateAll for Vec<T> {
 impl<K: Ord + Clone, T: InterpolateAll> InterpolateAll for BTreeMap<K, T> {
     fn interpolate_all(&mut self) -> Result<()> {
         for (_k, v) in self.iter_mut() {
-            try!(v.interpolate_all());
+            v.interpolate_all()?;
         }
         Ok(())
     }
@@ -641,7 +641,7 @@ impl<K: Ord + Clone, T: InterpolateAll> InterpolateAll for BTreeMap<K, T> {
 
 impl<T: InterpolatableValue> InterpolateAll for RawOr<T> {
     fn interpolate_all(&mut self) -> Result<()> {
-        try!(self.interpolate());
+        self.interpolate()?;
         Ok(())
     }
 }
@@ -654,7 +654,7 @@ macro_rules! derive_interpolate_all_for {
         impl $crate::v2::interpolation::InterpolateAll for $ty {
             fn interpolate_all(&mut self) -> Result<()>
             {
-                $( try!(self.$field.interpolate_all()); )+
+                $( self.$field.interpolate_all()?; )+
                 Ok(())
             }
         }

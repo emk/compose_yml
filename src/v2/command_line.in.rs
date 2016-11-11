@@ -42,9 +42,9 @@ impl Deserialize for CommandLine {
             fn visit_str<E>(&mut self, value: &str) -> result::Result<CommandLine, E>
                 where E: de::Error
             {
-                Ok(CommandLine::ShellCode(try!(raw(value).map_err(|err| {
+                Ok(CommandLine::ShellCode(raw(value).map_err(|err| {
                     E::custom(format!("{}", err))
-                }))))
+                })?))
             }
 
             // The deserializer found a sequence.
@@ -53,12 +53,12 @@ impl Deserialize for CommandLine {
                 where V: SeqVisitor
             {
                 let mut args: Vec<RawOr<String>> = vec!();
-                while let Some(arg) = try!(visitor.visit::<String>()) {
-                    args.push(try!(raw(arg).map_err(|err| {
+                while let Some(arg) = visitor.visit::<String>()? {
+                    args.push(raw(arg).map_err(|err| {
                         <V::Error as serde::Error>::custom(format!("{}", err))
-                    })));
+                    })?);
                 }
-                try!(visitor.end());
+                visitor.end()?;
                 Ok(CommandLine::Parsed(args))
             }
         }

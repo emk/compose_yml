@@ -291,8 +291,8 @@ impl Service {
     pub fn inline_all(&mut self, base: &Path) -> Result<()> {
         let mut new_env = BTreeMap::new();
         for rel_path in &self.env_files {
-            let env_file = try!(EnvFile::load(&base.join(&try!(rel_path.value()))));
-            new_env.append(&mut try!(env_file.to_environment()));
+            let env_file = EnvFile::load(&base.join(&rel_path.value()?))?;
+            new_env.append(&mut env_file.to_environment()?);
         }
         new_env.append(&mut self.environment.clone());
         self.environment = new_env;

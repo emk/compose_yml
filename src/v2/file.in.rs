@@ -35,14 +35,14 @@ impl File {
     pub fn read<R>(r: R) -> Result<Self>
         where R: io::Read
     {
-        Ok(try!(serde_yaml::from_reader(r)))
+        Ok(serde_yaml::from_reader(r)?)
     }
 
     /// Write a file to an output stream as YAML.
     pub fn write<W>(&self, w: &mut W) -> Result<()>
         where W: io::Write
     {
-        Ok(try!(serde_yaml::to_writer(w, self)))
+        Ok(serde_yaml::to_writer(w, self)?)
     }
 
     /// Read a file from the specified path.
@@ -51,7 +51,7 @@ impl File {
     {
         let path = path.as_ref();
         let mkerr = || ErrorKind::ReadFile(path.to_owned());
-        let f = try!(fs::File::open(path).chain_err(&mkerr));
+        let f = fs::File::open(path).chain_err(&mkerr)?;
         Self::read(io::BufReader::new(f)).chain_err(&mkerr)
     }
 
@@ -61,7 +61,7 @@ impl File {
     {
         let path = path.as_ref();
         let mkerr = || ErrorKind::WriteFile(path.to_owned());
-        let f = try!(fs::File::create(path).chain_err(&mkerr));
+        let f = fs::File::create(path).chain_err(&mkerr)?;
         self.write(&mut io::BufWriter::new(f)).chain_err(&mkerr)
     }
 
@@ -69,7 +69,7 @@ impl File {
     /// paths relative to `base`.
     pub fn inline_all(&mut self, base: &Path) -> Result<()> {
         for service in self.services.values_mut() {
-            try!(service.inline_all(base));
+            service.inline_all(base)?;
         }
         Ok(())
     }
@@ -81,7 +81,7 @@ impl File {
         // We need to interpolate first, in case there are environment
         // variables being used to construct the paths to `env_files`
         // entries.
-        try!(self.interpolate_all());
+        self.interpolate_all()?;
         self.inline_all(base)
     }
 }

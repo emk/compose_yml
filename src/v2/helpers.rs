@@ -119,20 +119,20 @@ pub fn deserialize_map_or_key_value_list<D>
             where V: MapVisitor
         {
             let mut map: BTreeMap<String, RawOr<String>> = BTreeMap::new();
-            while let Some(key) = try!(visitor.visit_key::<String>()) {
+            while let Some(key) = visitor.visit_key::<String>()? {
                 if map.contains_key(&key) {
                     let msg = format!("duplicate map key: {}", &key);
                     return Err(<V::Error as de::Error>::custom(msg));
                 }
                 let ConvertToString(val) =
-                    try!(visitor.visit_value::<ConvertToString>());
-                let raw_or_value = try!(raw(val)
+                    visitor.visit_value::<ConvertToString>()?;
+                let raw_or_value = raw(val)
                     .map_err(|e| {
                         <V::Error as de::Error>::custom(format!("{}", e))
-                    }));
+                    })?;
                 map.insert(key, raw_or_value);
             }
-            try!(visitor.end());
+            visitor.end()?;
             Ok(map)
         }
 
@@ -147,22 +147,22 @@ pub fn deserialize_map_or_key_value_list<D>
             }
 
             let mut map: BTreeMap<String, RawOr<String>> = BTreeMap::new();
-            while let Some(key_value) = try!(visitor.visit::<String>()) {
-                let caps = try!(KEY_VALUE.captures(&key_value).ok_or_else(|| {
+            while let Some(key_value) = visitor.visit::<String>()? {
+                let caps = KEY_VALUE.captures(&key_value).ok_or_else(|| {
                     let msg = format!("expected KEY=value, got: <{}>", &key_value);
                     <V::Error as de::Error>::custom(msg)
-                }));
+                })?;
                 let key = caps.at(1).unwrap();
                 let value = caps.at(2).unwrap();
                 if map.contains_key(key) {
                     let msg = format!("duplicate map key: {}", key);
                     return Err(<V::Error as de::Error>::custom(msg));
                 }
-                let raw_or_value = try!(raw(value.to_owned())
-                    .map_err(|e| <V::Error as de::Error>::custom(format!("{}", e))));
+                let raw_or_value = raw(value.to_owned())
+                    .map_err(|e| <V::Error as de::Error>::custom(format!("{}", e)))?;
                 map.insert(key.to_owned(), raw_or_value);
             }
-            try!(visitor.end());
+            visitor.end()?;
             Ok(map)
         }
     }
@@ -197,7 +197,7 @@ pub fn deserialize_map_or_default_list<T, D>
         {
             let mut map: Self::Value = BTreeMap::new();
             // TODO LOW: Fail with error if values are interpolated.
-            while let Some(key) = try!(visitor.visit::<String>()) {
+            while let Some(key) = visitor.visit::<String>()? {
                 map.insert(key, Default::default());
             }
             Ok(map)
@@ -226,7 +226,7 @@ pub fn deserialize_item_or_list<T, D>(deserializer: &mut D)
         fn visit_str<E>(&mut self, value: &str) -> Result<Self::Value, E>
             where E: de::Error
         {
-            let v = try!(raw(value).map_err(|err| E::custom(format!("{}", err))));
+            let v = raw(value).map_err(|err| E::custom(format!("{}", err)))?;
             Ok(vec![v])
         }
 
@@ -235,13 +235,13 @@ pub fn deserialize_item_or_list<T, D>(deserializer: &mut D)
             where V: SeqVisitor
         {
             let mut items: Vec<RawOr<T>> = vec![];
-            while let Some(item) = try!(visitor.visit::<String>()) {
-                let v = try!(raw(item).map_err(|err| {
+            while let Some(item) = visitor.visit::<String>()? {
+                let v = raw(item).map_err(|err| {
                     <V::Error as de::Error>::custom(format!("{}", err))
-                }));
+                })?;
                 items.push(v);
             }
-            try!(visitor.end());
+            visitor.end()?;
             Ok(items)
         }
     }
@@ -256,7 +256,7 @@ pub fn deserialize_map_struct_or_null<T, D>(deserializer: &mut D)
           D: Deserializer
 {
     let with_nulls: BTreeMap<String, Option<T>> =
-        try!(Deserialize::deserialize(deserializer));
+        Deserialize::deserialize(deserializer)?;
     let mut result = BTreeMap::new();
     for (k,v) in with_nulls {
         result.insert(k, v.unwrap_or_default());
@@ -268,7 +268,7 @@ pub fn deserialize_map_struct_or_null<T, D>(deserializer: &mut D)
 pub fn check_version<D>(deserializer: &mut D) -> Result<String, D::Error>
     where D: Deserializer
 {
-    let version = try!(String::deserialize(deserializer));
+    let version = String::deserialize(deserializer)?;
     if &version != "2" {
         let msg = format!("Can only deserialize docker-compose.yml version 2, found \
                            {}",

@@ -26,13 +26,13 @@ impl Default for DevicePermissions {
 impl fmt::Display for DevicePermissions {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.read {
-            try!(write!(f, "r"))
+            write!(f, "r")?
         }
         if self.write {
-            try!(write!(f, "w"))
+            write!(f, "w")?
         }
         if self.mknod {
-            try!(write!(f, "m"))
+            write!(f, "m")?
         }
         Ok(())
     }
@@ -46,9 +46,9 @@ impl FromStr for DevicePermissions {
             static ref PERMS: Regex =
                 Regex::new("^(r)?(w)?(m)?").unwrap();
         }
-        let caps = try!(PERMS.captures(s).ok_or_else(|| {
+        let caps = PERMS.captures(s).ok_or_else(|| {
             Error::invalid_value("restart-mode", s)
-        }));
+        })?;
         Ok(DevicePermissions {
             read: caps.at(1).is_some(),
             write: caps.at(2).is_some(),

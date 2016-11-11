@@ -7,8 +7,8 @@ use compose_yml::v2 as dc;
 use std::io::{self, Write};
 
 fn normalize() -> dc::Result<()> {
-    let file = try!(dc::File::read(io::stdin()));
-    try!(file.write(&mut io::stdout()));
+    let file = dc::File::read(io::stdin())?;
+    file.write(&mut io::stdout())?;
     Ok(())
 }
 
