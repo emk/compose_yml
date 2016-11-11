@@ -124,10 +124,8 @@ pub fn deserialize_map_or_key_value_list<D>
                     let msg = format!("duplicate map key: {}", &key);
                     return Err(<V::Error as de::Error>::custom(msg));
                 }
-                let ConvertToString(val) =
-                    visitor.visit_value::<ConvertToString>()?;
-                let raw_or_value = raw(val)
-                    .map_err(|e| {
+                let ConvertToString(val) = visitor.visit_value::<ConvertToString>()?;
+                let raw_or_value = raw(val).map_err(|e| {
                         <V::Error as de::Error>::custom(format!("{}", e))
                     })?;
                 map.insert(key, raw_or_value);
@@ -148,18 +146,20 @@ pub fn deserialize_map_or_key_value_list<D>
 
             let mut map: BTreeMap<String, RawOr<String>> = BTreeMap::new();
             while let Some(key_value) = visitor.visit::<String>()? {
-                let caps = KEY_VALUE.captures(&key_value).ok_or_else(|| {
-                    let msg = format!("expected KEY=value, got: <{}>", &key_value);
-                    <V::Error as de::Error>::custom(msg)
-                })?;
+                let caps = KEY_VALUE.captures(&key_value)
+                    .ok_or_else(|| {
+                        let msg = format!("expected KEY=value, got: <{}>", &key_value);
+                        <V::Error as de::Error>::custom(msg)
+                    })?;
                 let key = caps.at(1).unwrap();
                 let value = caps.at(2).unwrap();
                 if map.contains_key(key) {
                     let msg = format!("duplicate map key: {}", key);
                     return Err(<V::Error as de::Error>::custom(msg));
                 }
-                let raw_or_value = raw(value.to_owned())
-                    .map_err(|e| <V::Error as de::Error>::custom(format!("{}", e)))?;
+                let raw_or_value = raw(value.to_owned()).map_err(|e| {
+                        <V::Error as de::Error>::custom(format!("{}", e))
+                    })?;
                 map.insert(key.to_owned(), raw_or_value);
             }
             visitor.end()?;
@@ -237,8 +237,8 @@ pub fn deserialize_item_or_list<T, D>(deserializer: &mut D)
             let mut items: Vec<RawOr<T>> = vec![];
             while let Some(item) = visitor.visit::<String>()? {
                 let v = raw(item).map_err(|err| {
-                    <V::Error as de::Error>::custom(format!("{}", err))
-                })?;
+                        <V::Error as de::Error>::custom(format!("{}", err))
+                    })?;
                 items.push(v);
             }
             visitor.end()?;
@@ -251,14 +251,14 @@ pub fn deserialize_item_or_list<T, D>(deserializer: &mut D)
 
 /// Deserialize either list or a single bare string as a list.
 pub fn deserialize_map_struct_or_null<T, D>(deserializer: &mut D)
-                                           -> Result<BTreeMap<String, T>, D::Error>
+                                            -> Result<BTreeMap<String, T>, D::Error>
     where T: Deserialize + Default,
           D: Deserializer
 {
     let with_nulls: BTreeMap<String, Option<T>> =
         Deserialize::deserialize(deserializer)?;
     let mut result = BTreeMap::new();
-    for (k,v) in with_nulls {
+    for (k, v) in with_nulls {
         result.insert(k, v.unwrap_or_default());
     }
     Ok(result)

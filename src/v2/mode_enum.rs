@@ -247,9 +247,10 @@ impl FromStr for RestartMode {
                 let valstr = caps.at(2).unwrap();
                 match caps.at(1).unwrap() {
                     "on-failure" => {
-                        let value = FromStr::from_str(valstr).map_err(|_| {
-                                Error::invalid_value("restart mode", valstr)
-                            })?;
+                        let value =
+                            FromStr::from_str(valstr).map_err(|_| {
+                                    Error::invalid_value("restart mode", valstr)
+                                })?;
                         Ok(RestartMode::OnFailure(Some(value)))
                     }
                     _ => Err(Error::invalid_value("restart mode", s)),
