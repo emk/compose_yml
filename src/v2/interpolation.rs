@@ -71,28 +71,28 @@ fn interpolate_helper(input: &str, mode: Mode, env: &Environment) -> Result<Stri
 # ...but what follows it?
 (?:
    # A variable like $FOO
-   ([A-Za-z_][A-Za-z0-9_]+)
+   (?P<var1>[A-Za-z_][A-Za-z0-9_]+)
    |
-   # A variable like ${FOO}
-   \{([A-Za-z_][A-Za-z0-9_]+)\}
+   # A variable like ${FOO}, ${FOO-default} or ${FOO:-default}.
+   \{(?P<var2>[A-Za-z_][A-Za-z0-9_]+) (?:(?P<colon>:)?-(?P<default>.*))? \}
    |
    # An escaped dollar sign?
-   (\$)
+   (?P<dollar>\$)
    |
    # Something else?  In this case, we want to fail.
-   (.|$)
+   (?P<unknown>.|$)
 )
 "#).unwrap();
     }
     let mut err = None;
     let result = VAR.replace_all(input, |caps: &Captures| {
-        if caps.at(4).is_some() {
+        if caps.name("unknown").is_some() {
             // Our "fallback" group matched, which means that no valid
             // group matched.  Mark as invalid and return an empty
             // replacement.
             err = Some(ErrorKind::InterpolateInvalidSyntax(input.to_owned()));
             "".to_owned()
-        } else if caps.at(3).is_some() {
+        } else if caps.name("dollar").is_some() {
             // If we have `$$`, replace it with a single `$`.
             "$".to_owned()
         } else if mode == Mode::Unescape {
@@ -101,11 +101,20 @@ fn interpolate_helper(input: &str, mode: Mode, env: &Environment) -> Result<Stri
             "".to_owned()
         } else {
             // Handle actual interpolations.
-            let var = caps.at(1).or_else(|| caps.at(2)).unwrap();
-            match env.var(var) {
+            let var = caps.name("var1").or_else(|| caps.name("var2")).unwrap();
+            match (env.var(var), caps.name("colon"), caps.name("default")) {
+                // We're just validating syntax, not interpolating.
                 _ if mode == Mode::Validate => "".to_owned(),
-                Ok(val) => val,
-                Err(_) => {
+                // `${FOO:-default}` with a set-but-empty environment variable.
+                (Ok(ref val), Some(_), Some(default)) if val == "" => {
+                    default.to_owned()
+                }
+                // A set environment variable.
+                (Ok(val), _, _) => val,
+                // An unset environment with a default value provided.
+                (Err(_), _, Some(default)) => default.to_owned(),
+                // An unset environment variable with no default provided.
+                (Err(_), _, _) => {
                     err =
                         Some(ErrorKind::InterpolateUndefinedVariable(var.to_owned()));
                     "".to_owned()
@@ -128,6 +137,8 @@ fn interpolate_env(input: &str, env: &Environment) -> Result<String> {
 #[test]
 fn interpolate_env_interpolates_env_vars() {
     env::set_var("FOO", "foo");
+    env::remove_var("BAR");
+    env::set_var("EMPTY", "");
     let env = OsEnvironment::new();
 
     assert_eq!("foo", interpolate_env("$FOO", &env).unwrap());
@@ -136,6 +147,12 @@ fn interpolate_env_interpolates_env_vars() {
     assert_eq!("plain", interpolate_env("plain", &env).unwrap());
     assert_eq!("$escaped", interpolate_env("$$escaped", &env).unwrap());
     assert_eq!("${escaped}", interpolate_env("$${escaped}", &env).unwrap());
+
+    // Defaulting.
+    assert_eq!("bar", interpolate_env("${BAR-bar}", &env).unwrap());
+    assert_eq!("bar", interpolate_env("${BAR:-bar}", &env).unwrap());
+    assert_eq!("", interpolate_env("${EMPTY-bar}", &env).unwrap());
+    assert_eq!("bar", interpolate_env("${EMPTY:-bar}", &env).unwrap());
 }
 
 #[test]
