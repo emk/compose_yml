@@ -7,7 +7,6 @@
 #[serde(deny_unknown_fields)]
 pub struct File {
     /// The version of the `docker-compose.yml` file format.  Must be 2.
-    #[serde(deserialize_with = "check_version")]
     pub version: String,
 
     /// The individual services which make up this app.
@@ -110,16 +109,16 @@ impl Default for File {
 }
 
 impl FromStr for File {
-    type Err = serde_yaml::Error;
+    type Err = Error;
 
-    fn from_str(s: &str) -> result::Result<File, Self::Err> {
-        serde_yaml::from_str(&s)
+    fn from_str(s: &str) -> Result<File> {
+        Self::read(io::Cursor::new(s))
     }
 }
 
 #[test]
 #[cfg_attr(feature="clippy", allow(blacklisted_name))]
-fn file_can_be_converted_from_and_to_yaml() {
+fn file_can_be_converted_from_and_to_yaml_version_2() {
     let yaml = r#"---
 "version": "2"
 "services":
@@ -131,9 +130,23 @@ fn file_can_be_converted_from_and_to_yaml() {
 "#;
     assert_roundtrip!(File, yaml);
 
-    let file: File = serde_yaml::from_str(&yaml).unwrap();
+    let file = File::from_str(&yaml).unwrap();
     let foo = file.services.get("foo").unwrap();
     assert_eq!(foo.build.as_ref().unwrap().context, value(Context::new(".")));
+}
+
+#[test]
+fn file_can_be_converted_from_and_to_yaml_version_2_1() {
+    let yaml = r#"---
+"version": "2.1"
+"services":
+  "foo":
+    "build": "."
+"volumes":
+  "db":
+    "external": true
+"#;
+    assert_roundtrip!(File, yaml);
 }
 
 #[test]
@@ -150,18 +163,30 @@ fn file_allows_null_volumes_and_networks() {
   "frontend":
   "internal":
 "#;
-    let file: File = serde_yaml::from_str::<File>(&yaml).unwrap();
+    let file = File::from_str(&yaml).unwrap();
     assert_eq!(file.volumes.len(), 2);
     assert_eq!(file.networks.len(), 2);
 }
 
 #[test]
-fn file_can_only_load_from_version_2() {
+fn file_checks_version_number() {
     let yaml = r#"---
-"version": "3"
+"version": "100"
 "services":
   "foo":
     "build": "."
 "#;
-    assert!(serde_yaml::from_str::<File>(&yaml).is_err());
+    assert!(File::from_str(&yaml).is_err());
+}
+
+#[test]
+fn file_validates_against_schema() {
+    let yaml = r#"---
+"version": "2"
+"services":
+  # An invalid service name:
+  "foo!":
+    "build": "."
+"#;
+    assert!(File::from_str(&yaml).is_err());
 }

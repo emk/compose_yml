@@ -275,9 +275,9 @@
           "type": ["boolean", "object"],
           "properties": {
             "name": {"type": "string"}
-          }
-        },
-        "additionalProperties": false
+          },
+          "additionalProperties": false
+        }
       },
       "additionalProperties": false
     },

@@ -4,6 +4,7 @@
 use serde::Serialize;
 use serde_json;
 use std::ops::Deref;
+use url::Url;
 use valico;
 
 use errors::*;
@@ -38,13 +39,17 @@ lazy_static! {
 /// `docker-compose`.
 pub fn validate_file(file: &File) -> Result<()> {
     let schema_value = match &file.version[..] {
-        "2.0" => COMPOSE_2_0_SCHEMA.deref(),
+        "2" => COMPOSE_2_0_SCHEMA.deref(),
         "2.1" => COMPOSE_2_1_SCHEMA.deref(),
         vers => return Err(ErrorKind::UnsupportedVersion(vers.to_owned()).into()),
     };
 
     let mut scope = valico::json_schema::Scope::new();
-    let schema = match scope.compile_and_return(schema_value.clone(), false) {
+    let id = Url::parse("http://example.com/config_schema.json")
+        .expect("internal schema URL should be valid");
+    let schema_result =
+        scope.compile_and_return_with_id(&id, schema_value.clone(), false);
+    let schema = match schema_result {
         Ok(schema) => schema,
         Err(err) => panic!("cannot parse built-in schema: {:?}", err),
     };

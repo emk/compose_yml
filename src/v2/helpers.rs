@@ -263,17 +263,3 @@ pub fn deserialize_map_struct_or_null<T, D>(deserializer: &mut D)
     }
     Ok(result)
 }
-
-/// Make sure that the file conforms to a version we can parse.
-pub fn check_version<D>(deserializer: &mut D) -> Result<String, D::Error>
-    where D: Deserializer
-{
-    let version = String::deserialize(deserializer)?;
-    if &version != "2" {
-        let msg = format!("Can only deserialize docker-compose.yml version 2, found \
-                           {}",
-                          version);
-        return Err(<D::Error as de::Error>::custom(msg));
-    }
-    Ok(version)
-}
