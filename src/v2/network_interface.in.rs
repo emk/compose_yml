@@ -13,6 +13,7 @@ pub struct NetworkInterface {
 
     // TODO LOW: ipv4_address
     // TODO LOW: ipv6_address
+    // TODO LOW: link_local_ips
 
     /// PRIVATE.  Mark this struct as having unknown fields for future
     /// compatibility.  This prevents direct construction and exhaustive
