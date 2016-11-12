@@ -8,7 +8,7 @@
 pub struct File {
     /// The version of the `docker-compose.yml` file format.  Must be 2.
     #[serde(deserialize_with = "check_version")]
-    version: String,
+    pub version: String,
 
     /// The individual services which make up this app.
     pub services: BTreeMap<String, Service>,
@@ -24,10 +24,18 @@ pub struct File {
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
             deserialize_with = "deserialize_map_struct_or_null")]
     pub networks: BTreeMap<String, Network>,
+
+    /// PRIVATE.  Mark this struct as having unknown fields for future
+    /// compatibility.  This prevents direct construction and exhaustive
+    /// matching.  This needs to be be public because of
+    /// http://stackoverflow.com/q/39277157/12089
+    #[doc(hidden)]
+    #[serde(default, skip_serializing, skip_deserializing)]
+    pub _hidden: (),
 }
 
 derive_standard_impls_for!(File, {
-    version, services, volumes, networks
+    version, services, volumes, networks, _hidden
 });
 
 impl File {
@@ -35,13 +43,16 @@ impl File {
     pub fn read<R>(r: R) -> Result<Self>
         where R: io::Read
     {
-        Ok(serde_yaml::from_reader(r)?)
+        let file = serde_yaml::from_reader(r)?;
+        validate_file(&file)?;
+        Ok(file)
     }
 
     /// Write a file to an output stream as YAML.
     pub fn write<W>(&self, w: &mut W) -> Result<()>
         where W: io::Write
     {
+        validate_file(self)?;
         Ok(serde_yaml::to_writer(w, self)?)
     }
 
@@ -93,6 +104,7 @@ impl Default for File {
             services: Default::default(),
             volumes: Default::default(),
             networks: Default::default(),
+            _hidden: (),
         }
     }
 }

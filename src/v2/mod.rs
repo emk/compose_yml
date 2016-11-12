@@ -29,6 +29,7 @@ pub use self::merge_override::MergeOverride;
 pub use self::mode_enum::*;
 use self::string_or_struct::*;
 use self::true_or_struct::*;
+use self::validate::validate_file;
 
 // Re-export errors here so that people can use them by including `use
 // compose_yml::v2`.
@@ -46,6 +47,7 @@ mod merge_override;
 mod mode_enum;
 #[macro_use]
 mod derive;
+mod validate;
 
 macro_rules! assert_roundtrip {
     ( $ty:ty, $yaml:expr ) => {

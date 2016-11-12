@@ -10,7 +10,9 @@
 #![cfg_attr(feature="clippy", allow(redundant_closure))]
 
 use serde_yaml;
+use std::io::Write;
 use std::path::PathBuf;
+use valico::json_schema::ValidationState;
 
 error_chain! {
     // These are external, non-`error_chain` error types that we can
@@ -23,6 +25,13 @@ error_chain! {
 
     // These are our "native" error types.
     errors {
+        /// A value did not conform to a JSON schema.
+        DoesNotConformToSchema(state: ValidationState) {
+            description("data did not conform to schema")
+            display("data did not confirm to schema:{}",
+                    validation_state_to_string(&state))
+        }
+
         /// The interpolation syntax in the specified string was invalid.
         InterpolateInvalidSyntax(s: String) {
             description("invalid interpolation syntax")
@@ -76,6 +85,18 @@ error_chain! {
             display("error reading file '{}'", path.display())
         }
 
+        /// We don't support the specified version of `docker-compose.yml`.
+        UnsupportedVersion(version: String) {
+            description("unsupported docker-compose.yml version")
+            display("unsupported docker-compose.yml version '{}'", &version)
+        }
+
+        /// We were unable to validate a `docker-compose.yml` file.
+        ValidationFailed {
+            description("could not validate `docker-compose.yml` file")
+            display("could not validate `docker-compose.yml` file")
+        }
+
         /// An error occurred writing a file.
         WriteFile(path: PathBuf) {
             description("error writing to file")
@@ -92,4 +113,25 @@ impl Error {
     {
         ErrorKind::InvalidValue(wanted.into(), input.into()).into()
     }
+}
+
+impl From<ValidationState> for Error {
+    fn from(state: ValidationState) -> Self {
+        assert!(!state.is_strictly_valid());
+        ErrorKind::DoesNotConformToSchema(state).into()
+    }
+}
+
+/// Convert a `ValidationState` into a human-readable error message.
+fn validation_state_to_string(state: &ValidationState) -> String {
+    let mut out: Vec<u8> = vec![];
+    for err in &state.errors {
+        write!(&mut out, "\n- validation error: {:?}", err)
+            .expect("cannot format validation error");
+    }
+    for url in &state.missing {
+        write!(&mut out, "\n- missing {}", url)
+            .expect("cannot format URL");
+    }
+    String::from_utf8_lossy(&out).into_owned()
 }

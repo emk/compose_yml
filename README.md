@@ -33,6 +33,13 @@ rustup toolchain install nightly
 rustup run nightly cargo test --no-default-features --features unstable
 ```
 
+## License
+
+This library is in the public domain as described by `LICENSE.txt`, except
+for the files `src/v2/validate/config_schema_v2.0.json` and
+`src/v2/validate/config_schema_v2.1.json`, which are copyright Docker,
+Inc., and distributed under the Apache License, version 2.0.
+
 ## Sponsor
 
 <a href="http://www.faraday.io"><img
