@@ -20,10 +20,27 @@ pub struct Network {
     /// some kind of enum, but that might break in the future if things get
     /// more complicated.  For now, we're sticking close to the file
     /// format even if it makes things a bit less idiomatic in Rust.
+    ///
+    /// TODO LOW: Clear on merge if `driver` changes, like we do for
+    /// `Logging` options.
     #[serde(default, skip_serializing_if = "Option::is_none",
             serialize_with = "serialize_opt_true_or_struct",
             deserialize_with = "deserialize_opt_true_or_struct")]
     pub external: Option<ExternalNetwork>,
+
+    /// Create a network which has no access to the outside world.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub internal: bool,
+
+    /// Enable IPv6 for this network.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub enable_ipv6: bool,
+
+    /// Docker labels for this volume, specifying various sorts of
+    /// custom metadata.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
+            deserialize_with = "deserialize_map_or_key_value_list")]
+    pub labels: BTreeMap<String, RawOr<String>>,
 
     // TODO LOW: ipam
 
@@ -37,13 +54,17 @@ pub struct Network {
 }
 
 derive_standard_impls_for!(Network, {
-    driver, driver_opts, external, _hidden
+    driver, driver_opts, external, internal, enable_ipv6, labels, _hidden
 });
 
 #[test]
 fn network_handles_driver_correctly() {
     let yaml = r#"---
 "driver": "default"
+"internal": true
+"enable_ipv6": true
+"labels":
+  "com.example": "foo"
 "#;
     assert_roundtrip!(Network, yaml);
 }

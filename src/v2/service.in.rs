@@ -137,6 +137,8 @@ pub struct Service {
 
     // TODO LOW: ulimits
 
+    // TODO LOW: isolation (not documented at this point).
+
     /// Volumes associated with this service.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub volumes: Vec<RawOr<VolumeMount>>,
@@ -226,6 +228,15 @@ pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub working_dir: Option<RawOr<String>>,
 
+    /// Negative scores make a container less likely to be killed when the
+    /// kernel can't find memory; positive scores make it more likely.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    oom_score_adj: Option<i16>,
+
+    /// Extra groups to grant to the user.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    group_add: Vec<String>,
+
     /// PRIVATE.  Mark this struct as having unknown fields for future
     /// compatibility.  This prevents direct construction and exhaustive
     /// matching.  This needs to be be public because of
@@ -282,6 +293,8 @@ derive_standard_impls_for!(Service, {
     tty,
     user,
     working_dir,
+    oom_score_adj,
+    group_add,
     _hidden
 });
 

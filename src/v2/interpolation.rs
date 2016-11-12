@@ -606,6 +606,7 @@ pub trait InterpolateAll {
     }
 }
 
+impl InterpolateAll for i16 {}
 impl InterpolateAll for u16 {}
 impl InterpolateAll for u32 {}
 impl InterpolateAll for bool {}

@@ -24,6 +24,7 @@ macro_rules! assert_merge {
     }
 }
 
+impl MergeOverride for i16 {}
 impl MergeOverride for u16 {}
 impl MergeOverride for u32 {}
 impl MergeOverride for bool {}
