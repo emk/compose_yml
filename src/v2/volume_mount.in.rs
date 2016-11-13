@@ -20,7 +20,7 @@ impl fmt::Display for HostVolume {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             &HostVolume::Path(ref path) => {
-                let p = path.to_str().ok_or(fmt::Error)?;
+                let p = path_str_to_docker(path.to_str().ok_or(fmt::Error)?);
                 if path.is_absolute() {
                     write!(f, "{}", p)
                 } else if p.starts_with("./") || p.starts_with("../") {
@@ -44,6 +44,23 @@ impl fmt::Display for HostVolume {
     }
 }
 
+/// Leave non-Windows paths unchanged.
+#[cfg(not(windows))]
+fn path_str_to_docker(s: &str) -> String {
+    s.to_owned()
+}
+
+/// Fix Windows paths to have the syntax that they'll have inside the Docker
+/// container.
+#[cfg(windows)]
+fn path_str_to_docker(s: &str) -> String {
+    lazy_static! {
+        static ref DRIVE_LETTER: Regex =
+            Regex::new(r#"^(?P<letter>[a-z]):\\"#).unwrap();
+    }
+    DRIVE_LETTER.replace(s, "/$letter/").replace("\\", "/")
+}
+
 impl FromStr for HostVolume {
     type Err = Error;
 
@@ -56,14 +73,41 @@ impl FromStr for HostVolume {
             Error::invalid_value("host volume", s)
         })?;
         if let Some(path) = caps.at(1) {
-            Ok(HostVolume::Path(Path::new(path).to_owned()))
+            let fixed_path = path_str_from_docker(path)?;
+            Ok(HostVolume::Path(Path::new(&fixed_path).to_owned()))
         } else if let Some(path) = caps.at(2) {
-            Ok(HostVolume::UserRelativePath(Path::new(path).to_owned()))
+            let fixed_path = path_str_from_docker(path)?;
+            Ok(HostVolume::UserRelativePath(Path::new(&fixed_path).to_owned()))
         } else if let Some(name) = caps.at(3) {
             Ok(HostVolume::Name(name.to_owned()))
         } else {
             unreachable!()
         }
+    }
+}
+
+/// Leave non-Windows paths unchanged.
+#[cfg(not(windows))]
+fn path_str_from_docker(s: &str) -> Result<String> {
+    Ok(s.to_owned())
+}
+
+/// Convert from Docker path syntax to Windows path syntax.
+#[cfg(windows)]
+fn path_str_from_docker(s: &str) -> Result<String> {
+    if s.starts_with("/") {
+        lazy_static! {
+            static ref DRIVE_LETTER: Regex =
+                Regex::new(r#"/(?P<letter>[a-z])/"#).unwrap();
+        }
+
+        if DRIVE_LETTER.is_match(s) {
+            Ok(DRIVE_LETTER.replace(s, "$letter:\\").replace("/", "\\"))
+        } else {
+            Err(ErrorKind::ConvertMountedPathToWindows(s.to_owned()).into())
+        }
+    } else {
+        Ok(s.replace("/", "\\"))
     }
 }
 
@@ -198,18 +242,49 @@ impl FromStr for VolumeMount {
 }
 
 #[test]
-fn volume_mounts_should_have_string_representations() {
+fn portable_volume_mounts_should_have_string_representations() {
     let vol1 = VolumeMount::anonymous("/var/lib");
     let vol2 = VolumeMount::named("named", "/var/lib");
+
+    let pairs = vec!(
+        (vol1, "/var/lib"),
+        (vol2, "named:/var/lib"),
+    );
+    for (mode, s) in pairs {
+        assert_eq!(mode.to_string(), s);
+        assert_eq!(mode, VolumeMount::from_str(s).unwrap());
+    }
+}
+
+#[test]
+#[cfg(not(windows))]
+fn unix_windows_volume_mounts_should_have_string_representations() {
     let vol3 = VolumeMount {
         permissions: VolumePermissions::ReadOnly,
         ..VolumeMount::host("/etc/foo", "/etc/myfoo")
     };
 
     let pairs = vec!(
-        (vol1, "/var/lib"),
-        (vol2, "named:/var/lib"),
         (vol3, "/etc/foo:/etc/myfoo:ro"),
+    );
+    for (mode, s) in pairs {
+        assert_eq!(mode.to_string(), s);
+        assert_eq!(mode, VolumeMount::from_str(s).unwrap());
+    }
+}
+
+#[test]
+#[cfg(windows)]
+fn windows_volume_mounts_should_have_string_representations() {
+    let vol3 = VolumeMount {
+        permissions: VolumePermissions::ReadOnly,
+        ..VolumeMount::host("c:\\home\\smith\\foo", "/etc/myfoo")
+    };
+    let vol4 = VolumeMount::host(".\\foo", "/etc/myfoo");
+
+    let pairs = vec!(
+        (vol3, "/c/home/smith/foo:/etc/myfoo:ro"),
+        (vol4, "./foo:/etc/myfoo"),
     );
     for (mode, s) in pairs {
         assert_eq!(mode.to_string(), s);

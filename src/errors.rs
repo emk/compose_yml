@@ -25,6 +25,13 @@ error_chain! {
 
     // These are our "native" error types.
     errors {
+        /// We could not convert a path mounted inside a Docker container to a
+        /// Windows path on the host.
+        ConvertMountedPathToWindows(path: String) {
+            description("could not converted mounted Docker path to a Windows path")
+            display("could not convert '{}' to the equivalent Windows path", &path)
+        }
+
         /// A value did not conform to a JSON schema.
         DoesNotConformToSchema(state: ValidationState) {
             description("data did not conform to schema")
