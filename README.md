@@ -46,11 +46,11 @@ Inc., and distributed under the Apache License, version 2.0.
 src="http://cdn2.hubspot.net/hubfs/515497/img/logo.svg" alt="Faraday
 logo"/></a>
 
-Part of the work on [`compose_yml`][compose_yml] has been
-generously sponsored by [Faraday][] for use in
-their [`conductor`][conductor] tool, which orchestrates `docker-compose`
-for large, multi-pod apps.
+Part of the work on [`compose_yml`][compose_yml] has been generously
+sponsored by [Faraday][] for use in their [`cage`][cage] tool, which is
+designed to go beyond `docker-compose` and provide support for large,
+multi-pod apps.
 
 [Faraday]: http://www.faraday.io/
-[conductor]: https://github.com/faradayio/conductor
+[cage]: https://github.com/faradayio/cage
 [compose_yml]: https://github.com/emk/compose_yml
