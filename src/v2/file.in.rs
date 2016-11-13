@@ -120,10 +120,10 @@ impl FromStr for File {
 #[cfg_attr(feature="clippy", allow(blacklisted_name))]
 fn file_can_be_converted_from_and_to_yaml_version_2() {
     let yaml = r#"---
-"version": "2"
 "services":
   "foo":
     "build": "."
+"version": "2"
 "volumes":
   "db":
     "external": true
@@ -138,10 +138,10 @@ fn file_can_be_converted_from_and_to_yaml_version_2() {
 #[test]
 fn file_can_be_converted_from_and_to_yaml_version_2_1() {
     let yaml = r#"---
-"version": "2.1"
 "services":
   "foo":
     "build": "."
+"version": "2.1"
 "volumes":
   "db":
     "external": true
@@ -152,16 +152,16 @@ fn file_can_be_converted_from_and_to_yaml_version_2_1() {
 #[test]
 fn file_allows_null_volumes_and_networks() {
     let yaml = r#"---
-"version": "2"
 "services":
   "foo":
     "build": "."
-"volumes":
-  "bar":
-  "foo":
 "networks":
   "frontend":
   "internal":
+"version": "2"
+"volumes":
+  "bar":
+  "foo":
 "#;
     let file = File::from_str(&yaml).unwrap();
     assert_eq!(file.volumes.len(), 2);
@@ -171,10 +171,10 @@ fn file_allows_null_volumes_and_networks() {
 #[test]
 fn file_checks_version_number() {
     let yaml = r#"---
-"version": "100"
 "services":
   "foo":
     "build": "."
+"version": "100"
 "#;
     assert!(File::from_str(&yaml).is_err());
 }

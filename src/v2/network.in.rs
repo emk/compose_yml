@@ -61,8 +61,8 @@ derive_standard_impls_for!(Network, {
 fn network_handles_driver_correctly() {
     let yaml = r#"---
 "driver": "default"
-"internal": true
 "enable_ipv6": true
+"internal": true
 "labels":
   "com.example": "foo"
 "#;

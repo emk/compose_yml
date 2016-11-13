@@ -88,17 +88,17 @@ fn build_has_a_string_representation() {
 #[test]
 fn build_may_be_a_struct() {
     let yaml = r#"---
+"args":
+  "key": "value"
 "context": "."
 "dockerfile": "Dockerfile"
-"args":
-  "str": "value"
 "#;
     assert_roundtrip!(Build, yaml);
 
     let build: Build = serde_yaml::from_str(yaml).unwrap();
     assert_eq!(build.context, value(Context::new(".")));
     assert_eq!(build.dockerfile, Some(value("Dockerfile".to_owned())));
-    assert_eq!(build.args.get("str").expect("wanted key 'str'").value().unwrap(),
+    assert_eq!(build.args.get("key").expect("wanted key 'key'").value().unwrap(),
                "value");
 }
 

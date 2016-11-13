@@ -47,8 +47,8 @@ impl Extends {
 #[test]
 fn extends_can_be_roundtripped() {
     let yaml = r#"---
-"service": "foo"
 "file": "bar/docker-compose.yml"
+"service": "foo"
 "#;
     assert_roundtrip!(Extends, yaml);
 }
