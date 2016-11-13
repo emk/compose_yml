@@ -56,9 +56,13 @@ fn path_str_to_docker(s: &str) -> String {
 fn path_str_to_docker(s: &str) -> String {
     lazy_static! {
         static ref DRIVE_LETTER: Regex =
-            Regex::new(r#"^(?P<letter>[a-z]):\\"#).unwrap();
+            Regex::new(r#"^(?P<letter>[A-Za-z]):\\"#).unwrap();
     }
-    DRIVE_LETTER.replace(s, "/$letter/").replace("\\", "/")
+    DRIVE_LETTER
+        .replace(s, |caps: &Captures| {
+            format!("/{}/", caps.name("letter").unwrap().to_lowercase())
+        })
+        .replace("\\", "/")
 }
 
 impl FromStr for HostVolume {
@@ -98,7 +102,7 @@ fn path_str_from_docker(s: &str) -> Result<String> {
     if s.starts_with("/") {
         lazy_static! {
             static ref DRIVE_LETTER: Regex =
-                Regex::new(r#"/(?P<letter>[a-z])/"#).unwrap();
+                Regex::new(r#"/(?P<letter>[A-Za-z])/"#).unwrap();
         }
 
         if DRIVE_LETTER.is_match(s) {
