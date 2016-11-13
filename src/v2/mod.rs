@@ -1,6 +1,8 @@
 //! Support for the `docker-compose.yml` version 2 file format.
 
-use regex::{Captures, Regex};
+#[cfg(windows)]
+use regex::Captures;
+use regex::Regex;
 use serde;
 use serde::de::{self, Deserialize, Deserializer, SeqVisitor, Visitor};
 use serde::ser::{Serialize, Serializer};
