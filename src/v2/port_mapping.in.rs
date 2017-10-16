@@ -62,22 +62,22 @@ impl FromStr for Ports {
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Protocol {
     /// Transmission Control Protocol, the default.
-    TCP,
+    Tcp,
     /// User Datagram Protocol.
-    UDP
+    Udp
 }
 
 impl Default for Protocol {
     fn default() -> Self {
-        Protocol::TCP
+        Protocol::Tcp
     }
 }
 
 impl fmt::Display for Protocol {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            &Protocol::TCP => write!(f, "tcp"),
-            &Protocol::UDP => write!(f, "udp"),
+            &Protocol::Tcp => write!(f, "tcp"),
+            &Protocol::Udp => write!(f, "udp"),
         }
     }
 }
@@ -87,8 +87,8 @@ impl FromStr for Protocol {
 
     fn from_str(s: &str) -> Result<Self> {
         match s {
-            "tcp" => Ok(Protocol::TCP),
-            "udp" => Ok(Protocol::UDP),
+            "tcp" => Ok(Protocol::Tcp),
+            "udp" => Ok(Protocol::Udp),
             _ => Err(Error::invalid_value("protocol", s)),
         }
     }
@@ -185,16 +185,19 @@ impl fmt::Display for PortMapping {
         if let Some(ports) = self.host_ports {
             write!(f, "{}:", ports)?;
         }
-        write!(f, "{}/", self.container_ports)?;
-        write!(f, "{}", self.protocol)
+        write!(f, "{}", self.container_ports)?;
+        if self.protocol != Protocol::default() {
+            write!(f, "/{}", self.protocol)?;
+        }
+        Ok(())
     }
 }
 
 fn consume_protocol(ports_and_protocol: &str) -> Result<(&str, Protocol)> {
     let fields: Vec<_> = ports_and_protocol.split("/").collect();
     match fields.len() {
-        1 => Ok((fields[0], Protocol::TCP)),
-        2 => Ok((fields[0], FromStr::from_str(fields[1])?)),
+        1 => Ok((fields[0], Protocol::Tcp)),
+        2 => Ok((fields[0], Protocol::from_str(fields[1])?)),
         _ => {
             Err(Error::invalid_value("port mapping", ports_and_protocol))
         }
@@ -252,7 +255,37 @@ impl FromStr for PortMapping {
 }
 
 #[test]
-fn port_mapping_can_be_formatted_as_a_string() {
+fn port_mapping_should_have_a_string_representation() {
+    let localhost: IpAddr = FromStr::from_str("127.0.0.1").unwrap();
+
+    let map1 = PortMapping::any_to(80);
+    let map2 = PortMapping{ protocol: Protocol::Udp, ..map1 };
+    let map3 = PortMapping::new(Ports::Range(8080, 8089),
+                                Ports::Range(3000, 3009));
+    let map4 = PortMapping{ protocol: Protocol::Udp, ..map3 };
+    let map5 = PortMapping {
+        host_address: Some(localhost),
+        ..PortMapping::new(80, 80)
+    };
+    let map6 = PortMapping{ protocol: Protocol::Udp, ..map5 };
+
+    let pairs = vec!(
+        (map1, "80"),
+        (map2, "80/udp"),
+        (map3, "8080-8089:3000-3009"),
+        (map4, "8080-8089:3000-3009/udp"),
+        (map5, "127.0.0.1:80:80"),
+        (map6, "127.0.0.1:80:80/udp"),
+    );
+    for (map, s) in pairs {
+        assert_eq!(map.to_string(), s);
+        assert_eq!(map, PortMapping::from_str(s).unwrap());
+    }
+}
+
+#[test]
+fn port_mapping_can_be_parsed_from_a_string() {
+    // These are just the strings that don't format the same way they parse
     let localhost: IpAddr = FromStr::from_str("127.0.0.1").unwrap();
 
     let map1 = PortMapping::any_to(80);
@@ -260,51 +293,17 @@ fn port_mapping_can_be_formatted_as_a_string() {
                                 Ports::Range(3000, 3009));
     let map3 = PortMapping {
         host_address: Some(localhost),
-        protocol: Protocol::UDP,
         ..PortMapping::new(80, 80)
     };
-
-    let pairs = vec!(
-        (map1, "80/tcp"),
-        (map2, "8080-8089:3000-3009/tcp"),
-        (map3, "127.0.0.1:80:80/udp"),
-    );
-    for (map, s) in pairs {
-        assert_eq!(map.to_string(), s);
-    }
-}
-
-#[test]
-fn port_mapping_can_be_parsed_from_a_string() {
-    let localhost: IpAddr = FromStr::from_str("127.0.0.1").unwrap();
-
-    let map1 = PortMapping::any_to(80);
-    let map2 = PortMapping { protocol: Protocol::UDP, ..map1 };
-
-    let map3 = PortMapping::new(Ports::Range(8080, 8089),
-                                Ports::Range(3000, 3009));
-    let map4 = PortMapping { protocol: Protocol::UDP, ..map3 };
-
-    let map5 = PortMapping {
-        host_address: Some(localhost),
-        ..PortMapping::new(80, 80)
-    };
-    let map6 = PortMapping { protocol: Protocol::UDP, ..map5 };
 
     {
         let pairs = vec!(
-            (&map1, "80"),
-            (&map1, "80/tcp"),
-            (&map2, "80/udp"),
-            (&map3, "8080-8089:3000-3009"),
-            (&map3, "8080-8089:3000-3009/tcp"),
-            (&map4, "8080-8089:3000-3009/udp"),
-            (&map5, "127.0.0.1:80:80"),
-            (&map5, "127.0.0.1:80:80/tcp"),
-            (&map6, "127.0.0.1:80:80/udp"),
+            (map1, "80/tcp"),
+            (map2, "8080-8089:3000-3009/tcp"),
+            (map3, "127.0.0.1:80:80/tcp"),
         );
         for (map, s) in pairs {
-            assert_eq!(*map, PortMapping::from_str(s).unwrap());
+            assert_eq!(map, PortMapping::from_str(s).unwrap());
         }
     }
 }
