@@ -58,6 +58,21 @@ impl FromStr for Ports {
     }
 }
 
+/// An IP protocol
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum Protocol {
+    /// Transmission Control Protocol, the default.
+    TCP,
+    /// User Datagram Protocol.
+    UDP
+}
+
+impl Default for Protocol {
+    fn default() -> Self {
+        Protocol::TCP
+    }
+}
+
 /// Specify how to map container ports to the host.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[allow(missing_copy_implementations)]
@@ -72,6 +87,8 @@ pub struct PortMapping {
     pub host_ports: Option<Ports>,
     /// The container port(s) to export.
     pub container_ports: Ports,
+    /// The protocol to be used on the given port(s).
+    pub protocol: Protocol,
 
     /// PRIVATE.  Mark this struct as having unknown fields for future
     /// compatibility.  This prevents direct construction and exhaustive
@@ -103,6 +120,7 @@ impl PortMapping {
             host_address: Default::default(),
             host_ports: Some(host_ports.into()),
             container_ports: container_ports.into(),
+            protocol: Default::default(),
             _hidden: (),
         }
     }
@@ -125,6 +143,7 @@ impl PortMapping {
             host_address: Default::default(),
             host_ports: None,
             container_ports: container_ports.into(),
+            protocol: Default::default(),
             _hidden: (),
         }
     }
@@ -164,6 +183,7 @@ impl FromStr for PortMapping {
                     host_address: None,
                     host_ports: None,
                     container_ports: FromStr::from_str(fields[0])?,
+                    protocol: Default::default(),
                     _hidden: (),
                 })
             }
@@ -172,6 +192,7 @@ impl FromStr for PortMapping {
                     host_address: None,
                     host_ports: Some(FromStr::from_str(fields[1])?),
                     container_ports: FromStr::from_str(fields[0])?,
+                    protocol: Default::default(),
                     _hidden: (),
                 })
             }
@@ -184,6 +205,7 @@ impl FromStr for PortMapping {
                     host_address: Some(addr),
                     host_ports: Some(FromStr::from_str(fields[1])?),
                     container_ports: FromStr::from_str(fields[0])?,
+                    protocol: Default::default(),
                     _hidden: (),
                 })
             }
