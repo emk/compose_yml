@@ -190,11 +190,11 @@ impl fmt::Display for PortMapping {
     }
 }
 
-fn consume_protocol(ports_and_protocol: &str) -> Result<(&str, &str)> {
+fn consume_protocol(ports_and_protocol: &str) -> Result<(&str, Protocol)> {
     let fields: Vec<_> = ports_and_protocol.split("/").collect();
     match fields.len() {
-        1 => Ok((fields[0], "tcp")),
-        2 => Ok((fields[0], fields[1])),
+        1 => Ok((fields[0], Protocol::TCP)),
+        2 => Ok((fields[0], FromStr::from_str(fields[1])?)),
         _ => {
             Err(Error::invalid_value("port mapping", ports_and_protocol))
         }
@@ -218,7 +218,7 @@ impl FromStr for PortMapping {
                     host_address: None,
                     host_ports: None,
                     container_ports: FromStr::from_str(fields[0])?,
-                    protocol: FromStr::from_str(protocol)?,
+                    protocol,
                     _hidden: (),
                 })
             }
@@ -227,7 +227,7 @@ impl FromStr for PortMapping {
                     host_address: None,
                     host_ports: Some(FromStr::from_str(fields[1])?),
                     container_ports: FromStr::from_str(fields[0])?,
-                    protocol: FromStr::from_str(protocol)?,
+                    protocol,
                     _hidden: (),
                 })
             }
@@ -240,7 +240,7 @@ impl FromStr for PortMapping {
                     host_address: Some(addr),
                     host_ports: Some(FromStr::from_str(fields[1])?),
                     container_ports: FromStr::from_str(fields[0])?,
-                    protocol: FromStr::from_str(protocol)?,
+                    protocol,
                     _hidden: (),
                 })
             }
