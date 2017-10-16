@@ -17,6 +17,7 @@ pub trait MergeOverride: Clone + Sized {
     }
 }
 
+#[cfg(test)]
 macro_rules! assert_merge {
     ($ty:ty, $value1:expr, $value2:expr, $expected: expr) => {
         assert_eq!(($value1 as $ty).merge_override(&($value2 as $ty)),

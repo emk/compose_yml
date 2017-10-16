@@ -51,6 +51,7 @@ mod mode_enum;
 mod derive;
 mod validate;
 
+#[cfg(test)]
 macro_rules! assert_roundtrip {
     ( $ty:ty, $yaml:expr ) => {
         {

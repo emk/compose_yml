@@ -58,11 +58,11 @@ fn empty_volume_can_be_converted_from_and_to_yaml() {
 #[test]
 fn volume_with_driver_can_be_converted_from_and_to_yaml() {
     let yaml = r#"---
-"driver": "sample"
-"driver_opts":
-  "file_share": "myshare"
-"labels":
-  "com.example": "foo"
+driver: sample
+driver_opts:
+  file_share: myshare
+labels:
+  com.example: foo
 "#;
     assert_roundtrip!(Volume, yaml);
 }
@@ -70,7 +70,7 @@ fn volume_with_driver_can_be_converted_from_and_to_yaml() {
 #[test]
 fn external_volume_can_be_converted_from_and_to_yaml() {
     let yaml = r#"---
-"external": true
+external: true
 "#;
     assert_roundtrip!(Volume, yaml);
 }

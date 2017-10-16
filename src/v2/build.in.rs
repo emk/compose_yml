@@ -88,10 +88,10 @@ fn build_has_a_string_representation() {
 #[test]
 fn build_may_be_a_struct() {
     let yaml = r#"---
-"args":
-  "key": "value"
-"context": "."
-"dockerfile": "Dockerfile"
+args:
+  key: value
+context: .
+dockerfile: Dockerfile
 "#;
     assert_roundtrip!(Build, yaml);
 
@@ -105,12 +105,12 @@ fn build_may_be_a_struct() {
 #[test]
 fn args_support_stringification_and_interpolation() {
     let yaml = r#"---
-"context": "."
-"args":
-  "bool": true
-  "float": 1.5
-  "int": 1
-  "interp": "$FOO"
+context: .
+args:
+  bool: true
+  float: 1.5
+  int: 1
+  interp: $FOO
 "#;
     let build: Build = serde_yaml::from_str(yaml).unwrap();
 
@@ -133,9 +133,9 @@ fn args_support_stringification_and_interpolation() {
 #[test]
 fn build_args_may_be_a_key_value_list() {
     let yaml = "---
-context: \".\"
+context: .
 args:
-  - \"key=value\"
+  - key=value
 ";
     let build: Build = serde_yaml::from_str(yaml).unwrap();
     assert_eq!(build.args.get("key").expect("should have key").value().unwrap(),

@@ -70,7 +70,7 @@ impl Deserialize for CommandLine {
 #[test]
 fn command_line_may_be_shell_code() {
     let yaml = r#"---
-"ls $DIR"
+ls $DIR
 "#;
     assert_roundtrip!(CommandLine, yaml);
 }
@@ -78,8 +78,8 @@ fn command_line_may_be_shell_code() {
 #[test]
 fn command_line_may_be_parsed() {
     let yaml = r#"---
-- "ls"
-- "/"
+- ls
+- /
 "#;
     assert_roundtrip!(CommandLine, yaml);
 }

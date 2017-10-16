@@ -317,12 +317,12 @@ impl Service {
 #[test]
 fn service_handles_sample_fields_correctly() {
     let yaml = r#"---
-"dns":
-  - "8.8.8.8"
-"dns_search":
-  - "example.com"
-  - "example.net"
-"image": "hello"
+dns:
+  - 8.8.8.8
+dns_search:
+  - example.com
+  - example.net
+image: hello
 "#;
     assert_roundtrip!(Service, yaml);
 }
@@ -330,8 +330,8 @@ fn service_handles_sample_fields_correctly() {
 #[test]
 fn service_env_file_is_renamed() {
     let yaml = r#"---
-"env_file":
-  - "foo/bar.env"
+env_file:
+  - foo/bar.env
 "#;
     let service: Service = serde_yaml::from_str(&yaml).unwrap();
     assert_eq!(service.env_files.len(), 1);
@@ -341,11 +341,11 @@ fn service_env_file_is_renamed() {
 #[test]
 fn service_networks_supports_map() {
     let yaml = r#"---
-"networks":
-  "backend":
-    "aliases":
-      - "hostname2"
-  "frontend": {}
+networks:
+  backend:
+    aliases:
+      - hostname2
+  frontend: {}
 "#;
     assert_roundtrip!(Service, yaml);
 }

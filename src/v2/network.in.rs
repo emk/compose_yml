@@ -60,11 +60,11 @@ derive_standard_impls_for!(Network, {
 #[test]
 fn network_handles_driver_correctly() {
     let yaml = r#"---
-"driver": "default"
-"enable_ipv6": true
-"internal": true
-"labels":
-  "com.example": "foo"
+driver: default
+enable_ipv6: true
+internal: true
+labels:
+  com.example: foo
 "#;
     assert_roundtrip!(Network, yaml);
 }
@@ -72,7 +72,7 @@ fn network_handles_driver_correctly() {
 #[test]
 fn network_handles_external_true_correctly() {
     let yaml = r#"---
-"external": true
+external: true
 "#;
     assert_roundtrip!(Network, yaml);
 }
@@ -80,8 +80,8 @@ fn network_handles_external_true_correctly() {
 #[test]
 fn network_handles_external_name_correctly() {
     let yaml = r#"---
-"external":
-  "name": "bridge"
+external:
+  name: bridge
 "#;
     assert_roundtrip!(Network, yaml);
 }

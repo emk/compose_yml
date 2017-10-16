@@ -120,13 +120,13 @@ impl FromStr for File {
 #[cfg_attr(feature="clippy", allow(blacklisted_name))]
 fn file_can_be_converted_from_and_to_yaml_version_2() {
     let yaml = r#"---
-"services":
-  "foo":
-    "build": "."
-"version": "2"
-"volumes":
-  "db":
-    "external": true
+services:
+  foo:
+    build: .
+version: "2"
+volumes:
+  db:
+    external: true
 "#;
     assert_roundtrip!(File, yaml);
 
@@ -138,13 +138,13 @@ fn file_can_be_converted_from_and_to_yaml_version_2() {
 #[test]
 fn file_can_be_converted_from_and_to_yaml_version_2_1() {
     let yaml = r#"---
-"services":
-  "foo":
-    "build": "."
-"version": "2.1"
-"volumes":
-  "db":
-    "external": true
+services:
+  foo:
+    build: .
+version: "2.1"
+volumes:
+  db:
+    external: true
 "#;
     assert_roundtrip!(File, yaml);
 }
