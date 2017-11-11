@@ -71,6 +71,16 @@ impl GitUrl {
             }
         }
     }
+
+    /// Parse an optional subdirectory out of the git URL
+    pub fn subdirectory(&self) -> Option<String> {
+        lazy_static! {
+            static ref SUBDIR_PARSE: Regex = Regex::new(r#".*#.*:(.+)"#).unwrap();
+        }
+        SUBDIR_PARSE.captures(&self.url).map(
+            |captures| captures.at(1).unwrap().to_string()
+        )
+    }
 }
 
 impl fmt::Display for GitUrl {
@@ -132,5 +142,32 @@ fn to_url_converts_git_urls_to_real_ones() {
     let invalid_urls = &["local/path.git"];
     for &url in invalid_urls {
         assert!(GitUrl::new(url).is_err());
+    }
+}
+
+#[test]
+fn subdirectory_parses_the_subdir_from_the_url() {
+    let urls = &[
+        "git://github.com/docker/docker",
+        "https://github.com/docker/docker.git",
+        "http://github.com/docker/docker.git",
+        "git@github.com:docker/docker.git",
+        "git@bitbucket.org:atlassianlabs/atlassian-docker.git",
+        "github.com/docker/docker.git",
+    ];
+
+    // Refs/folders specified as per:
+    // https://docs.docker.com/engine/reference/commandline/build/#git-repositories
+    for &url in urls {
+        assert_eq!(GitUrl::new(url).unwrap().subdirectory(), None);
+
+        let with_ref = format!("{}{}", url, "#mybranch");
+        assert_eq!(GitUrl::new(with_ref).unwrap().subdirectory(), None);
+
+        let with_subdir = format!("{}{}", url, "#:myfolder");
+        assert_eq!(GitUrl::new(with_subdir).unwrap().subdirectory(), Some("myfolder".to_string()));
+
+        let with_ref_and_subdir = format!("{}{}", url, "#mybranch:myfolder");
+        assert_eq!(GitUrl::new(with_ref_and_subdir).unwrap().subdirectory(), Some("myfolder".to_string()));
     }
 }
