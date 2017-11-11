@@ -32,6 +32,21 @@ impl Context {
             Context::Dir(Path::new(&s_ref).to_owned())
         }
     }
+
+    /// Determines if two Contexts are equivalent. This is only true
+    /// if they are the same directory path, or if they are same git
+    /// repository and branch. Subdirectories of a repository may differ
+    pub fn is_equivalent_to(&self, other: &Context) -> bool {
+        match (self, other) {
+            (&Context::Dir(_), &Context::GitUrl(_)) => false,
+            (&Context::GitUrl(_), &Context::Dir(_)) => false,
+            (&Context::Dir(ref dir_1), &Context::Dir(ref dir_2)) => dir_1 == dir_2,
+            (&Context::GitUrl(ref git_url_1), &Context::GitUrl(ref git_url_2)) => {
+                git_url_1.repository() == git_url_2.repository() &&
+                    git_url_1.branch() == git_url_2.branch()
+            },
+        }
+    }
 }
 
 impl_interpolatable_value!(Context);
@@ -79,4 +94,33 @@ fn context_may_contain_dir_paths() {
         assert_eq!(context, Context::Dir(Path::new(path).to_owned()));
         assert_eq!(context.to_string(), path);
     }
+}
+
+#[test]
+fn is_equivalent_if_they_are_the_same_dir_or_the_same_repo_and_branch() {
+    let dir_1: Context = FromStr::from_str("./foo").unwrap();
+    let dir_2: Context = FromStr::from_str("./bar").unwrap();
+
+    let plain_repo: Context = FromStr::from_str("git@github.com:docker/docker.git").unwrap();
+    let repo_with_branch: Context = FromStr::from_str("git@github.com:docker/docker.git#somebranch").unwrap();
+    let repo_with_subdir: Context = FromStr::from_str("git@github.com:docker/docker.git#:somedir").unwrap();
+    let repo_with_branch_and_subdir: Context = FromStr::from_str("git@github.com:docker/docker.git#somebranch:somedir").unwrap();
+
+    let different_repo: Context = FromStr::from_str("git@github.com:docker/compose.git").unwrap();
+
+    assert!(dir_1.is_equivalent_to(&dir_1));
+    assert!(!dir_1.is_equivalent_to(&dir_2));
+    assert!(!dir_1.is_equivalent_to(&plain_repo));
+
+    assert!(plain_repo.is_equivalent_to(&plain_repo));
+    assert!(plain_repo.is_equivalent_to(&repo_with_subdir));
+
+    assert!(!plain_repo.is_equivalent_to(&dir_1));
+    assert!(!plain_repo.is_equivalent_to(&different_repo));
+    assert!(!plain_repo.is_equivalent_to(&repo_with_branch));
+    assert!(!plain_repo.is_equivalent_to(&repo_with_branch_and_subdir));
+
+    assert!(repo_with_branch.is_equivalent_to(&repo_with_branch));
+    assert!(repo_with_branch.is_equivalent_to(&repo_with_branch_and_subdir));
+    assert!(!repo_with_branch.is_equivalent_to(&plain_repo));
 }

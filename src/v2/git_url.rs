@@ -72,7 +72,25 @@ impl GitUrl {
         }
     }
 
-    /// Parse an optional subdirectory out of the git URL
+    /// Extract the repository part of the URL
+    pub fn repository(&self) -> String {
+        lazy_static! {
+            static ref REPO_PARSE: Regex = Regex::new(r#"([^#]*)"#).unwrap();
+        }
+        REPO_PARSE.captures(&self.url).unwrap().at(1).unwrap().to_string()
+    }
+
+    /// Extract the optional branch part of the git URL
+    pub fn branch(&self) -> Option<String> {
+        lazy_static! {
+            static ref BRANCH_PARSE: Regex = Regex::new(r#".*#([^:]+)"#).unwrap();
+        }
+        BRANCH_PARSE.captures(&self.url).map(
+            |captures| captures.at(1).unwrap().to_string()
+        )
+    }
+
+    /// Extract the optional subdirectory part of the git URL
     pub fn subdirectory(&self) -> Option<String> {
         lazy_static! {
             static ref SUBDIR_PARSE: Regex = Regex::new(r#".*#.*:(.+)"#).unwrap();
@@ -146,7 +164,7 @@ fn to_url_converts_git_urls_to_real_ones() {
 }
 
 #[test]
-fn subdirectory_parses_the_subdir_from_the_url() {
+fn it_can_extract_its_repo_branch_and_subdir_parts() {
     let urls = &[
         "git://github.com/docker/docker",
         "https://github.com/docker/docker.git",
@@ -159,15 +177,24 @@ fn subdirectory_parses_the_subdir_from_the_url() {
     // Refs/folders specified as per:
     // https://docs.docker.com/engine/reference/commandline/build/#git-repositories
     for &url in urls {
-        assert_eq!(GitUrl::new(url).unwrap().subdirectory(), None);
+        let plain = GitUrl::new(format!("{}{}", url, "")).unwrap();
+        assert_eq!(plain.repository(), url);
+        assert_eq!(plain.branch(), None);
+        assert_eq!(plain.subdirectory(), None);
 
-        let with_ref = format!("{}{}", url, "#mybranch");
-        assert_eq!(GitUrl::new(with_ref).unwrap().subdirectory(), None);
+        let with_ref = GitUrl::new(format!("{}{}", url, "#mybranch")).unwrap();
+        assert_eq!(with_ref.repository(), url);
+        assert_eq!(with_ref.branch(), Some("mybranch".to_string()));
+        assert_eq!(with_ref.subdirectory(), None);
 
-        let with_subdir = format!("{}{}", url, "#:myfolder");
-        assert_eq!(GitUrl::new(with_subdir).unwrap().subdirectory(), Some("myfolder".to_string()));
+        let with_subdir = GitUrl::new(format!("{}{}", url, "#:myfolder")).unwrap();
+        assert_eq!(with_subdir.repository(), url);
+        assert_eq!(with_subdir.branch(), None);
+        assert_eq!(with_subdir.subdirectory(), Some("myfolder".to_string()));
 
-        let with_ref_and_subdir = format!("{}{}", url, "#mybranch:myfolder");
-        assert_eq!(GitUrl::new(with_ref_and_subdir).unwrap().subdirectory(), Some("myfolder".to_string()));
+        let with_ref_and_subdir = GitUrl::new(format!("{}{}", url, "#mybranch:myfolder")).unwrap();
+        assert_eq!(with_ref_and_subdir.repository(), url);
+        assert_eq!(with_ref_and_subdir.branch(), Some("mybranch".to_string()));
+        assert_eq!(with_ref_and_subdir.subdirectory(), Some("myfolder".to_string()));
     }
 }
