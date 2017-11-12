@@ -33,16 +33,13 @@ impl Context {
         }
     }
 
-    /// Determines if two Contexts are compatible. This is only true
-    /// if they are the same directory path, or if they are two git
-    /// URLs which can share a checkout with each other.
-    pub fn is_compatible_with(&self, other: &Context) -> bool {
-        match (self, other) {
-            (&Context::Dir(_), &Context::GitUrl(_)) => false,
-            (&Context::GitUrl(_), &Context::Dir(_)) => false,
-            (&Context::Dir(ref dir_1), &Context::Dir(ref dir_2)) => dir_1 == dir_2,
-            (&Context::GitUrl(ref git_url_1), &Context::GitUrl(ref git_url_2)) => {
-                git_url_1.can_share_checkout_with(&git_url_2)
+    /// Returns a new Context which is the same as the
+    /// this one, but without any subdirectory part
+    pub fn without_subdirectory(&self) -> Context {
+        match self {
+            &Context::Dir(_) => self.clone(),
+            &Context::GitUrl(ref git_url) => {
+                Context::GitUrl(git_url.without_subdirectory())
             },
         }
     }
@@ -96,30 +93,17 @@ fn context_may_contain_dir_paths() {
 }
 
 #[test]
-fn is_equivalent_if_they_are_the_same_dir_or_the_same_repo_and_branch() {
-    let dir_1: Context = FromStr::from_str("./foo").unwrap();
-    let dir_2: Context = FromStr::from_str("./bar").unwrap();
-
+fn without_subdirectory_removes_the_optional_subdir() {
+    let dir: Context = FromStr::from_str("./foo").unwrap();
     let plain_repo: Context = FromStr::from_str("git@github.com:docker/docker.git").unwrap();
     let repo_with_branch: Context = FromStr::from_str("git@github.com:docker/docker.git#somebranch").unwrap();
     let repo_with_subdir: Context = FromStr::from_str("git@github.com:docker/docker.git#:somedir").unwrap();
     let repo_with_branch_and_subdir: Context = FromStr::from_str("git@github.com:docker/docker.git#somebranch:somedir").unwrap();
 
-    let different_repo: Context = FromStr::from_str("git@github.com:docker/compose.git").unwrap();
+    assert_eq!(dir, dir.without_subdirectory());
+    assert_eq!(plain_repo, plain_repo.without_subdirectory());
+    assert_eq!(repo_with_branch, repo_with_branch.without_subdirectory());
 
-    assert!(dir_1.is_compatible_with(&dir_1));
-    assert!(!dir_1.is_compatible_with(&dir_2));
-    assert!(!dir_1.is_compatible_with(&plain_repo));
-
-    assert!(plain_repo.is_compatible_with(&plain_repo));
-    assert!(plain_repo.is_compatible_with(&repo_with_subdir));
-
-    assert!(!plain_repo.is_compatible_with(&dir_1));
-    assert!(!plain_repo.is_compatible_with(&different_repo));
-    assert!(!plain_repo.is_compatible_with(&repo_with_branch));
-    assert!(!plain_repo.is_compatible_with(&repo_with_branch_and_subdir));
-
-    assert!(repo_with_branch.is_compatible_with(&repo_with_branch));
-    assert!(repo_with_branch.is_compatible_with(&repo_with_branch_and_subdir));
-    assert!(!repo_with_branch.is_compatible_with(&plain_repo));
+    assert_eq!(plain_repo, repo_with_subdir.without_subdirectory());
+    assert_eq!(repo_with_branch, repo_with_branch_and_subdir.without_subdirectory());
 }
