@@ -72,6 +72,17 @@ impl GitUrl {
         }
     }
 
+    /// Returns a new GitUrl which is the same as the
+    /// this one, but without any subdirectory part
+    pub fn without_subdirectory(&self) -> GitUrl {
+        let (repository, branch, _) = self.parse_parts();
+        let branch_str = match branch {
+            Some(branch) => format!("#{}", branch),
+            None => String::new(),
+        };
+        GitUrl { url: format!("{}{}", repository, branch_str) }
+    }
+
     /// Extract the repository part of the URL
     pub fn repository(&self) -> String {
         self.parse_parts().0
