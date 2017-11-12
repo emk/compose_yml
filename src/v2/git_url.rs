@@ -71,6 +71,33 @@ impl GitUrl {
             }
         }
     }
+
+    /// Extract the repository part of the URL
+    pub fn repository(&self) -> String {
+        self.parse_parts().0
+    }
+
+    /// Extract the optional branch part of the git URL
+    pub fn branch(&self) -> Option<String> {
+        self.parse_parts().1
+    }
+
+    /// Extract the optional subdirectory part of the git URL
+    pub fn subdirectory(&self) -> Option<String> {
+        self.parse_parts().2
+    }
+
+    fn parse_parts(&self) -> (String, Option<String>, Option<String>) {
+        lazy_static! {
+            static ref URL_PARSE: Regex = Regex::new(r#"^([^#]+)(#([^:]+)?(:(.+))?)?$"#).unwrap();
+        }
+        let captures = URL_PARSE.captures(&self.url).unwrap();
+        (
+            captures.at(1).unwrap().to_string(),
+            captures.at(3).map(|branch| branch.to_string()),
+            captures.at(5).map(|branch| branch.to_string()),
+        )
+    }
 }
 
 impl fmt::Display for GitUrl {
@@ -132,5 +159,41 @@ fn to_url_converts_git_urls_to_real_ones() {
     let invalid_urls = &["local/path.git"];
     for &url in invalid_urls {
         assert!(GitUrl::new(url).is_err());
+    }
+}
+
+#[test]
+fn it_can_extract_its_repo_branch_and_subdir_parts() {
+    let urls = &[
+        "git://github.com/docker/docker",
+        "https://github.com/docker/docker.git",
+        "http://github.com/docker/docker.git",
+        "git@github.com:docker/docker.git",
+        "git@bitbucket.org:atlassianlabs/atlassian-docker.git",
+        "github.com/docker/docker.git",
+    ];
+
+    // Refs/folders specified as per:
+    // https://docs.docker.com/engine/reference/commandline/build/#git-repositories
+    for &url in urls {
+        let plain = GitUrl::new(url).unwrap();
+        assert_eq!(plain.repository(), url);
+        assert_eq!(plain.branch(), None);
+        assert_eq!(plain.subdirectory(), None);
+
+        let with_ref = GitUrl::new(format!("{}{}", url, "#mybranch")).unwrap();
+        assert_eq!(with_ref.repository(), url);
+        assert_eq!(with_ref.branch(), Some("mybranch".to_string()));
+        assert_eq!(with_ref.subdirectory(), None);
+
+        let with_subdir = GitUrl::new(format!("{}{}", url, "#:myfolder")).unwrap();
+        assert_eq!(with_subdir.repository(), url);
+        assert_eq!(with_subdir.branch(), None);
+        assert_eq!(with_subdir.subdirectory(), Some("myfolder".to_string()));
+
+        let with_ref_and_subdir = GitUrl::new(format!("{}{}", url, "#mybranch:myfolder")).unwrap();
+        assert_eq!(with_ref_and_subdir.repository(), url);
+        assert_eq!(with_ref_and_subdir.branch(), Some("mybranch".to_string()));
+        assert_eq!(with_ref_and_subdir.subdirectory(), Some("myfolder".to_string()));
     }
 }
