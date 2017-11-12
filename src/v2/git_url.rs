@@ -74,29 +74,28 @@ impl GitUrl {
 
     /// Extract the repository part of the URL
     pub fn repository(&self) -> String {
-        lazy_static! {
-            static ref REPO_PARSE: Regex = Regex::new(r#"([^#]*)"#).unwrap();
-        }
-        REPO_PARSE.captures(&self.url).unwrap().at(1).unwrap().to_string()
+        self.parse_parts().0
     }
 
     /// Extract the optional branch part of the git URL
     pub fn branch(&self) -> Option<String> {
-        lazy_static! {
-            static ref BRANCH_PARSE: Regex = Regex::new(r#".*#([^:]+)"#).unwrap();
-        }
-        BRANCH_PARSE.captures(&self.url).map(
-            |captures| captures.at(1).unwrap().to_string()
-        )
+        self.parse_parts().1
     }
 
     /// Extract the optional subdirectory part of the git URL
     pub fn subdirectory(&self) -> Option<String> {
+        self.parse_parts().2
+    }
+
+    fn parse_parts(&self) -> (String, Option<String>, Option<String>) {
         lazy_static! {
-            static ref SUBDIR_PARSE: Regex = Regex::new(r#".*#.*:(.+)"#).unwrap();
+            static ref URL_PARSE: Regex = Regex::new(r#"^([^#]+)(#([^:]+)?(:(.+))?)?$"#).unwrap();
         }
-        SUBDIR_PARSE.captures(&self.url).map(
-            |captures| captures.at(1).unwrap().to_string()
+        let captures = URL_PARSE.captures(&self.url).unwrap();
+        (
+            captures.at(1).unwrap().to_string(),
+            captures.at(3).map(|branch| branch.to_string()),
+            captures.at(5).map(|branch| branch.to_string()),
         )
     }
 }
@@ -177,7 +176,7 @@ fn it_can_extract_its_repo_branch_and_subdir_parts() {
     // Refs/folders specified as per:
     // https://docs.docker.com/engine/reference/commandline/build/#git-repositories
     for &url in urls {
-        let plain = GitUrl::new(format!("{}{}", url, "")).unwrap();
+        let plain = GitUrl::new(url).unwrap();
         assert_eq!(plain.repository(), url);
         assert_eq!(plain.branch(), None);
         assert_eq!(plain.subdirectory(), None);
