@@ -33,17 +33,16 @@ impl Context {
         }
     }
 
-    /// Determines if two Contexts are equivalent. This is only true
-    /// if they are the same directory path, or if they are same git
-    /// repository and branch. Subdirectories of a repository may differ
-    pub fn is_equivalent_to(&self, other: &Context) -> bool {
+    /// Determines if two Contexts are compatible. This is only true
+    /// if they are the same directory path, or if they are two git
+    /// URLs which can share a checkout with each other.
+    pub fn is_compatible_with(&self, other: &Context) -> bool {
         match (self, other) {
             (&Context::Dir(_), &Context::GitUrl(_)) => false,
             (&Context::GitUrl(_), &Context::Dir(_)) => false,
             (&Context::Dir(ref dir_1), &Context::Dir(ref dir_2)) => dir_1 == dir_2,
             (&Context::GitUrl(ref git_url_1), &Context::GitUrl(ref git_url_2)) => {
-                git_url_1.repository() == git_url_2.repository() &&
-                    git_url_1.branch() == git_url_2.branch()
+                git_url_1.can_share_checkout_with(&git_url_2)
             },
         }
     }
@@ -108,19 +107,19 @@ fn is_equivalent_if_they_are_the_same_dir_or_the_same_repo_and_branch() {
 
     let different_repo: Context = FromStr::from_str("git@github.com:docker/compose.git").unwrap();
 
-    assert!(dir_1.is_equivalent_to(&dir_1));
-    assert!(!dir_1.is_equivalent_to(&dir_2));
-    assert!(!dir_1.is_equivalent_to(&plain_repo));
+    assert!(dir_1.is_compatible_with(&dir_1));
+    assert!(!dir_1.is_compatible_with(&dir_2));
+    assert!(!dir_1.is_compatible_with(&plain_repo));
 
-    assert!(plain_repo.is_equivalent_to(&plain_repo));
-    assert!(plain_repo.is_equivalent_to(&repo_with_subdir));
+    assert!(plain_repo.is_compatible_with(&plain_repo));
+    assert!(plain_repo.is_compatible_with(&repo_with_subdir));
 
-    assert!(!plain_repo.is_equivalent_to(&dir_1));
-    assert!(!plain_repo.is_equivalent_to(&different_repo));
-    assert!(!plain_repo.is_equivalent_to(&repo_with_branch));
-    assert!(!plain_repo.is_equivalent_to(&repo_with_branch_and_subdir));
+    assert!(!plain_repo.is_compatible_with(&dir_1));
+    assert!(!plain_repo.is_compatible_with(&different_repo));
+    assert!(!plain_repo.is_compatible_with(&repo_with_branch));
+    assert!(!plain_repo.is_compatible_with(&repo_with_branch_and_subdir));
 
-    assert!(repo_with_branch.is_equivalent_to(&repo_with_branch));
-    assert!(repo_with_branch.is_equivalent_to(&repo_with_branch_and_subdir));
-    assert!(!repo_with_branch.is_equivalent_to(&plain_repo));
+    assert!(repo_with_branch.is_compatible_with(&repo_with_branch));
+    assert!(repo_with_branch.is_compatible_with(&repo_with_branch_and_subdir));
+    assert!(!repo_with_branch.is_compatible_with(&plain_repo));
 }

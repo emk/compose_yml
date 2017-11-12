@@ -72,6 +72,13 @@ impl GitUrl {
         }
     }
 
+    /// For two git URLs to share a checkout, they must refer
+    /// to both the same repository and also the same branch.
+    /// Their subdirectories may differ.
+    pub fn can_share_checkout_with(&self, other: &GitUrl) -> bool {
+        self.repository() == other.repository() && self.branch() == other.branch()
+    }
+
     /// Extract the repository part of the URL
     pub fn repository(&self) -> String {
         self.parse_parts().0
