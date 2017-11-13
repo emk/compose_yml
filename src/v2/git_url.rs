@@ -42,7 +42,9 @@ impl GitUrl {
     pub fn new<S: Into<String>>(url: S) -> Result<GitUrl> {
         let url = url.into();
         if GitUrl::should_treat_as_url(&url) {
-            Ok(GitUrl { url: url })
+            let git_url = GitUrl { url };
+            git_url.parse_parts()?;
+            Ok(git_url)
         } else {
             Err(ErrorKind::ParseGitUrl(url.clone()).into())
         }
@@ -75,7 +77,8 @@ impl GitUrl {
     /// Returns a new GitUrl which is the same as the
     /// this one, but without any subdirectory part
     pub fn without_subdirectory(&self) -> GitUrl {
-        let (repository, branch, _) = self.parse_parts();
+        let (repository, branch, _) = self.parse_parts()
+            .expect("parse_parts failed on data that we already parsed once successfully");
         let branch_str = match branch {
             Some(branch) => format!("#{}", branch),
             None => String::new(),
@@ -84,30 +87,37 @@ impl GitUrl {
     }
 
     /// Extract the repository part of the URL
-    pub fn repository(&self) -> String {
-        self.parse_parts().0
+    pub fn repository(&self) -> &str {
+        let (repository, _, _) = self.parse_parts()
+            .expect("parse_parts failed on data that we already parsed once successfully");
+        repository
     }
 
     /// Extract the optional branch part of the git URL
-    pub fn branch(&self) -> Option<String> {
-        self.parse_parts().1
+    pub fn branch(&self) -> Option<&str> {
+        let (_, branch, _) = self.parse_parts()
+            .expect("parse_parts failed on data that we already parsed once successfully");
+        branch
     }
 
     /// Extract the optional subdirectory part of the git URL
-    pub fn subdirectory(&self) -> Option<String> {
-        self.parse_parts().2
+    pub fn subdirectory(&self) -> Option<&str> {
+        let (_, _, subdirectory) = self.parse_parts()
+            .expect("parse_parts failed on data that we already parsed once successfully");
+        subdirectory
     }
 
-    fn parse_parts(&self) -> (String, Option<String>, Option<String>) {
+    fn parse_parts(&self) -> Result<(&str, Option<&str>, Option<&str>)> {
         lazy_static! {
-            static ref URL_PARSE: Regex = Regex::new(r#"^([^#]+)(#([^:]+)?(:(.+))?)?$"#).unwrap();
+            static ref URL_PARSE: Regex = Regex::new(r#"^([^#]+)(?:#([^:]+)?(?::(.+))?)?$"#)
+                .expect("Could not parse regex URL_PARSE");
         }
-        let captures = URL_PARSE.captures(&self.url).unwrap();
-        (
-            captures.at(1).unwrap().to_string(),
-            captures.at(3).map(|branch| branch.to_string()),
-            captures.at(5).map(|branch| branch.to_string()),
-        )
+        let captures = URL_PARSE.captures(&self.url).ok_or_else(|| -> Error { "".into() })?;
+        Ok((
+            captures.at(1).unwrap(),
+            captures.at(2),
+            captures.at(3),
+        ))
     }
 }
 
@@ -194,17 +204,17 @@ fn it_can_extract_its_repo_branch_and_subdir_parts() {
 
         let with_ref = GitUrl::new(format!("{}{}", url, "#mybranch")).unwrap();
         assert_eq!(with_ref.repository(), url);
-        assert_eq!(with_ref.branch(), Some("mybranch".to_string()));
+        assert_eq!(with_ref.branch(), Some("mybranch"));
         assert_eq!(with_ref.subdirectory(), None);
 
         let with_subdir = GitUrl::new(format!("{}{}", url, "#:myfolder")).unwrap();
         assert_eq!(with_subdir.repository(), url);
         assert_eq!(with_subdir.branch(), None);
-        assert_eq!(with_subdir.subdirectory(), Some("myfolder".to_string()));
+        assert_eq!(with_subdir.subdirectory(), Some("myfolder"));
 
         let with_ref_and_subdir = GitUrl::new(format!("{}{}", url, "#mybranch:myfolder")).unwrap();
         assert_eq!(with_ref_and_subdir.repository(), url);
-        assert_eq!(with_ref_and_subdir.branch(), Some("mybranch".to_string()));
-        assert_eq!(with_ref_and_subdir.subdirectory(), Some("myfolder".to_string()));
+        assert_eq!(with_ref_and_subdir.branch(), Some("mybranch"));
+        assert_eq!(with_ref_and_subdir.subdirectory(), Some("myfolder"));
     }
 }
