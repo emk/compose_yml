@@ -32,6 +32,17 @@ impl Context {
             Context::Dir(Path::new(&s_ref).to_owned())
         }
     }
+
+    /// Returns a new Context which is the same as the
+    /// this one, but without any subdirectory part
+    pub fn without_repository_subdirectory(&self) -> Context {
+        match self {
+            &Context::Dir(_) => self.clone(),
+            &Context::GitUrl(ref git_url) => {
+                Context::GitUrl(git_url.without_subdirectory())
+            },
+        }
+    }
 }
 
 impl_interpolatable_value!(Context);
@@ -79,4 +90,20 @@ fn context_may_contain_dir_paths() {
         assert_eq!(context, Context::Dir(Path::new(path).to_owned()));
         assert_eq!(context.to_string(), path);
     }
+}
+
+#[test]
+fn without_subdirectory_removes_the_optional_subdir() {
+    let dir: Context = FromStr::from_str("./foo").unwrap();
+    let plain_repo: Context = FromStr::from_str("git@github.com:docker/docker.git").unwrap();
+    let repo_with_branch: Context = FromStr::from_str("git@github.com:docker/docker.git#somebranch").unwrap();
+    let repo_with_subdir: Context = FromStr::from_str("git@github.com:docker/docker.git#:somedir").unwrap();
+    let repo_with_branch_and_subdir: Context = FromStr::from_str("git@github.com:docker/docker.git#somebranch:somedir").unwrap();
+
+    assert_eq!(dir, dir.without_repository_subdirectory());
+    assert_eq!(plain_repo, plain_repo.without_repository_subdirectory());
+    assert_eq!(repo_with_branch, repo_with_branch.without_repository_subdirectory());
+
+    assert_eq!(plain_repo, repo_with_subdir.without_repository_subdirectory());
+    assert_eq!(repo_with_branch, repo_with_branch_and_subdir.without_repository_subdirectory());
 }
