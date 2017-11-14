@@ -43,6 +43,7 @@ impl GitUrl {
         let url = url.into();
         if GitUrl::should_treat_as_url(&url) {
             let git_url = GitUrl { url };
+            // Invariant: `parse_parts` should succeed for all `GitUrl` values after construction.
             git_url.parse_parts()?;
             Ok(git_url)
         } else {
@@ -112,7 +113,8 @@ impl GitUrl {
             static ref URL_PARSE: Regex = Regex::new(r#"^([^#]+)(?:#([^:]+)?(?::(.+))?)?$"#)
                 .expect("Could not parse regex URL_PARSE");
         }
-        let captures = URL_PARSE.captures(&self.url).ok_or_else(|| -> Error { "".into() })?;
+        let captures = URL_PARSE.captures(&self.url)
+            .ok_or_else(|| -> Error { format!("could not parse URL {:?}", self.url).into() })?;
         Ok((
             captures.at(1).unwrap(),
             captures.at(2),
@@ -216,5 +218,11 @@ fn it_can_extract_its_repo_branch_and_subdir_parts() {
         assert_eq!(with_ref_and_subdir.repository(), url);
         assert_eq!(with_ref_and_subdir.branch(), Some("mybranch"));
         assert_eq!(with_ref_and_subdir.subdirectory(), Some("myfolder"));
+
+        // This is an invalid URL - just making sure it doesn't extract a directory from it
+        let weird_url = GitUrl::new(format!("{}{}", url, ":myfolder")).unwrap();
+        assert_eq!(weird_url.repository(), format!("{}{}", url, ":myfolder"));
+        assert_eq!(weird_url.branch(), None);
+        assert_eq!(weird_url.subdirectory(), None);
     }
 }
