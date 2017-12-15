@@ -45,12 +45,12 @@ impl FromStr for Ports {
         // Convert a regex capture group to a string.  Only call if the
         // specified capture group is known to be valid.
         let port_from_str = |i: usize| -> Result<u16> {
-            FromStr::from_str(caps.at(i).unwrap()).map_err(|_| {
+            FromStr::from_str(caps.get(i).unwrap().as_str()).map_err(|_| {
                 Error::invalid_value("port", s)
             })
         };
 
-        if caps.at(2).is_none() {
+        if caps.get(2).is_none() {
             Ok(Ports::Port(port_from_str(1)?))
         } else {
             Ok(Ports::Range(port_from_str(1)?, port_from_str(2)?))

@@ -62,8 +62,8 @@ impl FromStr for AliasedName {
             Error::invalid_value("aliased name", s)
         })?;
         Ok(AliasedName {
-            name: caps.at(1).unwrap().to_owned(),
-            alias: caps.at(2).map(|v| v.to_owned()),
+            name: caps.get(1).unwrap().as_str().to_owned(),
+            alias: caps.get(2).map(|v| v.as_str().to_owned()),
         })
     }
 }

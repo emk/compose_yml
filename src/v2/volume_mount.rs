@@ -76,14 +76,14 @@ impl FromStr for HostVolume {
         let caps = HOST_VOLUME.captures(s).ok_or_else(|| {
             Error::invalid_value("host volume", s)
         })?;
-        if let Some(path) = caps.at(1) {
-            let fixed_path = path_str_from_docker(path)?;
+        if let Some(path) = caps.get(1) {
+            let fixed_path = path_str_from_docker(path.as_str())?;
             Ok(HostVolume::Path(Path::new(&fixed_path).to_owned()))
-        } else if let Some(path) = caps.at(2) {
-            let fixed_path = path_str_from_docker(path)?;
+        } else if let Some(path) = caps.get(2) {
+            let fixed_path = path_str_from_docker(path.as_str())?;
             Ok(HostVolume::UserRelativePath(Path::new(&fixed_path).to_owned()))
-        } else if let Some(name) = caps.at(3) {
-            Ok(HostVolume::Name(name.to_owned()))
+        } else if let Some(name) = caps.get(3) {
+            Ok(HostVolume::Name(name.as_str().to_owned()))
         } else {
             unreachable!()
         }

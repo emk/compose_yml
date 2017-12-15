@@ -41,10 +41,10 @@ impl FromStr for HostMapping {
             Error::invalid_value("host mapping", s)
         })?;
         let addr: IpAddr =
-            FromStr::from_str(caps.at(2).unwrap()).map_err(|_| {
+            FromStr::from_str(caps.get(2).unwrap().as_str()).map_err(|_| {
                 Error::invalid_value("IP address", s)
             })?;
-        Ok(HostMapping::new(caps.at(1).unwrap(), &addr))
+        Ok(HostMapping::new(caps.get(1).unwrap().as_str(), &addr))
     }
 }
 

@@ -19,7 +19,7 @@ impl MergeOverride for CommandLine {}
 impl InterpolateAll for CommandLine {}
 
 impl Serialize for CommandLine {
-    fn serialize<S>(&self, serializer: &mut S) -> result::Result<(), S::Error>
+    fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>
         where S: Serializer
     {
         match self {
@@ -29,17 +29,17 @@ impl Serialize for CommandLine {
     }
 }
 
-impl Deserialize for CommandLine {
-    fn deserialize<D>(deserializer: &mut D) -> result::Result<CommandLine, D::Error>
-        where D: Deserializer
+impl<'de> Deserialize<'de> for CommandLine {
+    fn deserialize<D>(deserializer: D) -> result::Result<CommandLine, D::Error>
+        where D: Deserializer<'de>
     {
         struct CommandLineVisitor;
 
-        impl Visitor for CommandLineVisitor {
+        impl<'de> Visitor<'de> for CommandLineVisitor {
             type Value = CommandLine;
 
             // The deserializer found a string, so handle it.
-            fn visit_str<E>(&mut self, value: &str) -> result::Result<CommandLine, E>
+            fn visit_str<E>(self, value: &str) -> result::Result<CommandLine, E>
                 where E: de::Error
             {
                 Ok(CommandLine::ShellCode(raw(value).map_err(|err| {
@@ -48,22 +48,25 @@ impl Deserialize for CommandLine {
             }
 
             // The deserializer found a sequence.
-            fn visit_seq<V>(&mut self, mut visitor: V) ->
+            fn visit_seq<V>(self, mut visitor: V) ->
                 result::Result<Self::Value, V::Error>
-                where V: SeqVisitor
+                where V: SeqAccess<'de>
             {
                 let mut args: Vec<RawOr<String>> = vec!();
-                while let Some(arg) = visitor.visit::<String>()? {
+                while let Some(arg) = visitor.next_element::<String>()? {
                     args.push(raw(arg).map_err(|err| {
-                        <V::Error as serde::Error>::custom(format!("{}", err))
+                        <V::Error as serde::de::Error>::custom(format!("{}", err))
                     })?);
                 }
-                visitor.end()?;
                 Ok(CommandLine::Parsed(args))
+            }
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                write!(formatter, "a string or list of strings")
             }
         }
 
-        deserializer.deserialize(CommandLineVisitor)
+        deserializer.deserialize_seq(CommandLineVisitor)
     }
 }
 

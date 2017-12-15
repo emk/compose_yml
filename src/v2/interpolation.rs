@@ -101,18 +101,18 @@ fn interpolate_helper(input: &str, mode: Mode, env: &Environment) -> Result<Stri
             "".to_owned()
         } else {
             // Handle actual interpolations.
-            let var = caps.name("var1").or_else(|| caps.name("var2")).unwrap();
+            let var = caps.name("var1").or_else(|| caps.name("var2")).unwrap().as_str();
             match (env.var(var), caps.name("colon"), caps.name("default")) {
                 // We're just validating syntax, not interpolating.
                 _ if mode == Mode::Validate => "".to_owned(),
                 // `${FOO:-default}` with a set-but-empty environment variable.
                 (Ok(ref val), Some(_), Some(default)) if val == "" => {
-                    default.to_owned()
+                    default.as_str().to_owned()
                 }
                 // A set environment variable.
                 (Ok(val), _, _) => val,
                 // An unset environment with a default value provided.
-                (Err(_), _, Some(default)) => default.to_owned(),
+                (Err(_), _, Some(default)) => default.as_str().to_owned(),
                 // An unset environment variable with no default provided.
                 (Err(_), _, _) => {
                     err =
@@ -125,7 +125,7 @@ fn interpolate_helper(input: &str, mode: Mode, env: &Environment) -> Result<Stri
     if let Some(e) = err {
         return Err(e.into());
     }
-    Ok(result)
+    Ok(result.into_owned())
 }
 
 /// Interpolate environment variables into a string using the same rules as
@@ -585,7 +585,7 @@ impl<T> Display for RawOr<T>
 impl<T> Serialize for RawOr<T>
     where T: InterpolatableValue
 {
-    fn serialize<S>(&self, serializer: &mut S) -> result::Result<(), S::Error>
+    fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>
         where S: Serializer
     {
         serializer.serialize_str(&self.to_string())
@@ -602,11 +602,11 @@ impl<T> FromStr for RawOr<T>
     }
 }
 
-impl<T> Deserialize for RawOr<T>
+impl<'de, T> Deserialize<'de> for RawOr<T>
     where T: InterpolatableValue
 {
-    fn deserialize<D>(deserializer: &mut D) -> result::Result<Self, D::Error>
-        where D: Deserializer
+    fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
+        where D: Deserializer<'de>
     {
         let string = String::deserialize(deserializer)?;
         Self::from_str(&string).map_err(|err| de::Error::custom(format!("{}", err)))

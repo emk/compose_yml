@@ -37,8 +37,8 @@ impl EnvFile {
 
             let caps = VAR.captures(&line)
                 .ok_or_else(|| ErrorKind::ParseEnv(line.clone()))?;
-            vars.insert(caps.at(1).unwrap().to_owned(),
-                        caps.at(2).unwrap().to_owned());
+            vars.insert(caps.get(1).unwrap().as_str().to_owned(),
+                        caps.get(2).unwrap().as_str().to_owned());
         }
         Ok(EnvFile { vars: vars })
     }

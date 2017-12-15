@@ -84,19 +84,19 @@ impl FromStr for Image {
         })?;
         // This could use a good refactoring.
         let registry_host =
-            if caps.at(1).is_some() {
+            if caps.get(1).is_some() {
                 // TODO LOW: Is there a special map function for things
                 // which might fail?
                 let port =
-                    if caps.at(2).is_some() {
-                        Some(FromStr::from_str(caps.at(2).unwrap()).map_err(|_| {
+                    if caps.get(2).is_some() {
+                        Some(FromStr::from_str(caps.get(2).unwrap().as_str()).map_err(|_| {
                             Error::invalid_value("image", s)
                         })?)
                     } else {
                         None
                     };
                 Some(RegistryHost {
-                    host: caps.at(1).unwrap().to_owned(),
+                    host: caps.get(1).unwrap().as_str().to_owned(),
                     port: port,
                 })
             } else {
@@ -104,9 +104,9 @@ impl FromStr for Image {
             };
         Ok(Image {
             registry_host: registry_host,
-            user_name: caps.at(3).map(|s| s.to_owned()),
-            name: caps.at(4).unwrap().to_owned(),
-            tag: caps.at(5).map(|s| s.to_owned()),
+            user_name: caps.get(3).map(|s| s.as_str().to_owned()),
+            name: caps.get(4).unwrap().as_str().to_owned(),
+            tag: caps.get(5).map(|s| s.as_str().to_owned()),
         })
     }
 }

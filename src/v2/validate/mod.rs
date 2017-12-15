@@ -1,14 +1,33 @@
 //! Support for validating a `docker-compose.yml` file against the official
 //! schema.
 
+/*
 use serde::Serialize;
 use serde_json;
 use std::ops::Deref;
 use url::Url;
 use valico;
+*/
 
 use errors::*;
 use super::File;
+
+/// TODO: This should validate a `File` against the official JSON schema
+/// provided by `docker-compose`, but there's no usable version of `valico`
+/// for stable Rust. See https://github.com/emk/compose_yml/issues/11
+pub fn validate_file(file: &File) -> Result<()> {
+    match &file.version[..] {
+        "2" => {}
+        "2.1" => {}
+        vers => return Err(ErrorKind::UnsupportedVersion(vers.to_owned()).into()),
+    };
+
+    warn!("docker-compose.yml file validation disabled until valico is updated");
+
+    Ok(())
+}
+
+/*
 
 /// Schema for `docker-compose.yml` version 2.0.
 const COMPOSE_2_0_SCHEMA_STR: &'static str = include_str!("config_schema_v2.0.json");
@@ -66,3 +85,5 @@ pub fn validate_file(file: &File) -> Result<()> {
         res.chain_err(|| ErrorKind::ValidationFailed)
     }
 }
+
+*/

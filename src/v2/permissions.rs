@@ -50,9 +50,9 @@ impl FromStr for DevicePermissions {
             Error::invalid_value("restart-mode", s)
         })?;
         Ok(DevicePermissions {
-            read: caps.at(1).is_some(),
-            write: caps.at(2).is_some(),
-            mknod: caps.at(3).is_some(),
+            read: caps.get(1).is_some(),
+            write: caps.get(2).is_some(),
+            mknod: caps.get(3).is_some(),
         })
     }
 }

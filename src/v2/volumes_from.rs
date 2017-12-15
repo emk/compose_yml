@@ -103,17 +103,17 @@ impl FromStr for VolumesFrom {
             Error::invalid_value("volumes_from", s)
         })?;
 
-        let name = caps.at(2).unwrap().to_owned();
+        let name = caps.get(2).unwrap().as_str().to_owned();
         let source =
-            if caps.at(1).is_some() {
+            if caps.get(1).is_some() {
                 ServiceOrContainer::Container(name)
             } else {
                 ServiceOrContainer::Service(name)
             };
         let permissions =
-            match caps.at(3) {
+            match caps.get(3) {
                 None => Default::default(),
-                Some(permstr) => FromStr::from_str(permstr)?,
+                Some(permstr) => FromStr::from_str(permstr.as_str())?,
             };
         Ok(VolumesFrom {
             source: source,

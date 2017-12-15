@@ -63,12 +63,12 @@ impl GitUrl {
                             .unwrap();
                 }
                 let caps = URL_PARSE.captures(&self.url).ok_or_else(&mkerr)?;
-                let new = if caps.at(1).is_some() {
+                let new = if caps.get(1).is_some() {
                     format!("git://git@{}/{}",
-                            caps.at(1).unwrap(),
-                            caps.at(2).unwrap())
+                            caps.get(1).unwrap().as_str(),
+                            caps.get(2).unwrap().as_str())
                 } else {
-                    format!("https://{}", caps.at(3).unwrap())
+                    format!("https://{}", caps.get(3).unwrap().as_str())
                 };
                 Url::parse(&new).chain_err(&mkerr)
             }
@@ -116,9 +116,9 @@ impl GitUrl {
         let captures = URL_PARSE.captures(&self.url)
             .ok_or_else(|| -> Error { format!("could not parse URL {:?}", self.url).into() })?;
         Ok((
-            captures.at(1).unwrap(),
-            captures.at(2),
-            captures.at(3),
+            captures.get(1).unwrap().as_str(),
+            captures.get(2).map(|c| c.as_str()),
+            captures.get(3).map(|c| c.as_str()),
         ))
     }
 }

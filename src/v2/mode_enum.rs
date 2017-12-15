@@ -110,8 +110,8 @@ macro_rules! mode_enum {
                         let caps = COMPOUND.captures(s).ok_or_else(|| {
                             Error::invalid_value(stringify!($name), s)
                         })?;
-                        let valstr = caps.at(2).unwrap();
-                        match caps.at(1).unwrap() {
+                        let valstr = caps.get(2).unwrap().as_str();
+                        match caps.get(1).unwrap().as_str() {
                             $( $tag1 => {
                                let value = FromStr::from_str(valstr).map_err(|_| {
                                    Error::invalid_value(stringify!($name), valstr)
@@ -244,8 +244,8 @@ impl FromStr for RestartMode {
             _ => {
                 let caps = COMPOUND.captures(s)
                     .ok_or_else(|| Error::invalid_value("restart-mode", s))?;
-                let valstr = caps.at(2).unwrap();
-                match caps.at(1).unwrap() {
+                let valstr = caps.get(2).unwrap().as_str();
+                match caps.get(1).unwrap().as_str() {
                     "on-failure" => {
                         let value =
                             FromStr::from_str(valstr).map_err(|_| {

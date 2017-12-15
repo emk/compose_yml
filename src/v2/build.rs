@@ -65,8 +65,8 @@ impl FromStr for Build {
 }
 
 impl SerializeStringOrStruct for Build {
-    fn serialize_string_or_struct<S>(&self, serializer: &mut S) ->
-        result::Result<(), S::Error>
+    fn serialize_string_or_struct<S>(&self, serializer: S) ->
+        result::Result<S::Ok, S::Error>
         where S: Serializer
     {
         if self.dockerfile.is_none() && self.args.is_empty() {

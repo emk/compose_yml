@@ -69,8 +69,8 @@ impl FromStr for MemorySize {
         let caps = MEM_SIZE.captures(s).ok_or_else(|| {
             Error::invalid_value("memory size", s)
         })?;
-        let value: usize = caps.at(1).unwrap().parse().unwrap();
-        match caps.at(2) {
+        let value: usize = caps.get(1).unwrap().as_str().parse().unwrap();
+        match caps.get(2).map(|c| c.as_str()) {
             None | Some("b") => Ok(MemorySize::bytes(value)),
             Some("k") => Ok(MemorySize::kb(value)),
             Some("m") => Ok(MemorySize::mb(value)),

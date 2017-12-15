@@ -91,7 +91,6 @@ extern crate lazy_static;
 extern crate log;
 extern crate regex;
 extern crate serde;
-#[cfg(feature = "serde_derive")]
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;

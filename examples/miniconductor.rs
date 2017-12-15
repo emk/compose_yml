@@ -30,7 +30,7 @@ fn git_to_local(ctx: &dc::Context) -> dc::Result<PathBuf> {
             match re.captures(url.as_ref()) {
                 None => Err(err!("Can't get dir name from Git URL: {}", url)),
                 Some(caps) => {
-                    let path = Path::new(caps.at(1).unwrap());
+                    let path = Path::new(caps.get(1).unwrap().as_str());
                     Ok(path.to_owned())
                 }
             }

@@ -3,7 +3,7 @@
 
 use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
-use std::fmt::Display;
+use std::fmt::{self, Display};
 use std::marker::PhantomData;
 use std::str::FromStr;
 
@@ -17,21 +17,21 @@ use std::str::FromStr;
 /// for [this official `serde`
 /// example](https://serde.rs/string-or-struct.html), which in turn forms
 /// the basis of this code.
-pub fn deserialize_string_or_struct<T, D>(d: &mut D) -> Result<T, D::Error>
-    where T: Deserialize + FromStr,
+pub fn deserialize_string_or_struct<'de, T, D>(d: D) -> Result<T, D::Error>
+    where T: Deserialize<'de> + FromStr,
           <T as FromStr>::Err: Display,
-          D: Deserializer
+          D: Deserializer<'de>
 {
     /// Declare an internal visitor type to handle our input.
     struct StringOrStruct<T>(PhantomData<T>);
 
-    impl<T> de::Visitor for StringOrStruct<T>
-        where T: Deserialize + FromStr,
+    impl<'de, T> de::Visitor<'de> for StringOrStruct<T>
+        where T: Deserialize<'de> + FromStr,
               <T as FromStr>::Err: Display
     {
         type Value = T;
 
-        fn visit_str<E>(&mut self, value: &str) -> Result<T, E>
+        fn visit_str<E>(self, value: &str) -> Result<T, E>
             where E: de::Error
         {
             FromStr::from_str(value).map_err(|err| {
@@ -41,15 +41,19 @@ pub fn deserialize_string_or_struct<T, D>(d: &mut D) -> Result<T, D::Error>
             })
         }
 
-        fn visit_map<M>(&mut self, visitor: M) -> Result<T, M::Error>
-            where M: de::MapVisitor
+        fn visit_map<M>(self, visitor: M) -> Result<T, M::Error>
+            where M: de::MapAccess<'de>
         {
-            let mut mvd = de::value::MapVisitorDeserializer::new(visitor);
-            Deserialize::deserialize(&mut mvd)
+            let mvd = de::value::MapAccessDeserializer::new(visitor);
+            Deserialize::deserialize(mvd)
+        }
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            write!(formatter, "a string or a map")
         }
     }
 
-    d.deserialize(StringOrStruct(PhantomData))
+    d.deserialize_map(StringOrStruct(PhantomData))
 }
 
 /// Like `opt_string_or_struct`, but it also handles the case where the
@@ -58,32 +62,35 @@ pub fn deserialize_string_or_struct<T, D>(d: &mut D) -> Result<T, D::Error>
 /// We could probably make this more generic, supporting underlying
 /// functions other than `string_or_struct`, but that's a project for
 /// another day.
-pub fn deserialize_opt_string_or_struct<T, D>(d: &mut D) -> Result<Option<T>, D::Error>
-    where T: Deserialize + FromStr,
+pub fn deserialize_opt_string_or_struct<'de, T, D>(d: D) -> Result<Option<T>, D::Error>
+    where T: Deserialize<'de> + FromStr,
           <T as FromStr>::Err: Display,
-          D: Deserializer
+          D: Deserializer<'de>
 {
     /// Declare an internal visitor type to handle our input.
     struct OptStringOrStruct<T>(PhantomData<T>);
 
-    impl<T> de::Visitor for OptStringOrStruct<T>
-        where T: Deserialize + FromStr,
+    impl<'de, T> de::Visitor<'de> for OptStringOrStruct<T>
+        where T: Deserialize<'de> + FromStr,
               <T as FromStr>::Err: Display
     {
         type Value = Option<T>;
 
-        fn visit_none<E>(&mut self) -> Result<Self::Value, E>
+        fn visit_none<E>(self) -> Result<Self::Value, E>
             where E: de::Error
         {
             Ok(None)
         }
 
-        fn visit_some<D>(&mut self,
-                         deserializer: &mut D)
+        fn visit_some<D>(self, deserializer: D)
                          -> Result<Self::Value, D::Error>
-            where D: Deserializer
+            where D: Deserializer<'de>
         {
             deserialize_string_or_struct(deserializer).map(Some)
+        }
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            write!(formatter, "a null, a string or a map")
         }
     }
 
@@ -96,16 +103,16 @@ pub trait SerializeStringOrStruct: Serialize {
     /// Serialize either a string representation of this struct, or a full
     /// struct if the object cannot be represented as a string.
     fn serialize_string_or_struct<S>(&self,
-                                     serializer: &mut S)
-                                     -> Result<(), S::Error>
+                                     serializer: S)
+                                     -> Result<S::Ok, S::Error>
         where S: Serializer;
 }
 
 /// Serialize the specified value as a string if we can, and a struct
 /// otherwise.
 pub fn serialize_string_or_struct<T, S>(value: &T,
-                                        serializer: &mut S)
-                                        -> Result<(), S::Error>
+                                        serializer: S)
+                                        -> Result<S::Ok, S::Error>
     where T: SerializeStringOrStruct,
           S: Serializer
 {
@@ -114,8 +121,8 @@ pub fn serialize_string_or_struct<T, S>(value: &T,
 
 /// Like `serialize_string_or_struct`, but can also handle missing values.
 pub fn serialize_opt_string_or_struct<T, S>(value: &Option<T>,
-                                            serializer: &mut S)
-                                            -> Result<(), S::Error>
+                                            serializer: S)
+                                            -> Result<S::Ok, S::Error>
     where T: SerializeStringOrStruct,
           S: Serializer
 {
@@ -130,7 +137,7 @@ pub fn serialize_opt_string_or_struct<T, S>(value: &Option<T>,
     impl<'a, T> Serialize for Wrap<'a, T>
         where T: 'a + SerializeStringOrStruct
     {
-        fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
             where S: Serializer
         {
             match *self {
@@ -141,6 +148,6 @@ pub fn serialize_opt_string_or_struct<T, S>(value: &Option<T>,
 
     match *value {
         None => serializer.serialize_none(),
-        Some(ref v) => serializer.serialize_some(Wrap(v)),
+        Some(ref v) => serializer.serialize_some(&Wrap(v)),
     }
 }

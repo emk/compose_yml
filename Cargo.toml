@@ -2,7 +2,6 @@
 name = "compose_yml"
 version = "0.0.50"
 authors = ["Eric Kidd <git@randomhacks.net>"]
-build = "build.rs"
 
 description = "Parse, manipulate and serialize docker-compose.yml in a strongly-typed fashion"
 documentation = "http://docs.rs/compose_yml"
@@ -10,27 +9,19 @@ license = "CC0-1.0"
 readme = "README.md"
 repository = "https://github.com/emk/compose_yml"
 
-[features]
-default = ["glob", "serde_codegen"]
-unstable = ["serde_derive", "clippy"]
-
-[build-dependencies]
-glob = { version = "0.2.11", optional = true }
-serde_codegen = { version = "0.8", optional = true }
-
 [dependencies]
 clippy = { version = "0.*", optional = true }
-error-chain = "0.5.0"
-lazy_static = "0.2.1"
-log = "0.3.6"
-regex = "0.1.73"
-serde = "0.8"
-serde_derive = { version = "0.8", optional = true }
-serde_json = "0.8.3"
+error-chain = "0.5"
+lazy_static = "1.0"
+log = "0.3"
+regex = "0.2"
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
 # See https://github.com/kbknapp/clap-rs/issues/747 before upgrading to
 # serde_yaml 0.5.x.
-serde_yaml = "0.4.1"
-yaml-rust = "0.3.3"
-url = "1.2.0"
-valico = "1.0.1"
-void = "1.0.2"
+serde_yaml = "0.7"
+yaml-rust = "0.4"
+url = "1.2"
+valico = "1.0"
+void = "1.0"
