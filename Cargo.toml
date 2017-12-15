@@ -1,6 +1,6 @@
 [package]
 name = "compose_yml"
-version = "0.0.50"
+version = "0.0.51"
 authors = ["Eric Kidd <git@randomhacks.net>"]
 
 description = "Parse, manipulate and serialize docker-compose.yml in a strongly-typed fashion"
