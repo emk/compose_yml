@@ -60,9 +60,10 @@ fn path_str_to_docker(s: &str) -> String {
     }
     DRIVE_LETTER
         .replace(s, |caps: &Captures| {
-            format!("/{}/", caps.name("letter").unwrap().to_lowercase())
+            format!("/{}/", caps.name("letter").unwrap().as_str().to_lowercase())
         })
         .replace("\\", "/")
+        .into_owned()
 }
 
 impl FromStr for HostVolume {
