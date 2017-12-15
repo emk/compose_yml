@@ -1,11 +1,4 @@
 language: rust
-cache:
-  apt: true
-  cargo: true
-  pip: true
-  directories:
-  - "$TRAVIS_BUILD_DIR/target"
-  - "$HOME/Library/Python/2.7"
 sudo: required
 os:
 - linux
@@ -13,23 +6,14 @@ os:
 rust:
 - stable
 matrix:
+  fast_finish: true
+  allow_failures:
+  - rust: nightly
   include:
   - os: linux
     rust: beta
   - os: linux
     rust: nightly
-before_script:
-- |
-  (cargo install rustfmt || true) &&
-  pip install 'travis-cargo<0.2' --user &&
-  export PATH=$HOME/.local/bin:$HOME/Library/Python/2.7/bin:$HOME/.cargo/bin:$PATH
 script:
-- |
-  if [[ "$TRAVIS_RUST_VERSION" == nightly ]]; then
-    EXTRA_ARGS="-- --no-default-features"
-  fi &&
-  travis-cargo build $EXTRA_ARGS &&
-  travis-cargo test $EXTRA_ARGS &&
-  (cargo fmt -- --write-mode=diff || true) &&
-  travis-cargo bench $EXTRA_ARGS &&
-  travis-cargo doc $EXTRA_ARGS
+- cargo test
+- cargo build
