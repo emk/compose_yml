@@ -147,13 +147,13 @@ mode_enum! {
 
 #[test]
 fn network_mode_has_a_string_representation() {
-    let pairs = vec!(
+    let pairs = vec![
         (NetworkMode::Bridge, "bridge"),
         (NetworkMode::Host, "host"),
         (NetworkMode::None, "none"),
         (NetworkMode::Service("foo".to_owned()), "service:foo"),
         (NetworkMode::Container("foo".to_owned()), "container:foo"),
-    );
+    ];
     for (mode, s) in pairs {
         assert_eq!(mode.to_string(), s);
         assert_eq!(mode, NetworkMode::from_str(s).unwrap());
@@ -242,15 +242,14 @@ impl FromStr for RestartMode {
             "always" => Ok(RestartMode::Always),
             "unless-stopped" => Ok(RestartMode::UnlessStopped),
             _ => {
-                let caps = COMPOUND.captures(s)
+                let caps = COMPOUND
+                    .captures(s)
                     .ok_or_else(|| Error::invalid_value("restart-mode", s))?;
                 let valstr = caps.get(2).unwrap().as_str();
                 match caps.get(1).unwrap().as_str() {
                     "on-failure" => {
-                        let value =
-                            FromStr::from_str(valstr).map_err(|_| {
-                                    Error::invalid_value("restart mode", valstr)
-                                })?;
+                        let value = FromStr::from_str(valstr)
+                            .map_err(|_| Error::invalid_value("restart mode", valstr))?;
                         Ok(RestartMode::OnFailure(Some(value)))
                     }
                     _ => Err(Error::invalid_value("restart mode", s)),
@@ -262,13 +261,13 @@ impl FromStr for RestartMode {
 
 #[test]
 fn restart_mode_has_a_string_representation() {
-    let pairs = vec!(
+    let pairs = vec![
         (RestartMode::No, "no"),
         (RestartMode::OnFailure(None), "on-failure"),
         (RestartMode::OnFailure(Some(3)), "on-failure:3"),
         (RestartMode::Always, "always"),
         (RestartMode::UnlessStopped, "unless-stopped"),
-    );
+    ];
     for (mode, s) in pairs {
         assert_eq!(mode.to_string(), s);
         assert_eq!(mode, RestartMode::from_str(s).unwrap());

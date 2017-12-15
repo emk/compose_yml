@@ -40,8 +40,7 @@ fn git_to_local(ctx: &dc::Context) -> dc::Result<PathBuf> {
 }
 
 /// Get the local build directory that we'll use for a service.
-fn service_build_dir(service: &dc::Service) -> dc::Result<Option<PathBuf>>
-{
+fn service_build_dir(service: &dc::Service) -> dc::Result<Option<PathBuf>> {
     if let Some(ref build) = service.build {
         let mut path = Path::new("src").to_owned();
         path.push(git_to_local(build.context.value()?)?);
@@ -58,7 +57,9 @@ fn update(file: &mut dc::File) -> dc::Result<()> {
     for (_name, service) in file.services.iter_mut() {
         // Insert standard env_file entries.
         service.env_files.insert(0, dc::escape("pods/common.env")?);
-        service.env_files.insert(1, dc::raw("pods/overrides/$ENV/common.env")?);
+        service
+            .env_files
+            .insert(1, dc::raw("pods/overrides/$ENV/common.env")?);
 
         // Figure out where we'll keep the local checkout, if any.
         let build_dir = service_build_dir(service)?;
@@ -66,7 +67,9 @@ fn update(file: &mut dc::File) -> dc::Result<()> {
         // If we have a local build directory, update the service to use it.
         if let Some(ref dir) = build_dir {
             // Mount the local build directory as `/app` inside the container.
-            service.volumes.push(dc::value(dc::VolumeMount::host(dir, "/app")));
+            service
+                .volumes
+                .push(dc::value(dc::VolumeMount::host(dir, "/app")));
             // Update the `build` field if present.
             if let Some(ref mut build) = service.build {
                 build.context = dc::value(dc::Context::Dir(dir.clone()));

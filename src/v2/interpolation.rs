@@ -63,9 +63,9 @@ enum Mode {
 /// validating interpolation strings.  We use a single function for all
 /// three to prevent the risk of divergent code paths.
 fn interpolate_helper(input: &str, mode: Mode, env: &Environment) -> Result<String> {
+    #[cfg_attr(rustfmt, rustfmt_skip)]
     lazy_static! {
-        static ref VAR: Regex =
-            Regex::new(r#"(?x)
+        static ref VAR: Regex = Regex::new(r#"(?x)
 # We found a '$',
 \$
 # ...but what follows it?
@@ -101,7 +101,10 @@ fn interpolate_helper(input: &str, mode: Mode, env: &Environment) -> Result<Stri
             "".to_owned()
         } else {
             // Handle actual interpolations.
-            let var = caps.name("var1").or_else(|| caps.name("var2")).unwrap().as_str();
+            let var = caps.name("var1")
+                .or_else(|| caps.name("var2"))
+                .unwrap()
+                .as_str();
             match (env.var(var), caps.name("colon"), caps.name("default")) {
                 // We're just validating syntax, not interpolating.
                 _ if mode == Mode::Validate => "".to_owned(),
@@ -345,10 +348,13 @@ impl InterpolatableValue for PathBuf {
 }
 
 /// A wrapper type to make `format!` call `fmt_iv` instead of `fmt`.
-struct DisplayInterpolatableValue<'a, V>(&'a V) where V: 'a + InterpolatableValue;
+struct DisplayInterpolatableValue<'a, V>(&'a V)
+where
+    V: 'a + InterpolatableValue;
 
 impl<'a, T> Display for DisplayInterpolatableValue<'a, T>
-    where T: InterpolatableValue
+where
+    T: InterpolatableValue,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -361,7 +367,8 @@ impl<'a, T> Display for DisplayInterpolatableValue<'a, T>
 /// is the internal, private implementation of `RawOr`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum RawOrValue<T>
-    where T: InterpolatableValue
+where
+    T: InterpolatableValue,
 {
     /// A raw value.  Invariant: This is valid, but it contains actual
     /// references to environment variables.  If we can parse a string,
@@ -419,7 +426,9 @@ enum RawOrValue<T>
 /// assert!(dc::raw::<dc::NetworkMode, _>("invalid").is_err());
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RawOr<T>(RawOrValue<T>) where T: InterpolatableValue;
+pub struct RawOr<T>(RawOrValue<T>)
+where
+    T: InterpolatableValue;
 
 /// `InterpolatableValue` is basically just a string that we parse for
 /// internal use, so we can merge it as though it were a simple string,
@@ -431,8 +440,9 @@ impl<T: InterpolatableValue> MergeOverride for RawOr<T> {}
 /// Convert a raw string containing variable interpolations into a
 /// `RawOr<T>` value.  See `RawOr<T>` for examples of how to use this API.
 pub fn raw<T, S>(s: S) -> Result<RawOr<T>>
-    where T: InterpolatableValue,
-          S: Into<String>
+where
+    T: InterpolatableValue,
+    S: Into<String>,
 {
     let raw: String = s.into();
     validate(&raw)?;
@@ -451,8 +461,9 @@ pub fn raw<T, S>(s: S) -> Result<RawOr<T>>
 /// Escape a string and convert it into a `RawOr<T>` value.  See `RawOr<T>`
 /// for examples of how to use this API.
 pub fn escape<T, S>(s: S) -> Result<RawOr<T>>
-    where T: InterpolatableValue,
-          S: AsRef<str>
+where
+    T: InterpolatableValue,
+    S: AsRef<str>,
 {
     let value: T = InterpolatableValue::iv_from_str(s.as_ref())?;
     Ok(RawOr(RawOrValue::Value(value)))
@@ -461,13 +472,15 @@ pub fn escape<T, S>(s: S) -> Result<RawOr<T>>
 /// Convert a value into a `RawOr<T>` value, taking ownership of the
 /// original value.  See `RawOr<T>` for examples of how to use this API.
 pub fn value<T>(v: T) -> RawOr<T>
-    where T: InterpolatableValue
+where
+    T: InterpolatableValue,
 {
     RawOr(RawOrValue::Value(v))
 }
 
 impl<T> RawOr<T>
-    where T: InterpolatableValue
+where
+    T: InterpolatableValue,
 {
     /// Either return a `&T` for this `RawOr<T>`, or return an error if
     /// parsing the value would require performing interpolation.
@@ -510,7 +523,6 @@ impl<T> RawOr<T>
     /// environment variable interpolations using the supplied `env` object
     /// and updating the value in place.
     pub fn interpolate_env(&mut self, env: &Environment) -> Result<&mut T> {
-
         let RawOr(ref mut inner) = *self;
 
         // We have to very careful about how we destructure this value to
@@ -537,7 +549,6 @@ impl<T> RawOr<T>
                 unreachable!()
             }
         }
-
     }
 
     /// Return a `&mut T` for this `RawOr<T>`, performing any necessary
@@ -569,7 +580,8 @@ impl<T> RawOr<T>
 }
 
 impl<T> Display for RawOr<T>
-    where T: InterpolatableValue
+where
+    T: InterpolatableValue,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -583,17 +595,20 @@ impl<T> Display for RawOr<T>
 }
 
 impl<T> Serialize for RawOr<T>
-    where T: InterpolatableValue
+where
+    T: InterpolatableValue,
 {
     fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>
-        where S: Serializer
+    where
+        S: Serializer,
     {
         serializer.serialize_str(&self.to_string())
     }
 }
 
 impl<T> FromStr for RawOr<T>
-    where T: InterpolatableValue
+where
+    T: InterpolatableValue,
 {
     type Err = Error;
 
@@ -603,10 +618,12 @@ impl<T> FromStr for RawOr<T>
 }
 
 impl<'de, T> Deserialize<'de> for RawOr<T>
-    where T: InterpolatableValue
+where
+    T: InterpolatableValue,
 {
     fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         let string = String::deserialize(deserializer)?;
         Self::from_str(&string).map_err(|err| de::Error::custom(format!("{}", err)))

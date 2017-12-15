@@ -57,14 +57,17 @@ impl<T: MergeOverride> MergeOverride for Option<T> {
 #[test]
 fn option_uses_second_value_if_not_none() {
     assert_merge!(Option<bool>, Some(false), Some(true), Some(true));
-    assert_merge!(Option<bool>, Some(false), None,       Some(false));
-    assert_merge!(Option<bool>, None,        Some(true), Some(true));
-    assert_merge!(Option<bool>, None,        None,       None);
+    assert_merge!(Option<bool>, Some(false), None, Some(false));
+    assert_merge!(Option<bool>, None, Some(true), Some(true));
+    assert_merge!(Option<bool>, None, None, None);
 
     // Check complex recursive merge, too.
-    assert_merge!(Option<Vec<bool>>,
-                  Some(vec!(false)), Some(vec!(true)),
-                  Some(vec!(false, true)));
+    assert_merge!(
+        Option<Vec<bool>>,
+        Some(vec![false]),
+        Some(vec![true]),
+        Some(vec![false, true])
+    );
 }
 
 impl<T: MergeOverride> MergeOverride for Vec<T> {
@@ -78,7 +81,7 @@ impl<T: MergeOverride> MergeOverride for Vec<T> {
 
 #[test]
 fn vec_appends_new_values() {
-    assert_merge!(Vec<bool>, vec!(false), vec!(true), vec!(false, true));
+    assert_merge!(Vec<bool>, vec![false], vec![true], vec![false, true]);
 }
 
 impl<K: Ord + Clone, T: MergeOverride> MergeOverride for BTreeMap<K, T> {
@@ -104,15 +107,15 @@ impl<K: Ord + Clone, T: MergeOverride> MergeOverride for BTreeMap<K, T> {
 #[test]
 fn btree_map_merges_by_key() {
     let mut map1 = BTreeMap::new();
-    map1.insert("a", vec!(false));
-    map1.insert("c", vec!(false));
+    map1.insert("a", vec![false]);
+    map1.insert("c", vec![false]);
     let mut map2 = BTreeMap::new();
-    map2.insert("b", vec!(true));
-    map2.insert("c", vec!(true));
+    map2.insert("b", vec![true]);
+    map2.insert("c", vec![true]);
     let mut expected = BTreeMap::new();
-    expected.insert("a", vec!(false));
-    expected.insert("b", vec!(true));
-    expected.insert("c", vec!(false, true));
+    expected.insert("a", vec![false]);
+    expected.insert("b", vec![true]);
+    expected.insert("c", vec![false, true]);
     assert_merge!(BTreeMap<&'static str, Vec<bool>>, map1, map2, expected);
 }
 

@@ -64,9 +64,11 @@ impl GitUrl {
                 }
                 let caps = URL_PARSE.captures(&self.url).ok_or_else(&mkerr)?;
                 let new = if caps.get(1).is_some() {
-                    format!("git://git@{}/{}",
-                            caps.get(1).unwrap().as_str(),
-                            caps.get(2).unwrap().as_str())
+                    format!(
+                        "git://git@{}/{}",
+                        caps.get(1).unwrap().as_str(),
+                        caps.get(2).unwrap().as_str()
+                    )
                 } else {
                     format!("https://{}", caps.get(3).unwrap().as_str())
                 };
@@ -78,33 +80,39 @@ impl GitUrl {
     /// Returns a new GitUrl which is the same as the
     /// this one, but without any subdirectory part
     pub fn without_subdirectory(&self) -> GitUrl {
-        let (repository, branch, _) = self.parse_parts()
-            .expect("parse_parts failed on data that we already parsed once successfully");
+        let (repository, branch, _) = self.parse_parts().expect(
+            "parse_parts failed on data that we already parsed once successfully",
+        );
         let branch_str = match branch {
             Some(branch) => format!("#{}", branch),
             None => String::new(),
         };
-        GitUrl { url: format!("{}{}", repository, branch_str) }
+        GitUrl {
+            url: format!("{}{}", repository, branch_str),
+        }
     }
 
     /// Extract the repository part of the URL
     pub fn repository(&self) -> &str {
-        let (repository, _, _) = self.parse_parts()
-            .expect("parse_parts failed on data that we already parsed once successfully");
+        let (repository, _, _) = self.parse_parts().expect(
+            "parse_parts failed on data that we already parsed once successfully",
+        );
         repository
     }
 
     /// Extract the optional branch part of the git URL
     pub fn branch(&self) -> Option<&str> {
-        let (_, branch, _) = self.parse_parts()
-            .expect("parse_parts failed on data that we already parsed once successfully");
+        let (_, branch, _) = self.parse_parts().expect(
+            "parse_parts failed on data that we already parsed once successfully",
+        );
         branch
     }
 
     /// Extract the optional subdirectory part of the git URL
     pub fn subdirectory(&self) -> Option<&str> {
-        let (_, _, subdirectory) = self.parse_parts()
-            .expect("parse_parts failed on data that we already parsed once successfully");
+        let (_, _, subdirectory) = self.parse_parts().expect(
+            "parse_parts failed on data that we already parsed once successfully",
+        );
         subdirectory
     }
 
@@ -113,8 +121,9 @@ impl GitUrl {
             static ref URL_PARSE: Regex = Regex::new(r#"^([^#]+)(?:#([^:]+)?(?::(.+))?)?$"#)
                 .expect("Could not parse regex URL_PARSE");
         }
-        let captures = URL_PARSE.captures(&self.url)
-            .ok_or_else(|| -> Error { format!("could not parse URL {:?}", self.url).into() })?;
+        let captures = URL_PARSE.captures(&self.url).ok_or_else(|| -> Error {
+            format!("could not parse URL {:?}", self.url).into()
+        })?;
         Ok((
             captures.get(1).unwrap().as_str(),
             captures.get(2).map(|c| c.as_str()),
@@ -159,24 +168,36 @@ impl From<GitUrl> for OsString {
 fn to_url_converts_git_urls_to_real_ones() {
     // Example URLs from http://stackoverflow.com/a/34120821/12089,
     // originally from `docker-compose` source code.
-    let regular_urls = &["git://github.com/docker/docker",
-                         "https://github.com/docker/docker.git",
-                         "http://github.com/docker/docker.git"];
+    let regular_urls = &[
+        "git://github.com/docker/docker",
+        "https://github.com/docker/docker.git",
+        "http://github.com/docker/docker.git",
+    ];
     for &url in regular_urls {
         assert_eq!(GitUrl::new(url).unwrap().to_url().unwrap().to_string(), url);
     }
 
     // According to http://stackoverflow.com/a/34120821/12089, we also need
     // to special-case `git@` and `github.com/` prefixes.
-    let fake_urls = &[("git@github.com:docker/docker.git",
-                       "git://git@github.com/docker/docker.git"),
-                      ("git@bitbucket.org:atlassianlabs/atlassian-docker.git",
-                       "git://git@bitbucket.org/atlassianlabs/atlassian-docker.git"),
-                      ("github.com/docker/docker.git",
-                       "https://github.com/docker/docker.git")];
+    let fake_urls = &[
+        (
+            "git@github.com:docker/docker.git",
+            "git://git@github.com/docker/docker.git",
+        ),
+        (
+            "git@bitbucket.org:atlassianlabs/atlassian-docker.git",
+            "git://git@bitbucket.org/atlassianlabs/atlassian-docker.git",
+        ),
+        (
+            "github.com/docker/docker.git",
+            "https://github.com/docker/docker.git",
+        ),
+    ];
     for &(fake_url, real_url) in fake_urls {
-        assert_eq!(GitUrl::new(fake_url).unwrap().to_url().unwrap().to_string(),
-                   real_url);
+        assert_eq!(
+            GitUrl::new(fake_url).unwrap().to_url().unwrap().to_string(),
+            real_url
+        );
     }
 
     let invalid_urls = &["local/path.git"];
@@ -214,7 +235,8 @@ fn it_can_extract_its_repo_branch_and_subdir_parts() {
         assert_eq!(with_subdir.branch(), None);
         assert_eq!(with_subdir.subdirectory(), Some("myfolder"));
 
-        let with_ref_and_subdir = GitUrl::new(format!("{}{}", url, "#mybranch:myfolder")).unwrap();
+        let with_ref_and_subdir =
+            GitUrl::new(format!("{}{}", url, "#mybranch:myfolder")).unwrap();
         assert_eq!(with_ref_and_subdir.repository(), url);
         assert_eq!(with_ref_and_subdir.branch(), Some("mybranch"));
         assert_eq!(with_ref_and_subdir.subdirectory(), Some("myfolder"));

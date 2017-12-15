@@ -115,8 +115,9 @@ error_chain! {
 impl Error {
     /// Create an error reporting an invalid value.
     pub fn invalid_value<S1, S2>(wanted: S1, input: S2) -> Error
-        where S1: Into<String>,
-              S2: Into<String>
+    where
+        S1: Into<String>,
+        S2: Into<String>,
     {
         ErrorKind::InvalidValue(wanted.into(), input.into()).into()
     }
@@ -137,8 +138,7 @@ fn validation_state_to_string(state: &ValidationState) -> String {
             .expect("cannot format validation error");
     }
     for url in &state.missing {
-        write!(&mut out, "\n- missing {}", url)
-            .expect("cannot format URL");
+        write!(&mut out, "\n- missing {}", url).expect("cannot format URL");
     }
     String::from_utf8_lossy(&out).into_owned()
 }

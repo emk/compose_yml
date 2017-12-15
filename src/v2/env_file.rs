@@ -7,7 +7,7 @@ use std::io::{self, BufRead};
 use std::path::Path;
 
 use errors::*;
-use super::interpolation::{RawOr, escape};
+use super::interpolation::{escape, RawOr};
 
 /// A file pointed to by an `env_file:` field.
 pub struct EnvFile {
@@ -37,8 +37,10 @@ impl EnvFile {
 
             let caps = VAR.captures(&line)
                 .ok_or_else(|| ErrorKind::ParseEnv(line.clone()))?;
-            vars.insert(caps.get(1).unwrap().as_str().to_owned(),
-                        caps.get(2).unwrap().as_str().to_owned());
+            vars.insert(
+                caps.get(1).unwrap().as_str().to_owned(),
+                caps.get(2).unwrap().as_str().to_owned(),
+            );
         }
         Ok(EnvFile { vars: vars })
     }

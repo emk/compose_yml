@@ -3,12 +3,13 @@
 
 use regex::Regex;
 use serde::de;
-use serde::de::{Deserialize, DeserializeOwned, Deserializer, MapAccess, SeqAccess, Visitor};
+use serde::de::{Deserialize, DeserializeOwned, Deserializer, MapAccess, SeqAccess,
+                Visitor};
 use std::collections::BTreeMap;
 use std::fmt;
 use std::marker::PhantomData;
 
-use super::interpolation::{InterpolatableValue, RawOr, raw};
+use super::interpolation::{raw, InterpolatableValue, RawOr};
 
 /// Test whether a value is false.  Used to determine when to serialize
 /// things.
@@ -26,25 +27,29 @@ impl<'de> Visitor<'de> for ToStringVisitor {
     type Value = String;
 
     fn visit_bool<E>(self, v: bool) -> Result<Self::Value, E>
-        where E: de::Error
+    where
+        E: de::Error,
     {
         Ok(format!("{}", v))
     }
 
     fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
-        where E: de::Error
+    where
+        E: de::Error,
     {
         Ok(format!("{}", v))
     }
 
     fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
-        where E: de::Error
+    where
+        E: de::Error,
     {
         Ok(format!("{}", v))
     }
 
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-        where E: de::Error
+    where
+        E: de::Error,
     {
         Ok(v.to_owned())
     }
@@ -60,9 +65,12 @@ struct ConvertToString(String);
 
 impl<'de> Deserialize<'de> for ConvertToString {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
-        deserializer.deserialize_string(ToStringVisitor).map(ConvertToString)
+        deserializer
+            .deserialize_string(ToStringVisitor)
+            .map(ConvertToString)
     }
 }
 
@@ -91,10 +99,11 @@ impl<'de> Deserialize<'de> for ConvertToString {
 ///     pub args: BTreeMap<String, RawOr<String>>,
 /// }
 /// ```
-pub fn deserialize_map_or_key_value_list<'de, D>
-    (deserializer: D)
-     -> Result<BTreeMap<String, RawOr<String>>, D::Error>
-    where D: Deserializer<'de>
+pub fn deserialize_map_or_key_value_list<'de, D>(
+    deserializer: D,
+) -> Result<BTreeMap<String, RawOr<String>>, D::Error>
+where
+    D: Deserializer<'de>,
 {
     /// Declare an internal visitor type to handle our input.
     struct MapOrKeyValueListVisitor;
@@ -104,7 +113,8 @@ pub fn deserialize_map_or_key_value_list<'de, D>
 
         // We have a real map.
         fn visit_map<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
-            where V: MapAccess<'de>
+        where
+            V: MapAccess<'de>,
         {
             let mut map: BTreeMap<String, RawOr<String>> = BTreeMap::new();
             while let Some(key) = visitor.next_key::<String>()? {
@@ -113,9 +123,8 @@ pub fn deserialize_map_or_key_value_list<'de, D>
                     return Err(<V::Error as de::Error>::custom(msg));
                 }
                 let ConvertToString(val) = visitor.next_value::<ConvertToString>()?;
-                let raw_or_value = raw(val).map_err(|e| {
-                        <V::Error as de::Error>::custom(format!("{}", e))
-                    })?;
+                let raw_or_value = raw(val)
+                    .map_err(|e| <V::Error as de::Error>::custom(format!("{}", e)))?;
                 map.insert(key, raw_or_value);
             }
             Ok(map)
@@ -123,7 +132,8 @@ pub fn deserialize_map_or_key_value_list<'de, D>
 
         // We have a key/value list.  Yuck.
         fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
-            where V: SeqAccess<'de>
+        where
+            V: SeqAccess<'de>,
         {
             lazy_static! {
                 // Match a key/value pair.
@@ -133,20 +143,18 @@ pub fn deserialize_map_or_key_value_list<'de, D>
 
             let mut map: BTreeMap<String, RawOr<String>> = BTreeMap::new();
             while let Some(key_value) = visitor.next_element::<String>()? {
-                let caps = KEY_VALUE.captures(&key_value)
-                    .ok_or_else(|| {
-                        let msg = format!("expected KEY=value, got: <{}>", &key_value);
-                        <V::Error as de::Error>::custom(msg)
-                    })?;
+                let caps = KEY_VALUE.captures(&key_value).ok_or_else(|| {
+                    let msg = format!("expected KEY=value, got: <{}>", &key_value);
+                    <V::Error as de::Error>::custom(msg)
+                })?;
                 let key = caps.get(1).unwrap().as_str();
                 let value = caps.get(2).unwrap().as_str();
                 if map.contains_key(key) {
                     let msg = format!("duplicate map key: {}", key);
                     return Err(<V::Error as de::Error>::custom(msg));
                 }
-                let raw_or_value = raw(value.to_owned()).map_err(|e| {
-                        <V::Error as de::Error>::custom(format!("{}", e))
-                    })?;
+                let raw_or_value = raw(value.to_owned())
+                    .map_err(|e| <V::Error as de::Error>::custom(format!("{}", e)))?;
                 map.insert(key.to_owned(), raw_or_value);
             }
             Ok(map)
@@ -163,27 +171,32 @@ pub fn deserialize_map_or_key_value_list<'de, D>
 /// Given a map, deserialize it normally.  But if we have a list of string
 /// values, deserialize it as a map keyed with those strings, and with
 /// `Default::default()` used as the value.
-pub fn deserialize_map_or_default_list<'de, T, D>
-    (deserializer: D)
-     -> Result<BTreeMap<String, T>, D::Error>
-    where T: Default + DeserializeOwned,
-          D: Deserializer<'de>
+pub fn deserialize_map_or_default_list<'de, T, D>(
+    deserializer: D,
+) -> Result<BTreeMap<String, T>, D::Error>
+where
+    T: Default + DeserializeOwned,
+    D: Deserializer<'de>,
 {
     /// Declare an internal visitor type to handle our input.
-    struct MapOrDefaultListVisitor<T>(PhantomData<T>) where T: Default + DeserializeOwned;
+    struct MapOrDefaultListVisitor<T>(PhantomData<T>)
+    where
+        T: Default + DeserializeOwned;
 
     impl<'de, T: Default + DeserializeOwned> Visitor<'de> for MapOrDefaultListVisitor<T> {
         type Value = BTreeMap<String, T>;
 
         fn visit_map<M>(self, visitor: M) -> Result<Self::Value, M::Error>
-            where M: MapAccess<'de>
+        where
+            M: MapAccess<'de>,
         {
             let mvd = de::value::MapAccessDeserializer::new(visitor);
             Deserialize::deserialize(mvd)
         }
 
         fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
-            where V: SeqAccess<'de>
+        where
+            V: SeqAccess<'de>,
         {
             let mut map: Self::Value = BTreeMap::new();
             // TODO LOW: Fail with error if values are interpolated.
@@ -202,23 +215,29 @@ pub fn deserialize_map_or_default_list<'de, T, D>
 }
 
 /// Deserialize either list or a single bare string as a list.
-pub fn deserialize_item_or_list<'de, T, D>(deserializer: D)
-                                           -> Result<Vec<RawOr<T>>, D::Error>
-    where T: InterpolatableValue,
-          D: Deserializer<'de>
+pub fn deserialize_item_or_list<'de, T, D>(
+    deserializer: D,
+) -> Result<Vec<RawOr<T>>, D::Error>
+where
+    T: InterpolatableValue,
+    D: Deserializer<'de>,
 {
     /// Our Visitor type, tagged with a 0-size `PhantomData` value so that it
     /// can carry type information.
-    struct StringOrListVisitor<T>(PhantomData<T>) where T: InterpolatableValue;
+    struct StringOrListVisitor<T>(PhantomData<T>)
+    where
+        T: InterpolatableValue;
 
     impl<'de, T> Visitor<'de> for StringOrListVisitor<T>
-        where T: InterpolatableValue
+    where
+        T: InterpolatableValue,
     {
         type Value = Vec<RawOr<T>>;
 
         // Handle a single item.
         fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-            where E: de::Error
+        where
+            E: de::Error,
         {
             let v = raw(value).map_err(|err| E::custom(format!("{}", err)))?;
             Ok(vec![v])
@@ -226,13 +245,14 @@ pub fn deserialize_item_or_list<'de, T, D>(deserializer: D)
 
         // Handle a list of items.
         fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
-            where V: SeqAccess<'de>
+        where
+            V: SeqAccess<'de>,
         {
             let mut items: Vec<RawOr<T>> = vec![];
             while let Some(item) = visitor.next_element::<String>()? {
-                let v = raw(item).map_err(|err| {
-                        <V::Error as de::Error>::custom(format!("{}", err))
-                    })?;
+                let v = raw(item).map_err(
+                    |err| <V::Error as de::Error>::custom(format!("{}", err)),
+                )?;
                 items.push(v);
             }
             Ok(items)
@@ -247,10 +267,12 @@ pub fn deserialize_item_or_list<'de, T, D>(deserializer: D)
 }
 
 /// Deserialize either list or a single bare string as a list.
-pub fn deserialize_map_struct_or_null<'de, T, D>(deserializer: D)
-                                                -> Result<BTreeMap<String, T>, D::Error>
-    where T: Deserialize<'de> + Default,
-          D: Deserializer<'de>
+pub fn deserialize_map_struct_or_null<'de, T, D>(
+    deserializer: D,
+) -> Result<BTreeMap<String, T>, D::Error>
+where
+    T: Deserialize<'de> + Default,
+    D: Deserializer<'de>,
 {
     let with_nulls: BTreeMap<String, Option<T>> =
         Deserialize::deserialize(deserializer)?;
