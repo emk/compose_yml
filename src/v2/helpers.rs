@@ -95,7 +95,7 @@ impl<'de> Deserialize<'de> for ConvertToString {
 ///
 /// ```text
 /// struct Example {
-///     #[serde(deserialize_with = "deserialize_hash_or_key_value_list")]
+///     #[serde(deserialize_with = "deserialize_map_or_key_value_list")]
 ///     pub args: BTreeMap<String, RawOr<String>>,
 /// }
 /// ```
