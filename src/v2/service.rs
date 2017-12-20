@@ -72,8 +72,8 @@ pub struct Service {
 
     /// Environment variables and values to supply to the container.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
-            deserialize_with = "deserialize_map_or_key_value_list")]
-    pub environment: BTreeMap<String, RawOr<String>>,
+            deserialize_with = "deserialize_map_or_key_optional_value_list")]
+    pub environment: BTreeMap<String, Option<RawOr<String>>>,
 
     /// Expose a list of ports to any containers that link to us.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -305,7 +305,9 @@ impl Service {
         let mut new_env = BTreeMap::new();
         for rel_path in &self.env_files {
             let env_file = EnvFile::load(&base.join(&rel_path.value()?))?;
-            new_env.append(&mut env_file.to_environment()?);
+            new_env.extend(env_file.to_environment()?
+                           .into_iter()
+                           .map(|(k, v)| (k, Some(v))));
         }
         new_env.append(&mut self.environment.clone());
         self.environment = new_env;

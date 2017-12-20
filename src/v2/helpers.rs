@@ -168,6 +168,82 @@ where
     deserializer.deserialize_map(MapOrKeyValueListVisitor)
 }
 
+/// Like `deserialize_map_or_key_value_list`, but allowing missing values
+/// (e.g. for environment variables)
+pub fn deserialize_map_or_key_optional_value_list<'de, D>(
+    deserializer: D,
+) -> Result<BTreeMap<String, Option<RawOr<String>>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    /// Declare an internal visitor type to handle our input.
+    struct MapOrKeyOptionalValueListVisitor;
+
+    impl<'de> Visitor<'de> for MapOrKeyOptionalValueListVisitor {
+        type Value = BTreeMap<String, Option<RawOr<String>>>;
+
+        // We have a real map.
+        fn visit_map<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
+        where
+            V: MapAccess<'de>,
+        {
+            let mut map: BTreeMap<String, Option<RawOr<String>>> = BTreeMap::new();
+            while let Some(key) = visitor.next_key::<String>()? {
+                if map.contains_key(&key) {
+                    let msg = format!("duplicate map key: {}", &key);
+                    return Err(<V::Error as de::Error>::custom(msg));
+                }
+                let ConvertToString(val) = visitor.next_value::<ConvertToString>()?;
+                let raw_or_value = raw(val)
+                    .map_err(|e| <V::Error as de::Error>::custom(format!("{}", e)))?;
+                map.insert(key, Some(raw_or_value));
+            }
+            Ok(map)
+        }
+
+        // We have a key/value list.  Yuck.
+        fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
+        where
+            V: SeqAccess<'de>,
+        {
+            lazy_static! {
+                // Match a key/value pair.
+                static ref KEY_VALUE: Regex =
+                    Regex::new("^([^=]+)(=(.*))?$").unwrap();
+            }
+
+            let mut map: BTreeMap<String, Option<RawOr<String>>> = BTreeMap::new();
+            while let Some(key_value) = visitor.next_element::<String>()? {
+                let caps = KEY_VALUE.captures(&key_value).ok_or_else(|| {
+                    let msg = format!("expected KEY[=value], got: <{}>", &key_value);
+                    <V::Error as de::Error>::custom(msg)
+                })?;
+                let key = caps.get(1).unwrap().as_str();
+                let value = caps.get(3).map(|v| v.as_str());
+                if map.contains_key(key) {
+                    let msg = format!("duplicate map key: {}", key);
+                    return Err(<V::Error as de::Error>::custom(msg));
+                }
+                let optional_raw_or_value = match value.map(|value| {
+                    raw(value.to_owned())
+                        .map_err(|e| <V::Error as de::Error>::custom(format!("{}", e)))
+                }) {
+                    None => None,
+                    Some(x) => Some(x?),
+                };
+                map.insert(key.to_owned(), optional_raw_or_value);
+            }
+            Ok(map)
+        }
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            write!(formatter, "a map or a key/[value] list")
+        }
+    }
+
+    deserializer.deserialize_map(MapOrKeyOptionalValueListVisitor)
+}
+
 /// Given a map, deserialize it normally.  But if we have a list of string
 /// values, deserialize it as a map keyed with those strings, and with
 /// `Default::default()` used as the value.
