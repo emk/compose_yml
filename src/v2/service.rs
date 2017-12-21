@@ -305,9 +305,7 @@ impl Service {
         let mut new_env = BTreeMap::new();
         for rel_path in &self.env_files {
             let env_file = EnvFile::load(&base.join(&rel_path.value()?))?;
-            new_env.extend(env_file.to_environment()?
-                           .into_iter()
-                           .map(|(k, v)| (k, Some(v))));
+            new_env.append(&mut env_file.to_environment()?);
         }
         new_env.append(&mut self.environment.clone());
         self.environment = new_env;

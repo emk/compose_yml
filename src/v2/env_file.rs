@@ -12,13 +12,13 @@ use super::interpolation::{escape, RawOr};
 /// A file pointed to by an `env_file:` field.
 pub struct EnvFile {
     /// The variables found in our env file.
-    vars: BTreeMap<String, String>,
+    vars: BTreeMap<String, Option<String>>,
 }
 
 impl EnvFile {
     /// Read an `EnvFile` from a stream.
     pub fn read<R: io::Read>(input: R) -> Result<EnvFile> {
-        let mut vars: BTreeMap<String, String> = BTreeMap::new();
+        let mut vars: BTreeMap<String, Option<String>> = BTreeMap::new();
         let reader = io::BufReader::new(input);
         for line_result in reader.lines() {
             let line = line_result.chain_err(|| "I/O error")?;
@@ -28,7 +28,7 @@ impl EnvFile {
                     Regex::new(r#"^\s*(:?#.*)?$"#).unwrap();
                 // We allow lowercase env vars even if POSIX doesn't.
                 static ref VAR:  Regex =
-                    Regex::new(r#"^([_A-Za-z][_A-Za-z0-9]*)=(.*)"#).unwrap();
+                    Regex::new(r#"^([_A-Za-z][_A-Za-z0-9]*)(=(.*))?"#).unwrap();
             }
 
             if BLANK.is_match(&line) {
@@ -39,7 +39,7 @@ impl EnvFile {
                 .ok_or_else(|| ErrorKind::ParseEnv(line.clone()))?;
             vars.insert(
                 caps.get(1).unwrap().as_str().to_owned(),
-                caps.get(2).unwrap().as_str().to_owned(),
+                caps.get(3).map(|v| v.as_str().to_owned()),
             );
         }
         Ok(EnvFile { vars: vars })
@@ -54,10 +54,13 @@ impl EnvFile {
 
     /// Convert this `EnvFile` to the format we use for the `environment`
     /// member of `Service`.
-    pub fn to_environment(&self) -> Result<BTreeMap<String, RawOr<String>>> {
+    pub fn to_environment(&self) -> Result<BTreeMap<String, Option<RawOr<String>>>> {
         let mut env = BTreeMap::new();
         for (k, v) in &self.vars {
-            env.insert(k.to_owned(), escape(v)?);
+            env.insert(k.to_owned(), match v.as_ref().map(|v| escape(v)) {
+                None => None,
+                Some(v) => Some(v?),
+            });
         }
         Ok(env)
     }
@@ -79,6 +82,7 @@ fn parses_docker_compatible_env_files() {
 # These are environment variables:
 FOO=foo
 BAR=2
+BAZ
 
 # Docker does not currently do anything special with quotes!
 WEIRD="quoted"
@@ -88,7 +92,8 @@ WEIRD="quoted"
     let cursor = io::Cursor::new(input);
     let env_file = EnvFile::read(cursor).unwrap();
     let env = env_file.to_environment().unwrap();
-    assert_eq!(env.get("FOO").unwrap().value().unwrap(), "foo");
-    assert_eq!(env.get("BAR").unwrap().value().unwrap(), "2");
-    assert_eq!(env.get("WEIRD").unwrap().value().unwrap(), "\"quoted\"");
+    assert_eq!(env.get("FOO").unwrap().as_ref().unwrap().value().unwrap(), "foo");
+    assert_eq!(env.get("BAR").unwrap().as_ref().unwrap().value().unwrap(), "2");
+    assert_eq!(*env.get("BAZ").unwrap(), None);
+    assert_eq!(env.get("WEIRD").unwrap().as_ref().unwrap().value().unwrap(), "\"quoted\"");
 }
