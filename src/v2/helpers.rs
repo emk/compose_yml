@@ -165,7 +165,7 @@ where
         }
     }
 
-    deserializer.deserialize_map(MapOrKeyValueListVisitor)
+    deserializer.deserialize_any(MapOrKeyValueListVisitor)
 }
 
 /// Like `deserialize_map_or_key_value_list`, but allowing missing values
@@ -241,7 +241,7 @@ where
         }
     }
 
-    deserializer.deserialize_map(MapOrKeyOptionalValueListVisitor)
+    deserializer.deserialize_any(MapOrKeyOptionalValueListVisitor)
 }
 
 /// Given a map, deserialize it normally.  But if we have a list of string
@@ -287,7 +287,7 @@ where
         }
     }
 
-    deserializer.deserialize_map(MapOrDefaultListVisitor(PhantomData::<T>))
+    deserializer.deserialize_any(MapOrDefaultListVisitor(PhantomData::<T>))
 }
 
 /// Deserialize either list or a single bare string as a list.
