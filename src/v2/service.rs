@@ -98,8 +98,8 @@ pub struct Service {
     /// Docker labels for this container, specifying various sorts of
     /// custom metadata.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
-            deserialize_with = "deserialize_map_or_key_value_list")]
-    pub labels: BTreeMap<String, RawOr<String>>,
+            deserialize_with = "deserialize_map_or_key_optional_value_list")]
+    pub labels: BTreeMap<String, Option<RawOr<String>>>,
 
     /// Links to other services in this file.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
