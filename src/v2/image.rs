@@ -77,7 +77,7 @@ impl FromStr for Image {
     fn from_str(s: &str) -> Result<Self> {
         lazy_static! {
             static ref IMAGE: Regex =
-                Regex::new(r#"^(?:([^/:.]+\.[^/:]+)(?::([0-9]+))?/)?(?:([^/:.]+)/)?([^/:]+)(?::([^/:]+))?$"#).unwrap();
+                Regex::new(r#"^(?:([^/:.]+\.[^/:]+)(?::([0-9]+))?/)?(?:([^/:.]+)/)?([^:]+)(?::([^/:]+))?$"#).unwrap();
         }
         let caps = IMAGE.captures(s).ok_or_else(|| {
             Error::invalid_value("image", s)
