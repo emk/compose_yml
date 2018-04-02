@@ -86,6 +86,7 @@ include!("network.rs");
 include!("build.rs");
 include!("context.rs");
 include!("extends.rs");
+include!("health_check.rs");
 include!("logging.rs");
 include!("network_interface.rs");
 include!("port_mapping.rs");
