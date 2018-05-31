@@ -18,6 +18,10 @@ pub struct Build {
             deserialize_with = "deserialize_map_or_key_value_list")]
     pub args: BTreeMap<String, RawOr<String>>,
 
+    /// The FROM target at which to stop building
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub target: Option<RawOr<String>>,
+
     /// PRIVATE.  Mark this struct as having unknown fields for future
     /// compatibility.  This prevents direct construction and exhaustive
     /// matching.  This needs to be be public because of
@@ -28,7 +32,7 @@ pub struct Build {
 }
 
 derive_standard_impls_for!(Build, {
-    context, dockerfile, args, _hidden
+    context, dockerfile, args, target, _hidden
 });
 
 impl Build {
@@ -50,6 +54,7 @@ impl Build {
             context: value(ctx.into()),
             dockerfile: Default::default(),
             args: Default::default(),
+            target: Default::default(),
             _hidden: (),
         }
     }
