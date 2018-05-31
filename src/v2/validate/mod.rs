@@ -17,8 +17,7 @@ use super::File;
 /// for stable Rust. See https://github.com/emk/compose_yml/issues/11
 pub fn validate_file(file: &File) -> Result<()> {
     match &file.version[..] {
-        "2" => {}
-        "2.1" => {}
+        "2" | "2.1" | "2.2" | "2.3" | "2.4" => {}
         vers => return Err(ErrorKind::UnsupportedVersion(vers.to_owned()).into()),
     };
 
