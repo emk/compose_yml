@@ -99,7 +99,7 @@ impl File {
 impl Default for File {
     fn default() -> File {
         File {
-            version: "2".to_owned(),
+            version: "2.4".to_owned(),
             services: Default::default(),
             volumes: Default::default(),
             networks: Default::default(),
