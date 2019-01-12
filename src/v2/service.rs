@@ -135,7 +135,9 @@ pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stop_signal: Option<RawOr<String>>,
 
-    // TODO LOW: ulimits
+    /// Resource limits to apply to the container.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub ulimits: BTreeMap<String, Ulimit>,
 
     // TODO LOW: isolation (not documented at this point).
 
@@ -275,6 +277,7 @@ derive_standard_impls_for!(Service, {
     ports,
     security_opt,
     stop_signal,
+    ulimits,
     volumes,
     volumes_from,
     volume_driver,
@@ -360,4 +363,16 @@ fn service_networks_supports_list() {
     assert_eq!(service.networks.len(), 1);
     assert_eq!(service.networks.get("backend").unwrap(),
                &NetworkInterface::default());
+}
+
+#[test]
+fn service_ulimits() {
+    let yaml = r#"---
+ulimits:
+  nproc: 65535
+  nofile:
+    soft: 20000
+    hard: 40000
+"#;
+    assert_roundtrip!(Service, yaml);
 }

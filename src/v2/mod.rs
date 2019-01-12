@@ -89,6 +89,7 @@ include!("extends.rs");
 include!("logging.rs");
 include!("network_interface.rs");
 include!("port_mapping.rs");
+include!("ulimit.rs");
 include!("volume_mount.rs");
 include!("volumes_from.rs");
 
