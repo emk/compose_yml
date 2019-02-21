@@ -91,6 +91,10 @@ pub struct Service {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub extra_hosts: Vec<RawOr<HostMapping>>,
 
+    /// Settings for running health checks on services.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub healthcheck: Option<HealthCheck>,
+
     /// The name of the image to build or pull for this container.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub image: Option<RawOr<Image>>,
@@ -267,6 +271,7 @@ derive_standard_impls_for!(Service, {
     extends,
     external_links,
     extra_hosts,
+    healthcheck,
     image,
     labels,
     links,
