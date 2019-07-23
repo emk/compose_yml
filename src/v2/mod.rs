@@ -35,7 +35,7 @@ use self::validate::validate_file;
 
 // Re-export errors here so that people can use them by including `use
 // compose_yml::v2`.
-pub use errors::*;
+pub use crate::errors::*;
 
 mod helpers;
 mod env_file;

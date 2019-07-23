@@ -8,7 +8,7 @@ use std::ffi::{OsStr, OsString};
 use std::fmt;
 use url::Url;
 
-use errors::*;
+use crate::errors::*;
 
 /// URL of a Git repository.  Git repositories may be specified as either
 /// ordinary `http` or `https` URLs, or as `scp`-style remote directory

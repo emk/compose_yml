@@ -13,7 +13,7 @@ use std::str::FromStr;
 use std::string;
 use void::Void;
 
-use errors::*;
+use crate::errors::*;
 use super::merge_override::MergeOverride;
 
 /// A source of environment variable values.
@@ -326,7 +326,7 @@ macro_rules! impl_interpolatable_value {
                     .map_err(|err| convert_err(err, s))
             }
 
-            fn fmt_iv(&self, f: &mut fmt::Formatter) -> $crate::std::fmt::Result {
+            fn fmt_iv(&self, f: &mut fmt::Formatter) -> std::fmt::Result {
                 use std::fmt::Display;
                 self.fmt(f)
             }

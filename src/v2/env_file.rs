@@ -6,7 +6,7 @@ use std::fs;
 use std::io::{self, BufRead};
 use std::path::Path;
 
-use errors::*;
+use crate::errors::*;
 use super::interpolation::{escape, RawOr};
 
 /// A file pointed to by an `env_file:` field.

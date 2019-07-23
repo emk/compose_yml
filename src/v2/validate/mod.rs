@@ -9,7 +9,7 @@ use url::Url;
 use valico;
 */
 
-use errors::*;
+use crate::errors::*;
 use super::File;
 
 /// TODO: This should validate a `File` against the official JSON schema

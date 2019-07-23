@@ -7,9 +7,8 @@
 
 // Sadly, this macro does not generate complete documentation.
 #![allow(missing_docs)]
-#![cfg_attr(feature="clippy", allow(redundant_closure))]
+#![cfg_attr(feature = "clippy", allow(redundant_closure))]
 
-use serde_yaml;
 use std::io::Write;
 use std::path::PathBuf;
 use valico::json_schema::ValidationState;
@@ -20,7 +19,7 @@ error_chain! {
     foreign_links {
         // The YAML structure in a `docker-compose.yml` file could not be
         // parsed.
-        serde_yaml::Error, Yaml;
+        Yaml(::serde_yaml::Error);
     }
 
     // These are our "native" error types.
