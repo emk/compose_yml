@@ -45,10 +45,10 @@ impl fmt::Display for MemorySize {
             // Just print 0 without any units, because anything else looks
             // weird.
             write!(f, "0")
-        } else if bytes % (1024*1024*1024) == 0 {
-            write!(f, "{}g", bytes / (1024*1024*1024))
-        } else if bytes % (1024*1024) == 0 {
-            write!(f, "{}m", bytes / (1024*1024))
+        } else if bytes % (1024 * 1024 * 1024) == 0 {
+            write!(f, "{}g", bytes / (1024 * 1024 * 1024))
+        } else if bytes % (1024 * 1024) == 0 {
+            write!(f, "{}m", bytes / (1024 * 1024))
         } else if bytes % 1024 == 0 {
             write!(f, "{}k", bytes / 1024)
         } else {
@@ -62,19 +62,20 @@ impl FromStr for MemorySize {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
+        //TODO: support 'kb', 'mb', 'gb'
         lazy_static! {
             static ref MEM_SIZE: Regex =
-                Regex::new("^([0-9]+)([bkmg])?$").unwrap();
+                Regex::new("^([0-9]+)([bkmgBKMG])?$").unwrap();
         }
-        let caps = MEM_SIZE.captures(s).ok_or_else(|| {
-            Error::invalid_value("memory size", s)
-        })?;
+        let caps = MEM_SIZE
+            .captures(s)
+            .ok_or_else(|| Error::invalid_value("memory size", s))?;
         let value: usize = caps.get(1).unwrap().as_str().parse().unwrap();
         match caps.get(2).map(|c| c.as_str()) {
-            None | Some("b") => Ok(MemorySize::bytes(value)),
-            Some("k") => Ok(MemorySize::kb(value)),
-            Some("m") => Ok(MemorySize::mb(value)),
-            Some("g") => Ok(MemorySize::gb(value)),
+            None | Some("b") | Some("B") => Ok(MemorySize::bytes(value)),
+            Some("k") | Some("K") => Ok(MemorySize::kb(value)),
+            Some("m") | Some("M") => Ok(MemorySize::mb(value)),
+            Some("g") | Some("G") => Ok(MemorySize::gb(value)),
             _ => unreachable!("Unexpected error parsing MemorySize <{}>", s),
         }
     }
@@ -82,7 +83,7 @@ impl FromStr for MemorySize {
 
 #[test]
 fn memory_size_supports_string_serialization() {
-    let pairs = vec!(
+    let pairs = vec![
         (MemorySize::bytes(0), "0"),
         (MemorySize::bytes(1), "1"),
         (MemorySize::bytes(1023), "1023"),
@@ -91,11 +92,22 @@ fn memory_size_supports_string_serialization() {
         (MemorySize::bytes(1025), "1025"),
         (MemorySize::mb(1), "1m"),
         (MemorySize::gb(1), "1g"),
-    );
+    ];
     for (mem_sz, s) in pairs {
         assert_eq!(mem_sz.to_string(), s);
         assert_eq!(mem_sz, MemorySize::from_str(s).unwrap());
     }
+}
 
-    assert_eq!(MemorySize::bytes(10), MemorySize::from_str("10b").unwrap());
+#[test]
+fn memory_size_supports_alternative_deserialization() {
+    let pairs = vec![
+        (MemorySize::bytes(10), "10b"),
+        (MemorySize::kb(1), "1K"),
+        (MemorySize::mb(1), "1M"),
+        (MemorySize::gb(1), "1G"),
+    ];
+    for (mem_sz, s) in pairs {
+        assert_eq!(mem_sz, MemorySize::from_str(s).unwrap());
+    }
 }
