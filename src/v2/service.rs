@@ -7,9 +7,12 @@
 #[serde(deny_unknown_fields)]
 pub struct Service {
     /// How to build an image for this service.
-    #[serde(default, skip_serializing_if = "Option::is_none",
-            serialize_with = "serialize_opt_string_or_struct",
-            deserialize_with = "deserialize_opt_string_or_struct")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serialize_opt_string_or_struct",
+        deserialize_with = "deserialize_opt_string_or_struct"
+    )]
     pub build: Option<Build>,
 
     /// A list of capability names to grant to this container.
@@ -44,18 +47,27 @@ pub struct Service {
     pub depends_on: Vec<RawOr<String>>,
 
     /// DNS servers.
-    #[serde(default, skip_serializing_if = "Vec::is_empty",
-            deserialize_with = "deserialize_item_or_list")]
+    #[serde(
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        deserialize_with = "deserialize_item_or_list"
+    )]
     pub dns: Vec<RawOr<String>>,
 
     /// Domains to search for hostnames.
-    #[serde(default, skip_serializing_if = "Vec::is_empty",
-            deserialize_with = "deserialize_item_or_list")]
+    #[serde(
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        deserialize_with = "deserialize_item_or_list"
+    )]
     pub dns_search: Vec<RawOr<String>>,
 
     /// Locations to mount temporary file systems.
-    #[serde(default, skip_serializing_if = "Vec::is_empty",
-            deserialize_with = "deserialize_item_or_list")]
+    #[serde(
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        deserialize_with = "deserialize_item_or_list"
+    )]
     pub tmpfs: Vec<RawOr<String>>,
 
     /// The entrypoint for the container (wraps `command`, basically).
@@ -65,14 +77,20 @@ pub struct Service {
     /// Environment files used to supply variables to the container.  Note
     /// that this is `env_file` in the underlying Docker format, but the
     /// singular form looks weird at the API level.
-    #[serde(rename = "env_file",
-            default, skip_serializing_if = "Vec::is_empty",
-            deserialize_with = "deserialize_item_or_list")]
+    #[serde(
+        rename = "env_file",
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        deserialize_with = "deserialize_item_or_list"
+    )]
     pub env_files: Vec<RawOr<PathBuf>>,
 
     /// Environment variables and values to supply to the container.
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
-            deserialize_with = "deserialize_map_or_key_value_list")]
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "deserialize_map_or_key_value_list"
+    )]
     pub environment: BTreeMap<String, RawOr<String>>,
 
     /// Expose a list of ports to any containers that link to us.
@@ -97,8 +115,11 @@ pub struct Service {
 
     /// Docker labels for this container, specifying various sorts of
     /// custom metadata.
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
-            deserialize_with = "deserialize_map_or_key_value_list")]
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "deserialize_map_or_key_value_list"
+    )]
     pub labels: BTreeMap<String, RawOr<String>>,
 
     /// Links to other services in this file.
@@ -114,8 +135,11 @@ pub struct Service {
     pub network_mode: Option<RawOr<NetworkMode>>,
 
     /// Networks to which this container is attached.
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
-            deserialize_with = "deserialize_map_or_default_list")]
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "deserialize_map_or_default_list"
+    )]
     pub networks: BTreeMap<String, NetworkInterface>,
 
     /// What PID namespacing mode should we use?
@@ -140,7 +164,6 @@ pub struct Service {
     pub ulimits: BTreeMap<String, Ulimit>,
 
     // TODO LOW: isolation (not documented at this point).
-
     /// Volumes associated with this service.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub volumes: Vec<RawOr<VolumeMount>>,
@@ -164,10 +187,13 @@ pub struct Service {
     pub cpu_quota: Option<u32>,
 
     // TODO LOW: cpuset
-
     /// The domain name to use for this container.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub domainname: Option<RawOr<String>>,
+
+    /// A check that’s run to determine whether or not containers for this service are “healthy”.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub healthcheck: Option<RawOr<String>>,
 
     /// The hostname to use for this container.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -196,7 +222,6 @@ pub struct Service {
     pub privileged: bool,
 
     // TODO LOW: read_only (what is this, anyway?)
-
     /// What should we do when the container exits?
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub restart: Option<RawOr<RestartMode>>,
@@ -267,6 +292,7 @@ derive_standard_impls_for!(Service, {
     extends,
     external_links,
     extra_hosts,
+    healthcheck,
     image,
     labels,
     links,
@@ -317,9 +343,13 @@ impl Service {
     }
 }
 
-#[test]
-fn service_handles_sample_fields_correctly() {
-    let yaml = r#"---
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn service_handles_sample_fields_correctly() {
+        let yaml = r#"---
 dns:
   - 8.8.8.8
 dns_search:
@@ -327,52 +357,77 @@ dns_search:
   - example.net
 image: hello
 "#;
-    assert_roundtrip!(Service, yaml);
-}
+        assert_roundtrip!(Service, yaml);
+    }
 
-#[test]
-fn service_env_file_is_renamed() {
-    let yaml = r#"---
+    #[test]
+    fn service_env_file_is_renamed() {
+        let yaml = r#"---
 env_file:
   - foo/bar.env
 "#;
-    let service: Service = serde_yaml::from_str(&yaml).unwrap();
-    assert_eq!(service.env_files.len(), 1);
-    assert_eq!(service.env_files[0], escape("foo/bar.env").unwrap());
-}
+        let service: Service = serde_yaml::from_str(&yaml).unwrap();
+        assert_eq!(service.env_files.len(), 1);
+        assert_eq!(service.env_files[0], escape("foo/bar.env").unwrap());
+    }
 
-#[test]
-fn service_networks_supports_map() {
-    let yaml = r#"---
+    #[test]
+    fn service_networks_supports_map() {
+        let yaml = r#"---
 networks:
   backend:
     aliases:
       - hostname2
   frontend: {}
 "#;
-    assert_roundtrip!(Service, yaml);
-}
+        assert_roundtrip!(Service, yaml);
+    }
 
-#[test]
-fn service_networks_supports_list() {
-    let yaml = r#"---
+    #[test]
+    fn service_networks_supports_list() {
+        let yaml = r#"---
 "networks":
   - "backend"
 "#;
-    let service: Service = serde_yaml::from_str(&yaml).unwrap();
-    assert_eq!(service.networks.len(), 1);
-    assert_eq!(service.networks.get("backend").unwrap(),
-               &NetworkInterface::default());
-}
+        let service: Service = serde_yaml::from_str(&yaml).unwrap();
+        assert_eq!(service.networks.len(), 1);
+        assert_eq!(
+            service.networks.get("backend").unwrap(),
+            &NetworkInterface::default()
+        );
+    }
 
-#[test]
-fn service_ulimits() {
-    let yaml = r#"---
+    #[test]
+    fn service_ulimits() {
+        let yaml = r#"---
 ulimits:
   nproc: 65535
   nofile:
     soft: 20000
     hard: 40000
 "#;
-    assert_roundtrip!(Service, yaml);
+        assert_roundtrip!(Service, yaml);
+    }
+
+    #[test]
+    fn service_healtchcheck_regular() {
+        let yaml = r#"---
+healthcheck:
+  test: ["CMD", "curl", "-f", "http://localhost"]
+  interval: 1m30s
+  timeout: 10s
+  retries: 3
+  start_period: 40s
+"#;
+        assert_roundtrip!(Service, yaml);
+    }
+
+    #[test]
+    fn service_healtchcheck_disable() {
+        let yaml = r#"---
+healthcheck:
+  disable: true
+"#;
+        assert_roundtrip!(Service, yaml);
+    }
 }
