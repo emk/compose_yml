@@ -18,6 +18,8 @@ pub enum HostVolume {
     Name(String),
 }
 
+const SPECIAL_PATHS: [&str; 3] = ["/dev", "/var", "/sys"];
+
 impl fmt::Display for HostVolume {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -70,7 +72,7 @@ impl FromStr for HostVolume {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        if s.starts_with("/dev") || s.starts_with("/var") {
+        if SPECIAL_PATHS.into_iter().any(|p| s.starts_with(p)) {
             return Ok(HostVolume::Special(s.to_owned()));
         }
 
@@ -276,12 +278,14 @@ fn portable_volume_mounts_should_have_string_representations() {
     let vol2 = VolumeMount::named("named", "/var/lib");
     let vol3 = VolumeMount::special("/var/run/docker.sock", "/var/run/docker.sock");
     let vol4 = VolumeMount::special("/dev/shm", "/dev/shm");
+    let vol5 = VolumeMount::special("/sys", "/sys");
 
     let pairs = vec![
         (vol1, "/var/lib"),
         (vol2, "named:/var/lib"),
         (vol3, "/var/run/docker.sock:/var/run/docker.sock"),
         (vol4, "/dev/shm:/dev/shm"),
+        (vol5, "/sys:/sys"),
     ];
     for (mode, s) in pairs {
         assert_eq!(mode.to_string(), s);
