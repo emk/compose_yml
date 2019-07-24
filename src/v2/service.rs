@@ -43,8 +43,13 @@ pub struct Service {
     pub devices: Vec<RawOr<AliasedName>>,
 
     /// A list of other containers to start first.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub depends_on: Vec<RawOr<String>>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        serialize_with = "serialize_key_list_or_map",
+        deserialize_with = "deserialize_map_or_default_list"
+    )]
+    pub depends_on: BTreeMap<String, DependsOnService>,
 
     /// DNS servers.
     #[serde(
@@ -423,6 +428,28 @@ fn service_healtchcheck_disable() {
     let yaml = r#"---
 healthcheck:
   disable: true
+"#;
+    assert_roundtrip!(Service, yaml);
+}
+
+#[test]
+fn service_depends_on_supports_list() {
+    let yaml = r#"---
+depends_on:
+  - a
+  - b
+"#;
+    assert_roundtrip!(Service, yaml);
+}
+
+#[test]
+fn service_depends_on_supports_map() {
+    let yaml = r#"---
+depends_on:
+  a:
+    condition: service_healthy
+  b:
+    condition: service_healthy
 "#;
     assert_roundtrip!(Service, yaml);
 }

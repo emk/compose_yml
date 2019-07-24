@@ -84,6 +84,7 @@ include!("network.rs");
 // Service-related types.
 include!("build.rs");
 include!("context.rs");
+include!("depends_on_service.rs");
 include!("extends.rs");
 include!("healthcheck.rs");
 include!("logging.rs");
