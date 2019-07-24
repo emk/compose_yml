@@ -193,7 +193,7 @@ pub struct Service {
 
     /// A check that’s run to determine whether or not containers for this service are “healthy”.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub healthcheck: Option<RawOr<String>>,
+    pub healthcheck: Option<Healthcheck>,
 
     /// The hostname to use for this container.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -343,13 +343,9 @@ impl Service {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn service_handles_sample_fields_correctly() {
-        let yaml = r#"---
+#[test]
+fn service_handles_sample_fields_correctly() {
+    let yaml = r#"---
 dns:
   - 8.8.8.8
 dns_search:
@@ -357,61 +353,61 @@ dns_search:
   - example.net
 image: hello
 "#;
-        assert_roundtrip!(Service, yaml);
-    }
+    assert_roundtrip!(Service, yaml);
+}
 
-    #[test]
-    fn service_env_file_is_renamed() {
-        let yaml = r#"---
+#[test]
+fn service_env_file_is_renamed() {
+    let yaml = r#"---
 env_file:
   - foo/bar.env
 "#;
-        let service: Service = serde_yaml::from_str(&yaml).unwrap();
-        assert_eq!(service.env_files.len(), 1);
-        assert_eq!(service.env_files[0], escape("foo/bar.env").unwrap());
-    }
+    let service: Service = serde_yaml::from_str(&yaml).unwrap();
+    assert_eq!(service.env_files.len(), 1);
+    assert_eq!(service.env_files[0], escape("foo/bar.env").unwrap());
+}
 
-    #[test]
-    fn service_networks_supports_map() {
-        let yaml = r#"---
+#[test]
+fn service_networks_supports_map() {
+    let yaml = r#"---
 networks:
   backend:
     aliases:
       - hostname2
   frontend: {}
 "#;
-        assert_roundtrip!(Service, yaml);
-    }
+    assert_roundtrip!(Service, yaml);
+}
 
-    #[test]
-    fn service_networks_supports_list() {
-        let yaml = r#"---
+#[test]
+fn service_networks_supports_list() {
+    let yaml = r#"---
 "networks":
   - "backend"
 "#;
-        let service: Service = serde_yaml::from_str(&yaml).unwrap();
-        assert_eq!(service.networks.len(), 1);
-        assert_eq!(
-            service.networks.get("backend").unwrap(),
-            &NetworkInterface::default()
-        );
-    }
+    let service: Service = serde_yaml::from_str(&yaml).unwrap();
+    assert_eq!(service.networks.len(), 1);
+    assert_eq!(
+        service.networks.get("backend").unwrap(),
+        &NetworkInterface::default()
+    );
+}
 
-    #[test]
-    fn service_ulimits() {
-        let yaml = r#"---
+#[test]
+fn service_ulimits() {
+    let yaml = r#"---
 ulimits:
   nproc: 65535
   nofile:
     soft: 20000
     hard: 40000
 "#;
-        assert_roundtrip!(Service, yaml);
-    }
+    assert_roundtrip!(Service, yaml);
+}
 
-    #[test]
-    fn service_healtchcheck_regular() {
-        let yaml = r#"---
+#[test]
+fn service_healtchcheck_regular() {
+    let yaml = r#"---
 healthcheck:
   test: ["CMD", "curl", "-f", "http://localhost"]
   interval: 1m30s
@@ -419,15 +415,14 @@ healthcheck:
   retries: 3
   start_period: 40s
 "#;
-        assert_roundtrip!(Service, yaml);
-    }
+    assert_roundtrip!(Service, yaml);
+}
 
-    #[test]
-    fn service_healtchcheck_disable() {
-        let yaml = r#"---
+#[test]
+fn service_healtchcheck_disable() {
+    let yaml = r#"---
 healthcheck:
   disable: true
 "#;
-        assert_roundtrip!(Service, yaml);
-    }
+    assert_roundtrip!(Service, yaml);
 }
