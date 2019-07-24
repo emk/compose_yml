@@ -92,7 +92,7 @@ where
         }
     }
 
-    d.deserialize_any(OptTrueOrStruct(PhantomData))
+    d.deserialize_option(OptTrueOrStruct(PhantomData))
 }
 
 /// Serialize the specified value as `true` if it is equal to
