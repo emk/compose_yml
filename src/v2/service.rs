@@ -204,6 +204,11 @@ pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hostname: Option<RawOr<String>>,
 
+    /// Run an init inside the container that forwards signals and reaps processes.
+    /// Set this option to true to enable this feature for the service.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub init: Option<bool>,
+
     /// What IPC namespacing mode should we use?
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ipc: Option<RawOr<IpcMode>>,
@@ -299,6 +304,7 @@ derive_standard_impls_for!(Service, {
     extra_hosts,
     healthcheck,
     image,
+    init,
     labels,
     links,
     logging,
@@ -450,6 +456,14 @@ depends_on:
     condition: service_healthy
   b:
     condition: service_healthy
+"#;
+    assert_roundtrip!(Service, yaml);
+}
+
+#[test]
+fn service_init() {
+    let yaml = r#"---
+init: true
 "#;
     assert_roundtrip!(Service, yaml);
 }
