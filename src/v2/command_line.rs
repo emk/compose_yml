@@ -20,7 +20,8 @@ impl InterpolateAll for CommandLine {}
 
 impl Serialize for CommandLine {
     fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>
-        where S: Serializer
+    where
+        S: Serializer,
     {
         match self {
             &CommandLine::ShellCode(ref s) => s.serialize(serializer),
@@ -31,7 +32,8 @@ impl Serialize for CommandLine {
 
 impl<'de> Deserialize<'de> for CommandLine {
     fn deserialize<D>(deserializer: D) -> result::Result<CommandLine, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         struct CommandLineVisitor;
 
@@ -40,19 +42,23 @@ impl<'de> Deserialize<'de> for CommandLine {
 
             // The deserializer found a string, so handle it.
             fn visit_str<E>(self, value: &str) -> result::Result<CommandLine, E>
-                where E: de::Error
+            where
+                E: de::Error,
             {
-                Ok(CommandLine::ShellCode(raw(value).map_err(|err| {
-                    E::custom(format!("{}", err))
-                })?))
+                Ok(CommandLine::ShellCode(
+                    raw(value).map_err(|err| E::custom(format!("{}", err)))?,
+                ))
             }
 
             // The deserializer found a sequence.
-            fn visit_seq<V>(self, mut visitor: V) ->
-                result::Result<Self::Value, V::Error>
-                where V: SeqAccess<'de>
+            fn visit_seq<V>(
+                self,
+                mut visitor: V,
+            ) -> result::Result<Self::Value, V::Error>
+            where
+                V: SeqAccess<'de>,
             {
-                let mut args: Vec<RawOr<String>> = vec!();
+                let mut args: Vec<RawOr<String>> = vec![];
                 while let Some(arg) = visitor.next_element::<String>()? {
                     args.push(raw(arg).map_err(|err| {
                         <V::Error as serde::de::Error>::custom(format!("{}", err))
@@ -66,7 +72,7 @@ impl<'de> Deserialize<'de> for CommandLine {
             }
         }
 
-        deserializer.deserialize_seq(CommandLineVisitor)
+        deserializer.deserialize_any(CommandLineVisitor)
     }
 }
 

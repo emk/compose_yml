@@ -3,8 +3,9 @@
 
 use regex::Regex;
 use serde::de;
-use serde::de::{Deserialize, DeserializeOwned, Deserializer, MapAccess, SeqAccess,
-                Visitor};
+use serde::de::{
+    Deserialize, DeserializeOwned, Deserializer, MapAccess, SeqAccess, Visitor,
+};
 use std::collections::BTreeMap;
 use std::fmt;
 use std::marker::PhantomData;
@@ -165,7 +166,7 @@ where
         }
     }
 
-    deserializer.deserialize_map(MapOrKeyValueListVisitor)
+    deserializer.deserialize_any(MapOrKeyValueListVisitor)
 }
 
 /// Given a map, deserialize it normally.  But if we have a list of string
@@ -211,7 +212,7 @@ where
         }
     }
 
-    deserializer.deserialize_map(MapOrDefaultListVisitor(PhantomData::<T>))
+    deserializer.deserialize_any(MapOrDefaultListVisitor(PhantomData::<T>))
 }
 
 /// Deserialize either list or a single bare string as a list.
@@ -250,9 +251,9 @@ where
         {
             let mut items: Vec<RawOr<T>> = vec![];
             while let Some(item) = visitor.next_element::<String>()? {
-                let v = raw(item).map_err(
-                    |err| <V::Error as de::Error>::custom(format!("{}", err)),
-                )?;
+                let v = raw(item).map_err(|err| {
+                    <V::Error as de::Error>::custom(format!("{}", err))
+                })?;
                 items.push(v);
             }
             Ok(items)

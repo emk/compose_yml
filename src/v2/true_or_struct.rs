@@ -51,7 +51,7 @@ where
         }
     }
 
-    d.deserialize_map(TrueOrStruct(PhantomData))
+    d.deserialize_any(TrueOrStruct(PhantomData))
 }
 
 /// Like `opt_true_or_struct`, but it also handles the case where the
@@ -92,7 +92,7 @@ where
         }
     }
 
-    d.deserialize_option(OptTrueOrStruct(PhantomData))
+    d.deserialize_any(OptTrueOrStruct(PhantomData))
 }
 
 /// Serialize the specified value as `true` if it is equal to
