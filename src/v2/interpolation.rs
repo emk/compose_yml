@@ -62,7 +62,7 @@ enum Mode {
 /// An internal function which handles interpolating, unescaping and
 /// validating interpolation strings.  We use a single function for all
 /// three to prevent the risk of divergent code paths.
-fn interpolate_helper(input: &str, mode: Mode, env: &Environment) -> Result<String> {
+fn interpolate_helper(input: &str, mode: Mode, env: &dyn Environment) -> Result<String> {
     #[cfg_attr(rustfmt, rustfmt_skip)]
     lazy_static! {
         static ref VAR: Regex = Regex::new(r#"(?x)
@@ -133,7 +133,7 @@ fn interpolate_helper(input: &str, mode: Mode, env: &Environment) -> Result<Stri
 
 /// Interpolate environment variables into a string using the same rules as
 /// `docker-compose.yml`.
-fn interpolate_env(input: &str, env: &Environment) -> Result<String> {
+fn interpolate_env(input: &str, env: &dyn Environment) -> Result<String> {
     interpolate_helper(input, Mode::Interpolate, env)
 }
 
@@ -522,7 +522,7 @@ where
     /// Return a `&mut T` for this `RawOr<T>`, performing any necessary
     /// environment variable interpolations using the supplied `env` object
     /// and updating the value in place.
-    pub fn interpolate_env(&mut self, env: &Environment) -> Result<&mut T> {
+    pub fn interpolate_env(&mut self, env: &dyn Environment) -> Result<&mut T> {
         let RawOr(ref mut inner) = *self;
 
         // We have to very careful about how we destructure this value to
