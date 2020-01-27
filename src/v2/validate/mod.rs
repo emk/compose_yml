@@ -9,8 +9,8 @@ use url::Url;
 use valico;
 */
 
-use super::File;
 use crate::errors::*;
+use super::File;
 
 /// TODO: This should validate a `File` against the official JSON schema
 /// provided by `docker-compose`, but there's no usable version of `valico`

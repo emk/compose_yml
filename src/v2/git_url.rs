@@ -31,7 +31,8 @@ impl GitUrl {
     pub fn should_treat_as_url<S: AsRef<str>>(s: S) -> bool {
         lazy_static! {
             static ref URL_VALIDATE: Regex =
-                Regex::new(r#"^(?:https?://|git://|github\.com/|git@)"#).unwrap();
+                Regex::new(r#"^(?:https?://|git://|github\.com/|git@)"#)
+                    .unwrap();
         }
         URL_VALIDATE.is_match(s.as_ref())
     }
@@ -117,9 +118,8 @@ impl GitUrl {
 
     fn parse_parts(&self) -> Result<(&str, Option<&str>, Option<&str>)> {
         lazy_static! {
-            static ref URL_PARSE: Regex =
-                Regex::new(r#"^([^#]+)(?:#([^:]+)?(?::(.+))?)?$"#)
-                    .expect("Could not parse regex URL_PARSE");
+            static ref URL_PARSE: Regex = Regex::new(r#"^([^#]+)(?:#([^:]+)?(?::(.+))?)?$"#)
+                .expect("Could not parse regex URL_PARSE");
         }
         let captures = URL_PARSE.captures(&self.url).ok_or_else(|| -> Error {
             format!("could not parse URL {:?}", self.url).into()

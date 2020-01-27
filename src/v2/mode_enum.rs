@@ -232,7 +232,8 @@ impl FromStr for RestartMode {
 
     fn from_str(s: &str) -> Result<Self> {
         lazy_static! {
-            static ref COMPOUND: Regex = Regex::new("^([-a-z]+):(.+)$").unwrap();
+            static ref COMPOUND: Regex =
+                Regex::new("^([-a-z]+):(.+)$").unwrap();
         }
 
         match s {
@@ -247,9 +248,8 @@ impl FromStr for RestartMode {
                 let valstr = caps.get(2).unwrap().as_str();
                 match caps.get(1).unwrap().as_str() {
                     "on-failure" => {
-                        let value = FromStr::from_str(valstr).map_err(|_| {
-                            Error::invalid_value("restart mode", valstr)
-                        })?;
+                        let value = FromStr::from_str(valstr)
+                            .map_err(|_| Error::invalid_value("restart mode", valstr))?;
                         Ok(RestartMode::OnFailure(Some(value)))
                     }
                     _ => Err(Error::invalid_value("restart mode", s)),

@@ -13,8 +13,8 @@ use std::str::FromStr;
 use std::string;
 use void::Void;
 
-use super::merge_override::MergeOverride;
 use crate::errors::*;
+use super::merge_override::MergeOverride;
 
 /// A source of environment variable values.
 pub trait Environment {
@@ -101,8 +101,7 @@ fn interpolate_helper(input: &str, mode: Mode, env: &Environment) -> Result<Stri
             "".to_owned()
         } else {
             // Handle actual interpolations.
-            let var = caps
-                .name("var1")
+            let var = caps.name("var1")
                 .or_else(|| caps.name("var2"))
                 .unwrap()
                 .as_str();
@@ -314,16 +313,17 @@ pub trait InterpolatableValue: Clone + Eq {
 macro_rules! impl_interpolatable_value {
     ($ty:ty) => {
         impl $crate::v2::interpolation::InterpolatableValue for $ty {
-            fn iv_from_str(s: &str) -> Result<Self> {
+            fn iv_from_str(s: &str) -> Result<Self>
+            {
                 use $crate::v2::interpolation::IntoInvalidValueError;
                 fn convert_err<E>(err: E, input: &str) -> Error
-                where
-                    E: IntoInvalidValueError,
+                    where E: IntoInvalidValueError
                 {
                     err.into_invalid_value_error(stringify!($ty), input)
                 }
 
-                FromStr::from_str(s).map_err(|err| convert_err(err, s))
+                FromStr::from_str(s)
+                    .map_err(|err| convert_err(err, s))
             }
 
             fn fmt_iv(&self, f: &mut fmt::Formatter) -> std::fmt::Result {
@@ -331,7 +331,7 @@ macro_rules! impl_interpolatable_value {
                 self.fmt(f)
             }
         }
-    };
+    }
 }
 
 impl_interpolatable_value!(String);

@@ -6,8 +6,8 @@ use std::fs;
 use std::io::{self, BufRead};
 use std::path::Path;
 
-use super::interpolation::{escape, RawOr};
 use crate::errors::*;
+use super::interpolation::{escape, RawOr};
 
 /// A file pointed to by an `env_file:` field.
 pub struct EnvFile {
@@ -35,8 +35,7 @@ impl EnvFile {
                 continue;
             }
 
-            let caps = VAR
-                .captures(&line)
+            let caps = VAR.captures(&line)
                 .ok_or_else(|| ErrorKind::ParseEnv(line.clone()))?;
             vars.insert(
                 caps.get(1).unwrap().as_str().to_owned(),

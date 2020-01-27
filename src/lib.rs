@@ -53,14 +53,8 @@
 // Enable as many useful Rust and Clippy warnings as we can stand.  We'd
 // also enable `trivial_casts`, but we're waiting for
 // https://github.com/rust-lang/rust/issues/23416.
-#![warn(
-    missing_copy_implementations,
-    missing_debug_implementations,
-    missing_docs,
-    trivial_numeric_casts,
-    unsafe_code,
-    unused_import_braces
-)]
+#![warn(missing_copy_implementations, missing_debug_implementations, missing_docs,
+        trivial_numeric_casts, unsafe_code, unused_import_braces)]
 // We disabled `unused_extern_crates` because it's failing on macro-only crates.
 // We disabled `unused_qualifications` because it's failing on `try!`.
 #![cfg_attr(feature = "clippy", warn(cast_possible_truncation))]

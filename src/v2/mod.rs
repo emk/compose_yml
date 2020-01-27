@@ -13,8 +13,8 @@ use std::convert::Into;
 use std::default::Default;
 #[cfg(test)]
 use std::env;
-use std::fmt;
 use std::fs;
+use std::fmt;
 use std::io;
 use std::net::IpAddr;
 use std::path::{Path, PathBuf};
@@ -22,12 +22,11 @@ use std::result;
 use std::str::FromStr;
 use void::Void;
 
+use self::helpers::*;
 use self::env_file::EnvFile;
 pub use self::git_url::GitUrl;
-use self::helpers::*;
-pub use self::interpolation::{
-    escape, raw, value, Environment, InterpolateAll, OsEnvironment, RawOr,
-};
+pub use self::interpolation::{escape, raw, value, Environment, InterpolateAll,
+                              OsEnvironment, RawOr};
 pub use self::merge_override::MergeOverride;
 pub use self::mode_enum::*;
 use self::string_or_struct::*;
@@ -38,9 +37,9 @@ use self::validate::validate_file;
 // compose_yml::v2`.
 pub use crate::errors::*;
 
+mod helpers;
 mod env_file;
 mod git_url;
-mod helpers;
 #[macro_use]
 mod interpolation;
 mod string_or_struct;
@@ -54,14 +53,16 @@ mod validate;
 
 #[cfg(test)]
 macro_rules! assert_roundtrip {
-    ( $ty:ty, $yaml:expr ) => {{
-        use serde_json;
-        let yaml: &str = $yaml;
-        let data: $ty = serde_yaml::from_str(&yaml).unwrap();
-        let serialized = serde_json::to_value(&data).unwrap();
-        let expected: serde_json::Value = serde_yaml::from_str(&yaml).unwrap();
-        assert_eq!(serialized, expected);
-    }};
+    ( $ty:ty, $yaml:expr ) => {
+        {
+            use serde_json;
+            let yaml: &str = $yaml;
+            let data: $ty = serde_yaml::from_str(&yaml).unwrap();
+            let serialized = serde_json::to_value(&data).unwrap();
+            let expected: serde_json::Value = serde_yaml::from_str(&yaml).unwrap();
+            assert_eq!(serialized, expected);
+        }
+    }
 }
 
 // TODO: We use `include!` instead of submodules because of how `serde` used
