@@ -77,7 +77,7 @@ impl FromStr for Image {
     fn from_str(s: &str) -> Result<Self> {
         lazy_static! {
             static ref IMAGE: Regex =
-                Regex::new(r#"^(?:([^/:.]+\.[^/:]+)(?::([0-9]+))?/)?(?:([^/:.]+)/)?([^/:]+)(?::([^/:]+))?$"#).unwrap();
+                Regex::new(r#"^(?:([^/:.]+\.[^/:]+)(?::([0-9]+))?/)?(?:([^/:.]+)/)?([^:]+)(?::([^/:]+))?$"#).unwrap();
         }
         let caps = IMAGE.captures(s).ok_or_else(|| {
             Error::invalid_value("image", s)
@@ -145,11 +145,18 @@ fn parses_stand_image_formats() {
         name: "hello".to_owned(),
         tag: None,
     };
+    let img5 = Image {
+        registry_host: None,
+        user_name: Some("user".to_owned()),
+        name: "foo/bar".to_owned(),
+        tag: Some("latest".to_owned()),
+    };
     let pairs = vec!(
         (img1, "hello"),
         (img2, "example/hello:4.4-alpine"),
         (img3, "example.com:123/hello:latest"),
         (img4, "example.com/staff/hello"),
+        (img5, "user/foo/bar:latest"),
     );
     for (img, s) in pairs {
         assert_eq!(img.to_string(), s);
