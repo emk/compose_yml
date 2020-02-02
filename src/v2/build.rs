@@ -15,8 +15,8 @@ pub struct Build {
 
     /// Build arguments.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
-            deserialize_with = "deserialize_map_or_key_value_list")]
-    pub args: BTreeMap<String, RawOr<String>>,
+            deserialize_with = "deserialize_map_or_key_optional_value_list")]
+    pub args: BTreeMap<String, Option<RawOr<String>>>,
 
     /// The FROM target at which to stop building
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -103,7 +103,7 @@ dockerfile: Dockerfile
     let build: Build = serde_yaml::from_str(yaml).unwrap();
     assert_eq!(build.context, value(Context::new(".")));
     assert_eq!(build.dockerfile, Some(value("Dockerfile".to_owned())));
-    assert_eq!(build.args.get("key").expect("wanted key 'key'").value().unwrap(),
+    assert_eq!(build.args.get("key").expect("wanted key 'key'").as_ref().unwrap().value().unwrap(),
                "value");
 }
 
@@ -120,16 +120,16 @@ args:
     let build: Build = serde_yaml::from_str(yaml).unwrap();
 
     // Check type conversion.
-    assert_eq!(build.args.get("bool").expect("wanted key 'bool'").value().unwrap(),
+    assert_eq!(build.args.get("bool").expect("wanted key 'bool'").as_ref().unwrap().value().unwrap(),
                "true");
-    assert_eq!(build.args.get("float").expect("wanted key 'float'").value().unwrap(),
+    assert_eq!(build.args.get("float").expect("wanted key 'float'").as_ref().unwrap().value().unwrap(),
                "1.5");
-    assert_eq!(build.args.get("int").expect("wanted key 'int'").value().unwrap(),
+    assert_eq!(build.args.get("int").expect("wanted key 'int'").as_ref().unwrap().value().unwrap(),
                "1");
 
     // Check interpolation.
     let mut interp: RawOr<String> =
-        build.args.get("interp").expect("wanted key 'interp'").to_owned();
+        build.args.get("interp").expect("wanted key 'interp'").as_ref().unwrap().to_owned();
     env::set_var("FOO", "foo");
     let env = OsEnvironment::new();
     assert_eq!(interp.interpolate_env(&env).unwrap(), "foo")
@@ -141,14 +141,10 @@ fn build_args_may_be_a_key_value_list() {
 context: .
 args:
   - key=value
+  - other_key
 ";
     let build: Build = serde_yaml::from_str(yaml).unwrap();
-    assert_eq!(build.args.get("key").expect("should have key").value().unwrap(),
+    assert_eq!(build.args.get("key").expect("should have key").as_ref().unwrap().value().unwrap(),
                "value");
+    assert_eq!(*build.args.get("other_key").expect("should have other_key"), None);
 }
-
-// TODO MED: Implement valueless keys.
-//
-// args:
-//   - buildno
-//   - password
