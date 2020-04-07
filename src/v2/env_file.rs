@@ -7,7 +7,7 @@ use std::io::{self, BufRead};
 use std::path::Path;
 
 use super::interpolation::{escape, RawOr};
-use errors::*;
+use crate::errors::*;
 
 /// A file pointed to by an `env_file:` field.
 pub struct EnvFile {

@@ -5,7 +5,7 @@ use regex::Regex;
 use std::fmt;
 use std::str::FromStr;
 
-use errors::*;
+use crate::errors::*;
 
 /// This big, bad macro is in charge of implementing serializable enums
 /// with entries like:
