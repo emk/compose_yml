@@ -46,7 +46,7 @@ where
             Deserialize::deserialize(mvd)
         }
 
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(formatter, "a map or a boolean")
         }
     }
@@ -87,7 +87,7 @@ where
             deserialize_true_or_struct(deserializer).map(Some)
         }
 
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(formatter, "a map or a list of strings")
         }
     }
@@ -132,7 +132,7 @@ where
     /// how a trait is applied to a class.
     struct Wrap<'a, T>(&'a T)
     where
-        T: 'a + Serialize + Default + Eq;
+        T: Serialize + Default + Eq;
 
     impl<'a, T> Serialize for Wrap<'a, T>
     where

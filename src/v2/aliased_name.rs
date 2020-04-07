@@ -42,7 +42,7 @@ impl AliasedName {
 impl_interpolatable_value!(AliasedName);
 
 impl fmt::Display for AliasedName {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.alias {
             &Some(ref alias) => write!(f, "{}:{}", &self.name, alias),
             &None => write!(f, "{}", &self.name),

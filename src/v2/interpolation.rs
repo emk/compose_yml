@@ -89,7 +89,7 @@ fn interpolate_helper(
 "#).unwrap();
     }
     let mut err = None;
-    let result = VAR.replace_all(input, |caps: &Captures| {
+    let result = VAR.replace_all(input, |caps: &Captures<'_>| {
         if caps.name("unknown").is_some() {
             // Our "fallback" group matched, which means that no valid
             // group matched.  Mark as invalid and return an empty
@@ -287,7 +287,7 @@ pub trait InterpolatableValue: Clone + Eq {
     /// Our equivalent of `from_str`.
     fn iv_from_str(s: &str) -> Result<Self>;
     /// Our equivalent of `fmt`.
-    fn fmt_iv(&self, f: &mut fmt::Formatter) -> fmt::Result;
+    fn fmt_iv(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
 }
 
 /// Provide a default implementation of InterpolatableValue that works for
@@ -309,7 +309,7 @@ pub trait InterpolatableValue: Clone + Eq {
 ///         })
 ///     }
 ///
-///     default fn fmt_iv(&self, f: &mut fmt::Formatter) -> std::fmt::Result {
+///     default fn fmt_iv(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
 ///         self.fmt(f)
 ///     }
 /// }
@@ -329,7 +329,7 @@ macro_rules! impl_interpolatable_value {
                 FromStr::from_str(s).map_err(|err| convert_err(err, s))
             }
 
-            fn fmt_iv(&self, f: &mut fmt::Formatter) -> ::std::fmt::Result {
+            fn fmt_iv(&self, f: &mut fmt::Formatter<'_>) -> ::std::fmt::Result {
                 use std::fmt::Display;
                 self.fmt(f)
             }
@@ -345,7 +345,7 @@ impl InterpolatableValue for PathBuf {
         Ok(Path::new(s).to_owned())
     }
 
-    fn fmt_iv(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt_iv(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.display().fmt(f)
     }
 }
@@ -353,13 +353,13 @@ impl InterpolatableValue for PathBuf {
 /// A wrapper type to make `format!` call `fmt_iv` instead of `fmt`.
 struct DisplayInterpolatableValue<'a, V>(&'a V)
 where
-    V: 'a + InterpolatableValue;
+    V: InterpolatableValue;
 
 impl<'a, T> Display for DisplayInterpolatableValue<'a, T>
 where
     T: InterpolatableValue,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             DisplayInterpolatableValue(val) => val.fmt_iv(f),
         }
@@ -586,7 +586,7 @@ impl<T> Display for RawOr<T>
 where
     T: InterpolatableValue,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             RawOr(RawOrValue::Raw(ref raw)) => write!(f, "{}", raw),
             RawOr(RawOrValue::Value(ref value)) => {

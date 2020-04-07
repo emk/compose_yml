@@ -5,9 +5,6 @@
 //! minicondutor docker-compose.in.yml docker-compose.yml
 //! ```
 
-extern crate compose_yml;
-extern crate regex;
-
 use anyhow::{anyhow, Result};
 use compose_yml::v2 as dc;
 use regex::Regex;

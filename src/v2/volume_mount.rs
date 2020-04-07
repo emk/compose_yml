@@ -17,7 +17,7 @@ pub enum HostVolume {
 }
 
 impl fmt::Display for HostVolume {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             &HostVolume::Path(ref path) => {
                 let p = path_str_to_docker(path.to_str().ok_or(fmt::Error)?);
@@ -188,7 +188,7 @@ impl VolumeMount {
 impl_interpolatable_value!(VolumeMount);
 
 impl fmt::Display for VolumeMount {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // We can't have permissions on a purely internal volume, if I'm
         // reading this correctly.
         if self.host.is_none() && self.permissions != Default::default() {

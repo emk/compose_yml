@@ -22,7 +22,7 @@ impl From<u16> for Ports {
 }
 
 impl fmt::Display for Ports {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             &Ports::Port(port) => write!(f, "{}", port),
             &Ports::Range(first, last) => write!(f, "{}-{}", first, last),
@@ -74,7 +74,7 @@ impl Default for Protocol {
 }
 
 impl fmt::Display for Protocol {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             &Protocol::Tcp => write!(f, "tcp"),
             &Protocol::Udp => write!(f, "udp"),
@@ -173,7 +173,7 @@ impl PortMapping {
 impl_interpolatable_value!(PortMapping);
 
 impl fmt::Display for PortMapping {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // We can't serialize a host_address without host_ports.
         if self.host_address.is_some() && self.host_ports.is_none() {
             return Err(fmt::Error);

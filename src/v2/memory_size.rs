@@ -39,7 +39,7 @@ impl MemorySize {
 impl_interpolatable_value!(MemorySize);
 
 impl fmt::Display for MemorySize {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let bytes = self.to_bytes();
         if bytes == 0 {
             // Just print 0 without any units, because anything else looks

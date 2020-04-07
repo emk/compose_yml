@@ -56,7 +56,7 @@ impl FromStr for Context {
 }
 
 impl fmt::Display for Context {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             &Context::Dir(ref path) => write!(f, "{}", path.display()),
             &Context::GitUrl(ref url) => write!(f, "{}", url),

@@ -144,7 +144,7 @@ impl GitUrl {
 }
 
 impl fmt::Display for GitUrl {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.url.fmt(f)
     }
 }

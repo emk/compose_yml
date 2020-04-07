@@ -24,7 +24,7 @@ impl Default for DevicePermissions {
 }
 
 impl fmt::Display for DevicePermissions {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.read {
             write!(f, "r")?
         }
@@ -87,7 +87,7 @@ impl Default for VolumePermissions {
 }
 
 impl fmt::Display for VolumePermissions {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             &VolumePermissions::ReadWrite => write!(f, "rw"),
             &VolumePermissions::ReadOnly => write!(f, "ro"),

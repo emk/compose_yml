@@ -13,7 +13,7 @@ pub struct RegistryHost {
 }
 
 impl fmt::Display for RegistryHost {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", &self.host)?;
         if let Some(port) = self.port {
             write!(f, ":{}", port)?;
@@ -56,7 +56,7 @@ impl Image {
 }
 
 impl fmt::Display for Image {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if let Some(ref registry_host) = self.registry_host {
             write!(f, "{}/", registry_host)?;
         }

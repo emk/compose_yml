@@ -55,7 +55,7 @@ impl<'de> Visitor<'de> for ToStringVisitor {
         Ok(v.to_owned())
     }
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(formatter, "a value which can be converted to a string")
     }
 }
@@ -161,7 +161,7 @@ where
             Ok(map)
         }
 
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(formatter, "a map or a key/value list")
         }
     }
@@ -207,7 +207,7 @@ where
             Ok(map)
         }
 
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(formatter, "a map or a list of strings")
         }
     }
@@ -259,7 +259,7 @@ where
             Ok(items)
         }
 
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(formatter, "a string or a list of strings")
         }
     }

@@ -24,7 +24,7 @@ impl HostMapping {
 impl_interpolatable_value!(HostMapping);
 
 impl fmt::Display for HostMapping {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}:{}", &self.hostname, &self.address)
     }
 }

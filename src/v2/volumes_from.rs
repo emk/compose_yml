@@ -75,7 +75,7 @@ impl VolumesFrom {
 impl_interpolatable_value!(VolumesFrom);
 
 impl fmt::Display for VolumesFrom {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // We serialize service names without the `service:` here, but most
         // other places include the label.
         match &self.source {
