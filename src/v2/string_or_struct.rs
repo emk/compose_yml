@@ -57,7 +57,7 @@ where
         }
     }
 
-    d.deserialize_map(StringOrStruct(PhantomData))
+    d.deserialize_any(StringOrStruct(PhantomData))
 }
 
 /// Like `opt_string_or_struct`, but it also handles the case where the
