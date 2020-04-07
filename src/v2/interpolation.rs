@@ -62,7 +62,11 @@ enum Mode {
 /// An internal function which handles interpolating, unescaping and
 /// validating interpolation strings.  We use a single function for all
 /// three to prevent the risk of divergent code paths.
-fn interpolate_helper(input: &str, mode: Mode, env: &dyn Environment) -> Result<String> {
+fn interpolate_helper(
+    input: &str,
+    mode: Mode,
+    env: &dyn Environment,
+) -> Result<String> {
     #[cfg_attr(rustfmt, rustfmt_skip)]
     lazy_static! {
         static ref VAR: Regex = Regex::new(r#"(?x)
@@ -326,7 +330,7 @@ macro_rules! impl_interpolatable_value {
                 FromStr::from_str(s).map_err(|err| convert_err(err, s))
             }
 
-            fn fmt_iv(&self, f: &mut fmt::Formatter) -> $crate::std::fmt::Result {
+            fn fmt_iv(&self, f: &mut fmt::Formatter) -> ::std::fmt::Result {
                 use std::fmt::Display;
                 self.fmt(f)
             }
