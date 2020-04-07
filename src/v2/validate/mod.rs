@@ -18,7 +18,7 @@ use crate::errors::*;
 pub fn validate_file(file: &File) -> Result<()> {
     match &file.version[..] {
         "2" | "2.1" | "2.2" | "2.3" | "2.4" => {}
-        vers => return Err(ErrorKind::UnsupportedVersion(vers.to_owned()).into()),
+        vers => return Err(Error::UnsupportedVersion(vers.to_owned())),
     };
 
     warn!("docker-compose.yml file validation disabled until valico is updated");
@@ -59,7 +59,7 @@ pub fn validate_file(file: &File) -> Result<()> {
     let schema_value = match &file.version[..] {
         "2" => COMPOSE_2_0_SCHEMA.deref(),
         "2.1" => COMPOSE_2_1_SCHEMA.deref(),
-        vers => return Err(ErrorKind::UnsupportedVersion(vers.to_owned()).into()),
+        vers => return Err(Error::UnsupportedVersion(vers.to_owned())),
     };
 
     let mut scope = valico::json_schema::Scope::new();
@@ -74,14 +74,14 @@ pub fn validate_file(file: &File) -> Result<()> {
 
     let mut serializer = serde_json::value::Serializer::new();
     file.serialize(&mut serializer)
-        .chain_err(|| ErrorKind::ValidationFailed)?;
+        .chain_err(|| Error::ValidationFailed)?;
     let value = serializer.unwrap();
     let validation_state = schema.validate(&value);
     if validation_state.is_strictly_valid() {
         Ok(())
     } else {
         let res: Result<()> = Err(validation_state.into());
-        res.chain_err(|| ErrorKind::ValidationFailed)
+        res.chain_err(|| Error::ValidationFailed)
     }
 }
 

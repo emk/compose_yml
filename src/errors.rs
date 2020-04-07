@@ -10,123 +10,146 @@
 #![cfg_attr(feature="clippy", allow(redundant_closure))]
 
 use serde_yaml;
-use std::io::Write;
-use std::path::PathBuf;
-use valico::json_schema::ValidationState;
+use std::{error::Error as StdError, io, path::PathBuf};
+use thiserror::Error;
+//use valico::json_schema::ValidationState;
 
-error_chain! {
-    // These are external, non-`error_chain` error types that we can
-    // automatically wrap.
-    foreign_links {
-        // The YAML structure in a `docker-compose.yml` file could not be
-        // parsed.
-        serde_yaml::Error, Yaml;
-    }
+/// A `compose_yml` result.
+pub type Result<T, E = Error> = std::result::Result<T, E>;
 
-    // These are our "native" error types.
-    errors {
-        /// We could not convert a path mounted inside a Docker container to a
-        /// Windows path on the host.
-        ConvertMountedPathToWindows(path: String) {
-            description("could not converted mounted Docker path to a Windows path")
-            display("could not convert '{}' to the equivalent Windows path", &path)
-        }
+/// A `compose_yml` error.
+#[derive(Debug, Error)]
+#[non_exhaustive]
+pub enum Error {
+    /// We could not convert a path mounted inside a Docker container to a
+    /// Windows path on the host.
+    #[error("could not convert {0:?} to the equivalent Windows path")]
+    ConvertMountedPathToWindows(String),
 
-        /// A value did not conform to a JSON schema.
-        DoesNotConformToSchema(state: ValidationState) {
-            description("data did not conform to schema")
-            display("data did not confirm to schema:{}",
-                    validation_state_to_string(&state))
-        }
+    // /// A value did not conform to a JSON schema.
+    // #[error("data did not confirm to schema: {}", validation_state_to_string(&.0))]
+    // DoesNotConformToSchema(ValidationState),
+    /// The interpolation syntax in the specified string was invalid.
+    #[error("invalid interpolation syntax {0:?}")]
+    InterpolateInvalidSyntax(String),
 
-        /// The interpolation syntax in the specified string was invalid.
-        InterpolateInvalidSyntax(s: String) {
-            description("invalid interpolation syntax")
-            display("invalid interpolation syntax '{}'", &s)
-        }
+    /// The string contains an undefined environment variable.  This is not
+    /// an error for `docker-compose` (which treats undefined variables as
+    /// empty), but it is an error for us because we're a
+    /// `docker-compose.yml` parsing and transforming library, and we
+    /// try not to hide errors.
+    #[error("undefined environment variable in interpolation {0:?}")]
+    InterpolateUndefinedVariable(String),
 
-        /// The string contains an undefined environment variable.  This is not
-        /// an error for `docker-compose` (which treats undefined variables as
-        /// empty), but it is an error for us because we're a
-        /// `docker-compose.yml` parsing and transforming library, and we
-        /// try not to hide errors.
-        InterpolateUndefinedVariable(s: String) {
-            description("undefined environment variable in interpolation")
-            display("undefined environment variable in interpolation '{}'", &s)
-        }
+    /// We tried to parse a string that requires environment variable
+    /// interpolation, but in a context where we've been asked not to
+    /// access the environment.  This is typical when transforming
+    /// `docker-compose.yml` files that we want to interpolate at a later
+    /// time.
+    #[error("cannot parse without interpolating environment variables {0:?}")]
+    InterpolationDisabled(String),
 
-        /// We tried to parse a string that requires environment variable
-        /// interpolation, but in a context where we've been asked not to
-        /// access the environment.  This is typical when transforming
-        /// `docker-compose.yml` files that we want to interpolate at a later
-        /// time.
-        InterpolationDisabled(s: String) {
-            description("cannot parse without interpolating environment variables")
-            display("cannot parse without interpolating environment variables '{}'",
-                    &s)
-        }
+    /// A string value in a `docker-compose.yml` file could not be
+    /// parsed.
+    #[error("invalid {wanted} {input:?}")]
+    InvalidValue { wanted: String, input: String },
 
-        /// A string value in a `docker-compose.yml` file could not be
-        /// parsed.
-        InvalidValue(wanted: String, input: String) {
-            description("invalid value")
-            display("invalid {} '{}'", &wanted, &input)
-        }
+    #[error("I/O error")]
+    IoError(#[source] io::Error),
 
-        /// An `.env` file could not be parsed.
-        ParseEnv(line: String) {
-            description("cannot parse env variable declaration")
-            display("cannot parse env variable declaration '{}'", &line)
-        }
+    /// An `.env` file could not be parsed.
+    #[error("cannot parse env variable declaration {line:?}")]
+    ParseEnv { line: String },
 
-        /// A Git URL was either invalid or not compatible with
-        /// `docker-compose`.
-        ParseGitUrl(url: String) {
-            description("not a Docker-compatible git URL")
-            display("not a Docker-compatible git URL '{}'", &url)
-        }
+    /// A Git URL was either invalid or not compatible with
+    /// `docker-compose`.
+    #[error("not a Docker-compatible git URL {url:?}")]
+    ParseGitUrl {
+        url: String,
+        source: Option<Box<dyn StdError + Send + Sync + 'static>>,
+    },
 
-        /// An error occurred reading a file.
-        ReadFile(path: PathBuf) {
-            description("error reading file")
-            display("error reading file '{}'", path.display())
-        }
+    /// An error occurred reading a file.
+    #[error("error reading file {:?}", .path.display())]
+    ReadFile {
+        path: PathBuf,
+        source: Box<dyn StdError + Send + Sync + 'static>,
+    },
 
-        /// We don't support the specified version of `docker-compose.yml`.
-        UnsupportedVersion(version: String) {
-            description("unsupported docker-compose.yml version")
-            display("unsupported docker-compose.yml version '{}'", &version)
-        }
+    /// We don't support the specified version of `docker-compose.yml`.
+    #[error("unsupported docker-compose.yml version {0:?}")]
+    UnsupportedVersion(String),
 
-        /// We were unable to validate a `docker-compose.yml` file.
-        ValidationFailed {
-            description("could not validate `docker-compose.yml` file")
-            display("could not validate `docker-compose.yml` file")
-        }
+    /// We were unable to validate a `docker-compose.yml` file.
+    #[error("could not validate `docker-compose.yml` file")]
+    ValidationFailed,
 
-        /// An error occurred writing a file.
-        WriteFile(path: PathBuf) {
-            description("error writing to file")
-            display("error writing to file '{}'", path.display())
-        }
-    }
+    /// An error occurred writing a file.
+    #[error("error writing to file {:?}", .path.display())]
+    WriteFile {
+        path: PathBuf,
+        source: Box<dyn StdError + Send + Sync + 'static>,
+    },
+
+    /// An error occurred parsing a YAML structure.
+    #[error(transparent)]
+    Yaml(#[from] serde_yaml::Error),
 }
 
 impl Error {
     /// Create an error reporting an invalid value.
-    pub fn invalid_value<S1, S2>(wanted: S1, input: S2) -> Error
+    pub(crate) fn invalid_value<S1, S2>(wanted: S1, input: S2) -> Error
     where
         S1: Into<String>,
         S2: Into<String>,
     {
-        ErrorKind::InvalidValue(wanted.into(), input.into()).into()
+        Error::InvalidValue {
+            wanted: wanted.into(),
+            input: input.into(),
+        }
+    }
+
+    /// Create an `Error::ReadFile`.
+    pub(crate) fn parse_git_url<E>(url: String, source: E) -> Error
+    where
+        E: StdError + Send + Sync + 'static,
+    {
+        Error::ParseGitUrl {
+            url,
+            source: Some(Box::new(source)),
+        }
+    }
+
+    /// Create an `Error::ReadFile`.
+    pub(crate) fn read_file<P, E>(path: P, source: E) -> Error
+    where
+        P: Into<PathBuf>,
+        E: StdError + Send + Sync + 'static,
+    {
+        Error::ReadFile {
+            path: path.into(),
+            source: Box::new(source),
+        }
+    }
+
+    /// Create an `Error::WriteFile`.
+    pub(crate) fn write_file<P, E>(path: P, source: E) -> Error
+    where
+        P: Into<PathBuf>,
+        E: StdError + Send + Sync + 'static,
+    {
+        Error::WriteFile {
+            path: path.into(),
+            source: Box::new(source),
+        }
     }
 }
 
+/*
 impl From<ValidationState> for Error {
     fn from(state: ValidationState) -> Self {
         assert!(!state.is_strictly_valid());
-        ErrorKind::DoesNotConformToSchema(state).into()
+        Error::DoesNotConformToSchema(state)
     }
 }
 
@@ -142,3 +165,4 @@ fn validation_state_to_string(state: &ValidationState) -> String {
     }
     String::from_utf8_lossy(&out).into_owned()
 }
+*/

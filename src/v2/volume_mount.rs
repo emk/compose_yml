@@ -108,7 +108,7 @@ fn path_str_from_docker(s: &str) -> Result<String> {
         if DRIVE_LETTER.is_match(s) {
             Ok(DRIVE_LETTER.replace(s, "$letter:\\").replace("/", "\\"))
         } else {
-            Err(ErrorKind::ConvertMountedPathToWindows(s.to_owned()).into())
+            Err(Error::ConvertMountedPathToWindows(s.to_owned()))
         }
     } else {
         Ok(s.replace("/", "\\"))

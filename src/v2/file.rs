@@ -60,9 +60,8 @@ impl File {
         where P: AsRef<Path>
     {
         let path = path.as_ref();
-        let mkerr = || ErrorKind::ReadFile(path.to_owned());
-        let f = fs::File::open(path).chain_err(&mkerr)?;
-        Self::read(io::BufReader::new(f)).chain_err(&mkerr)
+        let f = fs::File::open(path).map_err(|err| Error::read_file(path.to_owned(), err))?;
+        Self::read(io::BufReader::new(f)).map_err(|err| Error::read_file(path.to_owned(), err))
     }
 
     /// Write a file to the specified path.
@@ -70,9 +69,8 @@ impl File {
         where P: AsRef<Path>
     {
         let path = path.as_ref();
-        let mkerr = || ErrorKind::WriteFile(path.to_owned());
-        let f = fs::File::create(path).chain_err(&mkerr)?;
-        self.write(&mut io::BufWriter::new(f)).chain_err(&mkerr)
+        let f = fs::File::create(path).map_err(|err| Error::write_file(path.to_owned(), err))?;
+        self.write(&mut io::BufWriter::new(f)).map_err(|err| Error::write_file(path.to_owned(), err))
     }
 
     /// Inline all our external resources, such as `env_files`, looking up

@@ -4,7 +4,6 @@
 use regex::Captures;
 use regex::Regex;
 use serde;
-use serde::de::{self, Deserialize, Deserializer, SeqAccess, Visitor};
 use serde::ser::{Serialize, Serializer};
 use serde_yaml;
 use std::borrow::ToOwned;

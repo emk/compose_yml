@@ -46,13 +46,15 @@ impl GitUrl {
             git_url.parse_parts()?;
             Ok(git_url)
         } else {
-            Err(ErrorKind::ParseGitUrl(url.clone()).into())
+            Err(Error::ParseGitUrl {
+                url: url.clone(),
+                source: None,
+            })
         }
     }
 
     /// Convert a `GitUrl` to a regular `url::Url` object.
     pub fn to_url(&self) -> Result<Url> {
-        let mkerr = || ErrorKind::ParseGitUrl(self.url.clone());
         match Url::parse(&self.url) {
             Ok(url) => Ok(url),
             Err(_) => {
@@ -61,7 +63,12 @@ impl GitUrl {
                         Regex::new(r#"^(?:git@([^:]+):(.*))|(github\.com/.*)"#)
                             .unwrap();
                 }
-                let caps = URL_PARSE.captures(&self.url).ok_or_else(&mkerr)?;
+                let caps = URL_PARSE.captures(&self.url).ok_or_else(|| {
+                    Error::ParseGitUrl {
+                        url: self.url.clone(),
+                        source: None,
+                    }
+                })?;
                 let new = if caps.get(1).is_some() {
                     format!(
                         "git://git@{}/{}",
@@ -71,7 +78,8 @@ impl GitUrl {
                 } else {
                     format!("https://{}", caps.get(3).unwrap().as_str())
                 };
-                Url::parse(&new).chain_err(&mkerr)
+                Url::parse(&new)
+                    .map_err(|err| Error::parse_git_url(self.url.clone(), err))
             }
         }
     }
@@ -122,7 +130,10 @@ impl GitUrl {
                     .expect("Could not parse regex URL_PARSE");
         }
         let captures = URL_PARSE.captures(&self.url).ok_or_else(|| -> Error {
-            format!("could not parse URL {:?}", self.url).into()
+            Error::ParseGitUrl {
+                url: self.url.clone(),
+                source: None,
+            }
         })?;
         Ok((
             captures.get(1).unwrap().as_str(),

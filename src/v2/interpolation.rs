@@ -94,14 +94,14 @@ fn interpolate_helper(
             // Our "fallback" group matched, which means that no valid
             // group matched.  Mark as invalid and return an empty
             // replacement.
-            err = Some(ErrorKind::InterpolateInvalidSyntax(input.to_owned()));
+            err = Some(Error::InterpolateInvalidSyntax(input.to_owned()));
             "".to_owned()
         } else if caps.name("dollar").is_some() {
             // If we have `$$`, replace it with a single `$`.
             "$".to_owned()
         } else if mode == Mode::Unescape {
             // If we're not allowed to interpolate, bail now.
-            err = Some(ErrorKind::InterpolationDisabled(input.to_owned()));
+            err = Some(Error::InterpolationDisabled(input.to_owned()));
             "".to_owned()
         } else {
             // Handle actual interpolations.
@@ -123,8 +123,7 @@ fn interpolate_helper(
                 (Err(_), _, Some(default)) => default.as_str().to_owned(),
                 // An unset environment variable with no default provided.
                 (Err(_), _, _) => {
-                    err =
-                        Some(ErrorKind::InterpolateUndefinedVariable(var.to_owned()));
+                    err = Some(Error::InterpolateUndefinedVariable(var.to_owned()));
                     "".to_owned()
                 }
             }
