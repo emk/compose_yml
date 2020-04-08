@@ -149,12 +149,12 @@ volumes:
 }
 
 #[test]
-fn file_can_be_converted_from_and_to_yaml_version_2_1() {
+fn file_can_be_converted_from_and_to_yaml_version_2_4() {
     let yaml = r#"---
 services:
   foo:
     build: .
-version: "2.1"
+version: "2.4"
 volumes:
   db:
     external: true

@@ -10,9 +10,13 @@
 #![cfg_attr(feature="clippy", allow(redundant_closure))]
 
 use serde_yaml;
-use std::{error::Error as StdError, io, path::PathBuf};
+use std::{
+    error::Error as StdError,
+    io::{self, Write},
+    path::PathBuf,
+};
 use thiserror::Error;
-//use valico::json_schema::ValidationState;
+use valico::json_schema::ValidationState;
 
 /// A `compose_yml` result.
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -26,9 +30,10 @@ pub enum Error {
     #[error("could not convert {0:?} to the equivalent Windows path")]
     ConvertMountedPathToWindows(String),
 
-    // /// A value did not conform to a JSON schema.
-    // #[error("data did not confirm to schema: {}", validation_state_to_string(&.0))]
-    // DoesNotConformToSchema(ValidationState),
+    /// A value did not conform to a JSON schema.
+    #[error("data did not confirm to schema: {0}")]
+    DoesNotConformToSchema(String),
+
     /// The interpolation syntax in the specified string was invalid.
     #[error("invalid interpolation syntax {0:?}")]
     InterpolateInvalidSyntax(String),
@@ -82,7 +87,9 @@ pub enum Error {
 
     /// We were unable to validate a `docker-compose.yml` file.
     #[error("could not validate `docker-compose.yml` file")]
-    ValidationFailed,
+    ValidationFailed {
+        source: Box<dyn StdError + Send + Sync + 'static>,
+    },
 
     /// An error occurred writing a file.
     #[error("error writing to file {:?}", .path.display())]
@@ -97,6 +104,20 @@ pub enum Error {
 }
 
 impl Error {
+    /// Create an error reporting a schema validation error.
+    pub(crate) fn does_not_conform_to_schema(state: ValidationState) -> Error {
+        assert!(!state.is_strictly_valid());
+        let mut out: Vec<u8> = vec![];
+        for err in &state.errors {
+            write!(&mut out, "\n- validation error: {:?}", err)
+                .expect("cannot format validation error");
+        }
+        for url in &state.missing {
+            write!(&mut out, "\n- missing {}", url).expect("cannot format URL");
+        }
+        Error::DoesNotConformToSchema(String::from_utf8_lossy(&out).into_owned())
+    }
+
     /// Create an error reporting an invalid value.
     pub(crate) fn invalid_value<S1, S2>(wanted: S1, input: S2) -> Error
     where
@@ -132,6 +153,15 @@ impl Error {
         }
     }
 
+    pub(crate) fn validation_failed<E>(source: E) -> Error
+    where
+        E: StdError + Send + Sync + 'static,
+    {
+        Error::ValidationFailed {
+            source: Box::new(source),
+        }
+    }
+
     /// Create an `Error::WriteFile`.
     pub(crate) fn write_file<P, E>(path: P, source: E) -> Error
     where
@@ -144,25 +174,3 @@ impl Error {
         }
     }
 }
-
-/*
-impl From<ValidationState> for Error {
-    fn from(state: ValidationState) -> Self {
-        assert!(!state.is_strictly_valid());
-        Error::DoesNotConformToSchema(state)
-    }
-}
-
-/// Convert a `ValidationState` into a human-readable error message.
-fn validation_state_to_string(state: &ValidationState) -> String {
-    let mut out: Vec<u8> = vec![];
-    for err in &state.errors {
-        write!(&mut out, "\n- validation error: {:?}", err)
-            .expect("cannot format validation error");
-    }
-    for url in &state.missing {
-        write!(&mut out, "\n- missing {}", url).expect("cannot format URL");
-    }
-    String::from_utf8_lossy(&out).into_owned()
-}
-*/
