@@ -25,11 +25,11 @@ impl AliasedName {
 
     /// (Internal.) Validate an aliased name is safely serializeable.
     fn validate(&self) -> Result<()> {
-        let bad_name = self.name.contains(":");
+        let bad_name = self.name.contains(':');
         let bad_alias = self
             .alias
             .as_ref()
-            .map(|a| a.contains(":"))
+            .map(|a| a.contains(':'))
             .unwrap_or(false);
         if bad_name || bad_alias {
             let val = format!("{:?}", &self);
@@ -44,8 +44,8 @@ impl_interpolatable_value!(AliasedName);
 impl fmt::Display for AliasedName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.alias {
-            &Some(ref alias) => write!(f, "{}:{}", &self.name, alias),
-            &None => write!(f, "{}", &self.name),
+            Some(alias) => write!(f, "{}:{}", &self.name, alias),
+            None => write!(f, "{}", &self.name),
         }
     }
 }

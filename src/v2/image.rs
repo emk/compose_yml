@@ -94,13 +94,13 @@ impl FromStr for Image {
             };
             Some(RegistryHost {
                 host: caps.get(1).unwrap().as_str().to_owned(),
-                port: port,
+                port,
             })
         } else {
             None
         };
         Ok(Image {
-            registry_host: registry_host,
+            registry_host,
             user_name: caps.get(3).map(|s| s.as_str().to_owned()),
             name: caps.get(4).unwrap().as_str().to_owned(),
             tag: caps.get(5).map(|s| s.as_str().to_owned()),

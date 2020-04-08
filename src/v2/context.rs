@@ -35,8 +35,8 @@ impl Context {
     /// this one, but without any subdirectory part
     pub fn without_repository_subdirectory(&self) -> Context {
         match self {
-            &Context::Dir(_) => self.clone(),
-            &Context::GitUrl(ref git_url) => {
+            Context::Dir(_) => self.clone(),
+            Context::GitUrl(git_url) => {
                 Context::GitUrl(git_url.without_subdirectory())
             }
         }
@@ -55,9 +55,9 @@ impl FromStr for Context {
 
 impl fmt::Display for Context {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            &Context::Dir(ref path) => write!(f, "{}", path.display()),
-            &Context::GitUrl(ref url) => write!(f, "{}", url),
+        match &self {
+            Context::Dir(path) => write!(f, "{}", path.display()),
+            Context::GitUrl(url) => write!(f, "{}", url),
         }
     }
 }

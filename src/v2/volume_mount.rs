@@ -17,25 +17,23 @@ pub enum HostVolume {
 impl fmt::Display for HostVolume {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            &HostVolume::Path(ref path) => {
+            HostVolume::Path(path) => {
                 let p = path_str_to_docker(path.to_str().ok_or(fmt::Error)?);
-                if path.is_absolute() {
-                    write!(f, "{}", p)
-                } else if p.starts_with("./") || p.starts_with("../") {
+                if path.is_absolute() && p.starts_with("./") || p.starts_with("../") {
                     write!(f, "{}", p)
                 } else {
                     // Relative paths must begin with `./` when serialized.
                     write!(f, "./{}", p)
                 }
             }
-            &HostVolume::UserRelativePath(ref path) => {
+            HostVolume::UserRelativePath(path) => {
                 let p = path.to_str().ok_or(fmt::Error)?;
                 if path.is_absolute() {
                     return Err(fmt::Error);
                 }
                 write!(f, "~/{}", p)
             }
-            &HostVolume::Name(ref name) => write!(f, "{}", name),
+            HostVolume::Name(name) => write!(f, "{}", name),
         }
     }
 }
@@ -199,8 +197,8 @@ impl fmt::Display for VolumeMount {
         }
 
         match &self.host {
-            &Some(ref host) => write!(f, "{}:", host)?,
-            &None => {}
+            Some(host) => write!(f, "{}:", host)?,
+            None => {}
         }
 
         write!(f, "{}", &self.container)?;
@@ -217,7 +215,7 @@ impl FromStr for VolumeMount {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        let items = s.split(":").collect::<Vec<_>>();
+        let items = s.split(':').collect::<Vec<_>>();
         match items.len() {
             1 => Ok(VolumeMount {
                 host: None,

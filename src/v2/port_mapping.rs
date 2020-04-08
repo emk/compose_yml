@@ -22,8 +22,8 @@ impl From<u16> for Ports {
 impl fmt::Display for Ports {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            &Ports::Port(port) => write!(f, "{}", port),
-            &Ports::Range(first, last) => write!(f, "{}-{}", first, last),
+            Ports::Port(port) => write!(f, "{}", port),
+            Ports::Range(first, last) => write!(f, "{}-{}", first, last),
         }
     }
 }
@@ -72,8 +72,8 @@ impl Default for Protocol {
 impl fmt::Display for Protocol {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            &Protocol::Tcp => write!(f, "tcp"),
-            &Protocol::Udp => write!(f, "udp"),
+            Protocol::Tcp => write!(f, "tcp"),
+            Protocol::Udp => write!(f, "udp"),
         }
     }
 }
@@ -193,7 +193,7 @@ impl fmt::Display for PortMapping {
 }
 
 fn consume_protocol(ports_and_protocol: &str) -> Result<(&str, Protocol)> {
-    let fields: Vec<_> = ports_and_protocol.split("/").collect();
+    let fields: Vec<_> = ports_and_protocol.split('/').collect();
     match fields.len() {
         1 => Ok((fields[0], Protocol::Tcp)),
         2 => Ok((fields[0], Protocol::from_str(fields[1])?)),
@@ -210,7 +210,7 @@ impl FromStr for PortMapping {
         // address field is an IPv6 address with embedded colons.  Hey,
         // it's not specified _never_ to happen.  Note that `fields` will
         // be in reverse order.
-        let fields: Vec<_> = s_without_protocol.rsplitn(3, ":").collect();
+        let fields: Vec<_> = s_without_protocol.rsplitn(3, ':').collect();
         match fields.len() {
             1 => Ok(PortMapping {
                 host_address: None,

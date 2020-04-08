@@ -20,7 +20,7 @@ impl EnvFile {
         let mut vars: BTreeMap<String, String> = BTreeMap::new();
         let reader = io::BufReader::new(input);
         for line_result in reader.lines() {
-            let line = line_result.map_err(|err| Error::IoError(err))?;
+            let line = line_result.map_err(Error::IoError)?;
 
             lazy_static! {
                 static ref BLANK: Regex =
@@ -42,7 +42,7 @@ impl EnvFile {
                 caps.get(2).unwrap().as_str().to_owned(),
             );
         }
-        Ok(EnvFile { vars: vars })
+        Ok(EnvFile { vars })
     }
 
     /// Load an `EnvFile` from the disk.

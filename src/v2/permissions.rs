@@ -104,8 +104,8 @@ impl Default for VolumePermissions {
 impl fmt::Display for VolumePermissions {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            &VolumePermissions::ReadWrite => write!(f, "rw"),
-            &VolumePermissions::ReadOnly => write!(f, "ro"),
+            VolumePermissions::ReadWrite => write!(f, "rw"),
+            VolumePermissions::ReadOnly => write!(f, "ro"),
         }
     }
 }

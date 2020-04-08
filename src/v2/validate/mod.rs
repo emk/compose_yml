@@ -11,19 +11,19 @@ use super::File;
 use crate::errors::*;
 
 /// Schema for `docker-compose.yml` version 2.0.
-const COMPOSE_2_0_SCHEMA_STR: &'static str = include_str!("config_schema_v2.0.json");
+const COMPOSE_2_0_SCHEMA_STR: &str = include_str!("config_schema_v2.0.json");
 
 /// Schema for `docker-compose.yml` version 2.1.
-const COMPOSE_2_1_SCHEMA_STR: &'static str = include_str!("config_schema_v2.1.json");
+const COMPOSE_2_1_SCHEMA_STR: &str = include_str!("config_schema_v2.1.json");
 
 /// Schema for `docker-compose.yml` version 2.2.
-const COMPOSE_2_2_SCHEMA_STR: &'static str = include_str!("config_schema_v2.2.json");
+const COMPOSE_2_2_SCHEMA_STR: &str = include_str!("config_schema_v2.2.json");
 
 /// Schema for `docker-compose.yml` version 2.3.
-const COMPOSE_2_3_SCHEMA_STR: &'static str = include_str!("config_schema_v2.3.json");
+const COMPOSE_2_3_SCHEMA_STR: &str = include_str!("config_schema_v2.3.json");
 
 /// Schema for `docker-compose.yml` version 2.4.
-const COMPOSE_2_4_SCHEMA_STR: &'static str = include_str!("config_schema_v2.4.json");
+const COMPOSE_2_4_SCHEMA_STR: &str = include_str!("config_schema_v2.4.json");
 
 /// Load and parse a built-in JSON file, panicking if it contains invalid
 /// JSON.
@@ -79,7 +79,7 @@ pub fn validate_file(file: &File) -> Result<()> {
     };
 
     let value =
-        serde_json::to_value(&file).map_err(|err| Error::validation_failed(err))?;
+        serde_json::to_value(&file).map_err(Error::validation_failed)?;
     let validation_state = schema.validate(&value);
     if validation_state.is_strictly_valid() {
         Ok(())

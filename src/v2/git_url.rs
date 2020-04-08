@@ -47,7 +47,7 @@ impl GitUrl {
             Ok(git_url)
         } else {
             Err(Error::ParseGitUrl {
-                url: url.clone(),
+                url,
                 source: None,
             })
         }
@@ -165,7 +165,7 @@ impl AsRef<OsStr> for GitUrl {
 
 impl From<GitUrl> for String {
     fn from(url: GitUrl) -> String {
-        From::from(url.url)
+        url.url
     }
 }
 

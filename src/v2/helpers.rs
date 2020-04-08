@@ -14,6 +14,7 @@ use super::interpolation::{raw, InterpolatableValue, RawOr};
 
 /// Test whether a value is false.  Used to determine when to serialize
 /// things.
+#[allow(clippy::trivially_copy_pass_by_ref)]
 pub fn is_false(b: &bool) -> bool {
     !b
 }

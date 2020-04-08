@@ -30,7 +30,7 @@ impl MergeOverride for Logging {
         Logging {
             driver: self.driver.merge_override(&ovr.driver),
             // Don't merge options if driver has changed.
-            options: if &self.driver == &ovr.driver || ovr.driver.is_none() {
+            options: if self.driver == ovr.driver || ovr.driver.is_none() {
                 self.options.merge_override(&ovr.options)
             } else {
                 ovr.options.clone()

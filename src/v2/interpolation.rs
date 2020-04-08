@@ -69,7 +69,7 @@ fn interpolate_helper(
     mode: Mode,
     env: &dyn Environment,
 ) -> Result<String> {
-    #[cfg_attr(rustfmt, rustfmt_skip)]
+    #[rustfmt::skip]
     lazy_static! {
         static ref VAR: Regex = Regex::new(r#"(?x)
 # We found a '$',
@@ -132,7 +132,7 @@ fn interpolate_helper(
         }
     });
     if let Some(e) = err {
-        return Err(e.into());
+        return Err(e);
     }
     Ok(result.into_owned())
 }

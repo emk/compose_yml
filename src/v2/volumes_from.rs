@@ -76,8 +76,8 @@ impl fmt::Display for VolumesFrom {
         // We serialize service names without the `service:` here, but most
         // other places include the label.
         match &self.source {
-            &ServiceOrContainer::Service(ref name) => write!(f, "{}", name)?,
-            &ServiceOrContainer::Container(ref name) => {
+            ServiceOrContainer::Service(name) => write!(f, "{}", name)?,
+            ServiceOrContainer::Container(name) => {
                 write!(f, "container:{}", name)?
             }
         }
@@ -111,8 +111,8 @@ impl FromStr for VolumesFrom {
             Some(permstr) => FromStr::from_str(permstr.as_str())?,
         };
         Ok(VolumesFrom {
-            source: source,
-            permissions: permissions,
+            source,
+            permissions,
             _hidden: (),
         })
     }
