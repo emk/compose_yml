@@ -17,7 +17,9 @@ mod mode_enum;
 #[macro_use]
 mod validate;
 
-pub use interpolation::{escape, raw, value, RawOr};
+pub use git_url::GitUrl;
+pub use interpolation::{escape, raw, value, Environment, RawOr};
+pub use merge_override::MergeOverride;
 pub use mode_enum::{IpcMode, NetworkMode, PidMode, RestartMode};
 
 #[cfg(test)]
@@ -116,13 +118,11 @@ pub(self) mod common {
     pub(crate) use void::Void;
 
     pub(crate) use super::env_file::EnvFile;
-    pub(crate) use super::git_url::GitUrl;
     pub(crate) use super::helpers::{
         deserialize_item_or_list, deserialize_map_or_default_list,
         deserialize_map_or_key_value_list, deserialize_map_struct_or_null, is_false,
     };
     pub(crate) use super::interpolation::InterpolateAll;
-    pub(crate) use super::merge_override::MergeOverride;
     pub(crate) use super::string_or_struct::{
         deserialize_opt_string_or_struct, serialize_opt_string_or_struct,
         SerializeStringOrStruct,
