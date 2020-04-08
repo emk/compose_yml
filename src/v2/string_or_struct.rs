@@ -52,12 +52,12 @@ where
             Deserialize::deserialize(mvd)
         }
 
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(formatter, "a string or a map")
         }
     }
 
-    d.deserialize_map(StringOrStruct(PhantomData))
+    d.deserialize_any(StringOrStruct(PhantomData))
 }
 
 /// Like `opt_string_or_struct`, but it also handles the case where the
@@ -96,7 +96,7 @@ where
             deserialize_string_or_struct(deserializer).map(Some)
         }
 
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(formatter, "a null, a string or a map")
         }
     }
@@ -144,7 +144,7 @@ where
     /// how a trait is applied to a class.
     struct Wrap<'a, T>(&'a T)
     where
-        T: 'a + SerializeStringOrStruct;
+        T: SerializeStringOrStruct;
 
     impl<'a, T> Serialize for Wrap<'a, T>
     where

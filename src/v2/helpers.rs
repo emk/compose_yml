@@ -1,10 +1,11 @@
 //! Helper functions and types we use for (de)serialization.  These handle
 //! several common, annoying patterns in the `docker-compose.yml` format.
 
+use lazy_static::lazy_static;
 use regex::Regex;
-use serde::de;
-use serde::de::{Deserialize, DeserializeOwned, Deserializer, MapAccess, SeqAccess,
-                Visitor};
+use serde::de::{
+    self, Deserialize, DeserializeOwned, Deserializer, MapAccess, SeqAccess, Visitor,
+};
 use std::collections::BTreeMap;
 use std::fmt;
 use std::marker::PhantomData;
@@ -13,6 +14,7 @@ use super::interpolation::{raw, InterpolatableValue, RawOr};
 
 /// Test whether a value is false.  Used to determine when to serialize
 /// things.
+#[allow(clippy::trivially_copy_pass_by_ref)]
 pub fn is_false(b: &bool) -> bool {
     !b
 }
@@ -54,7 +56,7 @@ impl<'de> Visitor<'de> for ToStringVisitor {
         Ok(v.to_owned())
     }
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(formatter, "a value which can be converted to a string")
     }
 }
@@ -160,12 +162,12 @@ where
             Ok(map)
         }
 
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(formatter, "a map or a key/value list")
         }
     }
 
-    deserializer.deserialize_map(MapOrKeyValueListVisitor)
+    deserializer.deserialize_any(MapOrKeyValueListVisitor)
 }
 
 /// Given a map, deserialize it normally.  But if we have a list of string
@@ -206,12 +208,12 @@ where
             Ok(map)
         }
 
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(formatter, "a map or a list of strings")
         }
     }
 
-    deserializer.deserialize_map(MapOrDefaultListVisitor(PhantomData::<T>))
+    deserializer.deserialize_any(MapOrDefaultListVisitor(PhantomData::<T>))
 }
 
 /// Deserialize either list or a single bare string as a list.
@@ -250,15 +252,15 @@ where
         {
             let mut items: Vec<RawOr<T>> = vec![];
             while let Some(item) = visitor.next_element::<String>()? {
-                let v = raw(item).map_err(
-                    |err| <V::Error as de::Error>::custom(format!("{}", err)),
-                )?;
+                let v = raw(item).map_err(|err| {
+                    <V::Error as de::Error>::custom(format!("{}", err))
+                })?;
                 items.push(v);
             }
             Ok(items)
         }
 
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(formatter, "a string or a list of strings")
         }
     }

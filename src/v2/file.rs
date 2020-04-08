@@ -1,6 +1,4 @@
-// This is not a normal Rust module! It's included directly into v2.rs,
-// possibly after build-time preprocessing.  See v2.rs for an explanation
-// of how this works.
+use super::common::*;
 
 /// A `docker-compose.yml` file.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -15,13 +13,19 @@ pub struct File {
     /// Named volumes used by this app.
     ///
     /// TODO MED: Can we parse just volume names followed by a colon?
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
-            deserialize_with = "deserialize_map_struct_or_null")]
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "deserialize_map_struct_or_null"
+    )]
     pub volumes: BTreeMap<String, Volume>,
 
     /// The networks used by this app.
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
-            deserialize_with = "deserialize_map_struct_or_null")]
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "deserialize_map_struct_or_null"
+    )]
     pub networks: BTreeMap<String, Network>,
 
     /// PRIVATE.  Mark this struct as having unknown fields for future
@@ -40,7 +44,8 @@ derive_standard_impls_for!(File, {
 impl File {
     /// Read a file from an input stream containing YAML.
     pub fn read<R>(r: R) -> Result<Self>
-        where R: io::Read
+    where
+        R: io::Read,
     {
         let file = serde_yaml::from_reader(r)?;
         validate_file(&file)?;
@@ -49,7 +54,8 @@ impl File {
 
     /// Write a file to an output stream as YAML.
     pub fn write<W>(&self, w: &mut W) -> Result<()>
-        where W: io::Write
+    where
+        W: io::Write,
     {
         validate_file(self)?;
         Ok(serde_yaml::to_writer(w, self)?)
@@ -57,22 +63,26 @@ impl File {
 
     /// Read a file from the specified path.
     pub fn read_from_path<P>(path: P) -> Result<Self>
-        where P: AsRef<Path>
+    where
+        P: AsRef<Path>,
     {
         let path = path.as_ref();
-        let mkerr = || ErrorKind::ReadFile(path.to_owned());
-        let f = fs::File::open(path).chain_err(&mkerr)?;
-        Self::read(io::BufReader::new(f)).chain_err(&mkerr)
+        let f = fs::File::open(path)
+            .map_err(|err| Error::read_file(path.to_owned(), err))?;
+        Self::read(io::BufReader::new(f))
+            .map_err(|err| Error::read_file(path.to_owned(), err))
     }
 
     /// Write a file to the specified path.
     pub fn write_to_path<P>(&self, path: P) -> Result<()>
-        where P: AsRef<Path>
+    where
+        P: AsRef<Path>,
     {
         let path = path.as_ref();
-        let mkerr = || ErrorKind::WriteFile(path.to_owned());
-        let f = fs::File::create(path).chain_err(&mkerr)?;
-        self.write(&mut io::BufWriter::new(f)).chain_err(&mkerr)
+        let f = fs::File::create(path)
+            .map_err(|err| Error::write_file(path.to_owned(), err))?;
+        self.write(&mut io::BufWriter::new(f))
+            .map_err(|err| Error::write_file(path.to_owned(), err))
     }
 
     /// Inline all our external resources, such as `env_files`, looking up
@@ -117,7 +127,7 @@ impl FromStr for File {
 }
 
 #[test]
-#[cfg_attr(feature="clippy", allow(blacklisted_name))]
+#[cfg_attr(feature = "clippy", allow(blacklisted_name))]
 fn file_can_be_converted_from_and_to_yaml_version_2() {
     let yaml = r#"---
 services:
@@ -132,16 +142,19 @@ volumes:
 
     let file = File::from_str(&yaml).unwrap();
     let foo = file.services.get("foo").unwrap();
-    assert_eq!(foo.build.as_ref().unwrap().context, value(Context::new(".")));
+    assert_eq!(
+        foo.build.as_ref().unwrap().context,
+        value(Context::new("."))
+    );
 }
 
 #[test]
-fn file_can_be_converted_from_and_to_yaml_version_2_1() {
+fn file_can_be_converted_from_and_to_yaml_version_2_4() {
     let yaml = r#"---
 services:
   foo:
     build: .
-version: "2.1"
+version: "2.4"
 volumes:
   db:
     external: true

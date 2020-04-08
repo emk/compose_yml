@@ -1,8 +1,6 @@
 //! Parse a docker-compose.yml file and print it to standard output in
 //! normalized format.
 
-extern crate compose_yml;
-
 use compose_yml::v2 as dc;
 use std::io::{self, Write};
 

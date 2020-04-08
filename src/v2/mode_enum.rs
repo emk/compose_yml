@@ -5,7 +5,7 @@ use regex::Regex;
 use std::fmt;
 use std::str::FromStr;
 
-use errors::*;
+use super::common::*;
 
 /// This big, bad macro is in charge of implementing serializable enums
 /// with entries like:
@@ -85,7 +85,7 @@ macro_rules! mode_enum {
 
         // Set up serialization to strings.
         impl fmt::Display for $name {
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 match *self {
                     $( $name::$item0 => write!(f, $tag0), )*
                     $( $name::$item1(ref name) =>
@@ -213,7 +213,7 @@ impl_interpolatable_value!(RestartMode);
 
 // Set up serialization to strings.
 impl fmt::Display for RestartMode {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             RestartMode::No => write!(f, "no"),
             RestartMode::OnFailure(None) => write!(f, "on-failure"),
@@ -232,8 +232,7 @@ impl FromStr for RestartMode {
 
     fn from_str(s: &str) -> Result<Self> {
         lazy_static! {
-            static ref COMPOUND: Regex =
-                Regex::new("^([-a-z]+):(.+)$").unwrap();
+            static ref COMPOUND: Regex = Regex::new("^([-a-z]+):(.+)$").unwrap();
         }
 
         match s {
@@ -248,8 +247,9 @@ impl FromStr for RestartMode {
                 let valstr = caps.get(2).unwrap().as_str();
                 match caps.get(1).unwrap().as_str() {
                     "on-failure" => {
-                        let value = FromStr::from_str(valstr)
-                            .map_err(|_| Error::invalid_value("restart mode", valstr))?;
+                        let value = FromStr::from_str(valstr).map_err(|_| {
+                            Error::invalid_value("restart mode", valstr)
+                        })?;
                         Ok(RestartMode::OnFailure(Some(value)))
                     }
                     _ => Err(Error::invalid_value("restart mode", s)),

@@ -1,13 +1,10 @@
-// This is not a normal Rust module! It's included directly into v2.rs,
-// possibly after build-time preprocessing.  See v2.rs for an explanation
-// of how this works.
+use super::common::*;
 
 /// The name of either a service or a container.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ServiceOrContainer {
     // TODO MED: Lots of the mode_enum stuff has these two cases built-in.
     // Can we re-use this there?
-
     /// The local name of a service defined in this `docker-compose.yml`
     /// file.
     Service(String),
@@ -75,14 +72,14 @@ impl VolumesFrom {
 impl_interpolatable_value!(VolumesFrom);
 
 impl fmt::Display for VolumesFrom {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // We serialize service names without the `service:` here, but most
         // other places include the label.
         match &self.source {
-            &ServiceOrContainer::Service(ref name) =>
-                write!(f, "{}", name)?,
-            &ServiceOrContainer::Container(ref name) =>
-                write!(f, "container:{}", name)?,
+            ServiceOrContainer::Service(name) => write!(f, "{}", name)?,
+            ServiceOrContainer::Container(name) => {
+                write!(f, "container:{}", name)?
+            }
         }
         if self.permissions != Default::default() {
             write!(f, ":{}", self.permissions)?
@@ -99,25 +96,23 @@ impl FromStr for VolumesFrom {
             static ref FROM: Regex =
                 Regex::new("^(container:)?([^:]+)(?::([^:]+))?$").unwrap();
         }
-        let caps = FROM.captures(s).ok_or_else(|| {
-            Error::invalid_value("volumes_from", s)
-        })?;
+        let caps = FROM
+            .captures(s)
+            .ok_or_else(|| Error::invalid_value("volumes_from", s))?;
 
         let name = caps.get(2).unwrap().as_str().to_owned();
-        let source =
-            if caps.get(1).is_some() {
-                ServiceOrContainer::Container(name)
-            } else {
-                ServiceOrContainer::Service(name)
-            };
-        let permissions =
-            match caps.get(3) {
-                None => Default::default(),
-                Some(permstr) => FromStr::from_str(permstr.as_str())?,
-            };
+        let source = if caps.get(1).is_some() {
+            ServiceOrContainer::Container(name)
+        } else {
+            ServiceOrContainer::Service(name)
+        };
+        let permissions = match caps.get(3) {
+            None => Default::default(),
+            Some(permstr) => FromStr::from_str(permstr.as_str())?,
+        };
         Ok(VolumesFrom {
-            source: source,
-            permissions: permissions,
+            source,
+            permissions,
             _hidden: (),
         })
     }
@@ -131,10 +126,7 @@ fn volumes_from_should_have_a_string_representation() {
         ..VolumesFrom::container("foo")
     };
 
-    let pairs = vec!(
-        (vf1, "foo"),
-        (vf2, "container:foo:ro"),
-    );
+    let pairs = vec![(vf1, "foo"), (vf2, "container:foo:ro")];
     for (vf, s) in pairs {
         assert_eq!(vf.to_string(), s);
         assert_eq!(vf, VolumesFrom::from_str(s).unwrap());

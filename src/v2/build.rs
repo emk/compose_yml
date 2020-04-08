@@ -1,6 +1,4 @@
-// This is not a normal Rust module! It's included directly into v2.rs,
-// possibly after build-time preprocessing.  See v2.rs for an explanation
-// of how this works.
+use super::common::*;
 
 /// Information on how to build a Docker image.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -14,8 +12,11 @@ pub struct Build {
     pub dockerfile: Option<RawOr<String>>,
 
     /// Build arguments.
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
-            deserialize_with = "deserialize_map_or_key_value_list")]
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "deserialize_map_or_key_value_list"
+    )]
     pub args: BTreeMap<String, RawOr<String>>,
 
     /// The FROM target at which to stop building
@@ -70,9 +71,12 @@ impl FromStr for Build {
 }
 
 impl SerializeStringOrStruct for Build {
-    fn serialize_string_or_struct<S>(&self, serializer: S) ->
-        result::Result<S::Ok, S::Error>
-        where S: Serializer
+    fn serialize_string_or_struct<S>(
+        &self,
+        serializer: S,
+    ) -> result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
     {
         if self.dockerfile.is_none() && self.args.is_empty() {
             self.context.serialize(serializer)
@@ -103,12 +107,21 @@ dockerfile: Dockerfile
     let build: Build = serde_yaml::from_str(yaml).unwrap();
     assert_eq!(build.context, value(Context::new(".")));
     assert_eq!(build.dockerfile, Some(value("Dockerfile".to_owned())));
-    assert_eq!(build.args.get("key").expect("wanted key 'key'").value().unwrap(),
-               "value");
+    assert_eq!(
+        build
+            .args
+            .get("key")
+            .expect("wanted key 'key'")
+            .value()
+            .unwrap(),
+        "value"
+    );
 }
 
 #[test]
 fn args_support_stringification_and_interpolation() {
+    use super::interpolation::OsEnvironment;
+
     let yaml = r#"---
 context: .
 args:
@@ -120,16 +133,40 @@ args:
     let build: Build = serde_yaml::from_str(yaml).unwrap();
 
     // Check type conversion.
-    assert_eq!(build.args.get("bool").expect("wanted key 'bool'").value().unwrap(),
-               "true");
-    assert_eq!(build.args.get("float").expect("wanted key 'float'").value().unwrap(),
-               "1.5");
-    assert_eq!(build.args.get("int").expect("wanted key 'int'").value().unwrap(),
-               "1");
+    assert_eq!(
+        build
+            .args
+            .get("bool")
+            .expect("wanted key 'bool'")
+            .value()
+            .unwrap(),
+        "true"
+    );
+    assert_eq!(
+        build
+            .args
+            .get("float")
+            .expect("wanted key 'float'")
+            .value()
+            .unwrap(),
+        "1.5"
+    );
+    assert_eq!(
+        build
+            .args
+            .get("int")
+            .expect("wanted key 'int'")
+            .value()
+            .unwrap(),
+        "1"
+    );
 
     // Check interpolation.
-    let mut interp: RawOr<String> =
-        build.args.get("interp").expect("wanted key 'interp'").to_owned();
+    let mut interp: RawOr<String> = build
+        .args
+        .get("interp")
+        .expect("wanted key 'interp'")
+        .to_owned();
     env::set_var("FOO", "foo");
     let env = OsEnvironment::new();
     assert_eq!(interp.interpolate_env(&env).unwrap(), "foo")
@@ -143,8 +180,15 @@ args:
   - key=value
 ";
     let build: Build = serde_yaml::from_str(yaml).unwrap();
-    assert_eq!(build.args.get("key").expect("should have key").value().unwrap(),
-               "value");
+    assert_eq!(
+        build
+            .args
+            .get("key")
+            .expect("should have key")
+            .value()
+            .unwrap(),
+        "value"
+    );
 }
 
 // TODO MED: Implement valueless keys.

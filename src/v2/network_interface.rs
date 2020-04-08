@@ -1,6 +1,4 @@
-// This is not a normal Rust module! It's included directly into v2.rs,
-// possibly after build-time preprocessing.  See v2.rs for an explanation
-// of how this works.
+use super::common::*;
 
 /// A connection from a `Service` to a `Network`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -14,7 +12,6 @@ pub struct NetworkInterface {
     // TODO LOW: ipv4_address
     // TODO LOW: ipv6_address
     // TODO LOW: link_local_ips
-
     /// PRIVATE.  Mark this struct as having unknown fields for future
     /// compatibility.  This prevents direct construction and exhaustive
     /// matching.  This needs to be be public because of

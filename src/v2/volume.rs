@@ -1,6 +1,4 @@
-// This is not a normal Rust module! It's included directly into v2.rs,
-// possibly after build-time preprocessing.  See v2.rs for an explanation
-// of how this works.
+use super::common::*;
 
 /// Where can we find the volume we want to map into a container?
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -18,8 +16,11 @@ pub struct Volume {
     ///
     /// TODO LOW: Clear on merge if `driver` changes, like we do for
     /// `Logging` options.
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
-            deserialize_with = "deserialize_map_or_key_value_list")]
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "deserialize_map_or_key_value_list"
+    )]
     pub driver_opts: BTreeMap<String, RawOr<String>>,
 
     /// If this is true, then the volume was created outside of
@@ -30,8 +31,11 @@ pub struct Volume {
 
     /// Docker labels for this volume, specifying various sorts of
     /// custom metadata.
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
-            deserialize_with = "deserialize_map_or_key_value_list")]
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "deserialize_map_or_key_value_list"
+    )]
     pub labels: BTreeMap<String, RawOr<String>>,
 
     /// PRIVATE.  Mark this struct as having unknown fields for future
@@ -46,7 +50,6 @@ pub struct Volume {
 derive_standard_impls_for!(Volume, {
     driver, driver_opts, external, labels, _hidden
 });
-
 
 #[test]
 fn empty_volume_can_be_converted_from_and_to_yaml() {

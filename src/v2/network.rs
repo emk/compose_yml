@@ -1,6 +1,4 @@
-// This is not a normal Rust module! It's included directly into v2.rs,
-// possibly after build-time preprocessing.  See v2.rs for an explanation
-// of how this works.
+use super::common::*;
 
 /// A service which will be managed by `docker-compose`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -23,9 +21,12 @@ pub struct Network {
     ///
     /// TODO LOW: Clear on merge if `driver` changes, like we do for
     /// `Logging` options.
-    #[serde(default, skip_serializing_if = "Option::is_none",
-            serialize_with = "serialize_opt_true_or_struct",
-            deserialize_with = "deserialize_opt_true_or_struct")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serialize_opt_true_or_struct",
+        deserialize_with = "deserialize_opt_true_or_struct"
+    )]
     pub external: Option<ExternalNetwork>,
 
     /// Create a network which has no access to the outside world.
@@ -38,12 +39,14 @@ pub struct Network {
 
     /// Docker labels for this volume, specifying various sorts of
     /// custom metadata.
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty",
-            deserialize_with = "deserialize_map_or_key_value_list")]
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "deserialize_map_or_key_value_list"
+    )]
     pub labels: BTreeMap<String, RawOr<String>>,
 
     // TODO LOW: ipam
-
     /// PRIVATE.  Mark this struct as having unknown fields for future
     /// compatibility.  This prevents direct construction and exhaustive
     /// matching.  This needs to be be public because of

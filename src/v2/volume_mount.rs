@@ -1,6 +1,4 @@
-// This is not a normal Rust module! It's included directly into v2.rs,
-// possibly after build-time preprocessing.  See v2.rs for an explanation
-// of how this works.
+use super::common::*;
 
 /// Where can we find the volume we want to map into a container?
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -17,29 +15,25 @@ pub enum HostVolume {
 }
 
 impl fmt::Display for HostVolume {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            &HostVolume::Path(ref path) => {
+            HostVolume::Path(path) => {
                 let p = path_str_to_docker(path.to_str().ok_or(fmt::Error)?);
-                if path.is_absolute() {
-                    write!(f, "{}", p)
-                } else if p.starts_with("./") || p.starts_with("../") {
+                if path.is_absolute() && p.starts_with("./") || p.starts_with("../") {
                     write!(f, "{}", p)
                 } else {
                     // Relative paths must begin with `./` when serialized.
                     write!(f, "./{}", p)
                 }
             }
-            &HostVolume::UserRelativePath(ref path) => {
+            HostVolume::UserRelativePath(path) => {
                 let p = path.to_str().ok_or(fmt::Error)?;
                 if path.is_absolute() {
                     return Err(fmt::Error);
                 }
                 write!(f, "~/{}", p)
             }
-            &HostVolume::Name(ref name) => {
-                write!(f, "{}", name)
-            }
+            HostVolume::Name(name) => write!(f, "{}", name),
         }
     }
 }
@@ -73,15 +67,17 @@ impl FromStr for HostVolume {
             static ref HOST_VOLUME: Regex =
                 Regex::new(r#"^(\.{0,2}/.*)|~/(.+)|([^./~].*)$"#).unwrap();
         }
-        let caps = HOST_VOLUME.captures(s).ok_or_else(|| {
-            Error::invalid_value("host volume", s)
-        })?;
+        let caps = HOST_VOLUME
+            .captures(s)
+            .ok_or_else(|| Error::invalid_value("host volume", s))?;
         if let Some(path) = caps.get(1) {
             let fixed_path = path_str_from_docker(path.as_str())?;
             Ok(HostVolume::Path(Path::new(&fixed_path).to_owned()))
         } else if let Some(path) = caps.get(2) {
             let fixed_path = path_str_from_docker(path.as_str())?;
-            Ok(HostVolume::UserRelativePath(Path::new(&fixed_path).to_owned()))
+            Ok(HostVolume::UserRelativePath(
+                Path::new(&fixed_path).to_owned(),
+            ))
         } else if let Some(name) = caps.get(3) {
             Ok(HostVolume::Name(name.as_str().to_owned()))
         } else {
@@ -108,7 +104,7 @@ fn path_str_from_docker(s: &str) -> Result<String> {
         if DRIVE_LETTER.is_match(s) {
             Ok(DRIVE_LETTER.replace(s, "$letter:\\").replace("/", "\\"))
         } else {
-            Err(ErrorKind::ConvertMountedPathToWindows(s.to_owned()).into())
+            Err(Error::ConvertMountedPathToWindows(s.to_owned()))
         }
     } else {
         Ok(s.replace("/", "\\"))
@@ -144,7 +140,9 @@ impl VolumeMount {
     /// dc::VolumeMount::host("./src", "/app");
     /// ```
     pub fn host<P1, P2>(host: P1, container: P2) -> VolumeMount
-        where P1: Into<PathBuf>, P2: Into<String>
+    where
+        P1: Into<PathBuf>,
+        P2: Into<String>,
     {
         VolumeMount {
             host: Some(HostVolume::Path(host.into())),
@@ -161,7 +159,9 @@ impl VolumeMount {
     /// dc::VolumeMount::named("pgvolume", "/app");
     /// ```
     pub fn named<S, P>(name: S, container: P) -> VolumeMount
-        where S: Into<String>, P: Into<String>
+    where
+        S: Into<String>,
+        P: Into<String>,
     {
         VolumeMount {
             host: Some(HostVolume::Name(name.into())),
@@ -174,7 +174,8 @@ impl VolumeMount {
     /// An anonymous persistent volume which will remain associated with
     /// this service when it is recreated.
     pub fn anonymous<P>(container: P) -> VolumeMount
-        where P: Into<String>
+    where
+        P: Into<String>,
     {
         VolumeMount {
             host: None,
@@ -188,7 +189,7 @@ impl VolumeMount {
 impl_interpolatable_value!(VolumeMount);
 
 impl fmt::Display for VolumeMount {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // We can't have permissions on a purely internal volume, if I'm
         // reading this correctly.
         if self.host.is_none() && self.permissions != Default::default() {
@@ -196,8 +197,8 @@ impl fmt::Display for VolumeMount {
         }
 
         match &self.host {
-            &Some(ref host) => write!(f, "{}:", host)?,
-            &None => {},
+            Some(host) => write!(f, "{}:", host)?,
+            None => {}
         }
 
         write!(f, "{}", &self.container)?;
@@ -214,32 +215,26 @@ impl FromStr for VolumeMount {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        let items = s.split(":").collect::<Vec<_>>();
+        let items = s.split(':').collect::<Vec<_>>();
         match items.len() {
-            1 => {
-                Ok(VolumeMount {
-                    host: None,
-                    container: items[0].to_owned(),
-                    permissions: Default::default(),
-                    _hidden: (),
-                })
-            }
-            2 => {
-                Ok(VolumeMount {
-                    host: Some(FromStr::from_str(items[0])?),
-                    container: items[1].to_owned(),
-                    permissions: Default::default(),
-                    _hidden: (),
-                })
-            }
-            3 => {
-                Ok(VolumeMount {
-                    host: Some(FromStr::from_str(items[0])?),
-                    container: items[1].to_owned(),
-                    permissions: FromStr::from_str(items[2])?,
-                    _hidden: (),
-                })
-            }
+            1 => Ok(VolumeMount {
+                host: None,
+                container: items[0].to_owned(),
+                permissions: Default::default(),
+                _hidden: (),
+            }),
+            2 => Ok(VolumeMount {
+                host: Some(FromStr::from_str(items[0])?),
+                container: items[1].to_owned(),
+                permissions: Default::default(),
+                _hidden: (),
+            }),
+            3 => Ok(VolumeMount {
+                host: Some(FromStr::from_str(items[0])?),
+                container: items[1].to_owned(),
+                permissions: FromStr::from_str(items[2])?,
+                _hidden: (),
+            }),
             _ => Err(Error::invalid_value("volume", s)),
         }
     }
@@ -250,10 +245,7 @@ fn portable_volume_mounts_should_have_string_representations() {
     let vol1 = VolumeMount::anonymous("/var/lib");
     let vol2 = VolumeMount::named("named", "/var/lib");
 
-    let pairs = vec!(
-        (vol1, "/var/lib"),
-        (vol2, "named:/var/lib"),
-    );
+    let pairs = vec![(vol1, "/var/lib"), (vol2, "named:/var/lib")];
     for (mode, s) in pairs {
         assert_eq!(mode.to_string(), s);
         assert_eq!(mode, VolumeMount::from_str(s).unwrap());
@@ -268,9 +260,7 @@ fn unix_windows_volume_mounts_should_have_string_representations() {
         ..VolumeMount::host("/etc/foo", "/etc/myfoo")
     };
 
-    let pairs = vec!(
-        (vol3, "/etc/foo:/etc/myfoo:ro"),
-    );
+    let pairs = vec![(vol3, "/etc/foo:/etc/myfoo:ro")];
     for (mode, s) in pairs {
         assert_eq!(mode.to_string(), s);
         assert_eq!(mode, VolumeMount::from_str(s).unwrap());
@@ -286,10 +276,10 @@ fn windows_volume_mounts_should_have_string_representations() {
     };
     let vol4 = VolumeMount::host(".\\foo", "/etc/myfoo");
 
-    let pairs = vec!(
+    let pairs = vec![
         (vol3, "/c/home/smith/foo:/etc/myfoo:ro"),
         (vol4, "./foo:/etc/myfoo"),
-    );
+    ];
     for (mode, s) in pairs {
         assert_eq!(mode.to_string(), s);
         assert_eq!(mode, VolumeMount::from_str(s).unwrap());
