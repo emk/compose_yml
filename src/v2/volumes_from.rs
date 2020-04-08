@@ -77,9 +77,7 @@ impl fmt::Display for VolumesFrom {
         // other places include the label.
         match &self.source {
             ServiceOrContainer::Service(name) => write!(f, "{}", name)?,
-            ServiceOrContainer::Container(name) => {
-                write!(f, "container:{}", name)?
-            }
+            ServiceOrContainer::Container(name) => write!(f, "container:{}", name)?,
         }
         if self.permissions != Default::default() {
             write!(f, ":{}", self.permissions)?

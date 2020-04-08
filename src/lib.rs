@@ -58,7 +58,7 @@
     unsafe_code,
     unused_extern_crates,
     unused_import_braces,
-    clippy::all,
+    clippy::all
 )]
 
 pub mod errors;

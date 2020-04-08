@@ -78,8 +78,7 @@ pub fn validate_file(file: &File) -> Result<()> {
         Err(err) => panic!("cannot parse built-in schema: {:?}", err),
     };
 
-    let value =
-        serde_json::to_value(&file).map_err(Error::validation_failed)?;
+    let value = serde_json::to_value(&file).map_err(Error::validation_failed)?;
     let validation_state = schema.validate(&value);
     if validation_state.is_strictly_valid() {
         Ok(())

@@ -46,10 +46,7 @@ impl GitUrl {
             git_url.parse_parts()?;
             Ok(git_url)
         } else {
-            Err(Error::ParseGitUrl {
-                url,
-                source: None,
-            })
+            Err(Error::ParseGitUrl { url, source: None })
         }
     }
 
