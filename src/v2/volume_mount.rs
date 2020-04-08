@@ -19,7 +19,7 @@ impl fmt::Display for HostVolume {
         match self {
             HostVolume::Path(path) => {
                 let p = path_str_to_docker(path.to_str().ok_or(fmt::Error)?);
-                if path.is_absolute() && p.starts_with("./") || p.starts_with("../") {
+                if path.is_absolute() || p.starts_with("./") || p.starts_with("../") {
                     write!(f, "{}", p)
                 } else {
                     // Relative paths must begin with `./` when serialized.
