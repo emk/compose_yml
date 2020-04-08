@@ -1,6 +1,4 @@
-// This is not a normal Rust module! It's included directly into v2.rs,
-// possibly after build-time preprocessing.  See v2.rs for an explanation
-// of how this works.
+use super::common::*;
 
 /// A host mapping to add to `/etc/hosts`.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -34,16 +32,13 @@ impl FromStr for HostMapping {
 
     fn from_str(s: &str) -> Result<Self> {
         lazy_static! {
-            static ref HOST_ADDRESS: Regex =
-                Regex::new("^([^:]+):(.+)$").unwrap();
+            static ref HOST_ADDRESS: Regex = Regex::new("^([^:]+):(.+)$").unwrap();
         }
-        let caps = HOST_ADDRESS.captures(s).ok_or_else(|| {
-            Error::invalid_value("host mapping", s)
-        })?;
-        let addr: IpAddr =
-            FromStr::from_str(caps.get(2).unwrap().as_str()).map_err(|_| {
-                Error::invalid_value("IP address", s)
-            })?;
+        let caps = HOST_ADDRESS
+            .captures(s)
+            .ok_or_else(|| Error::invalid_value("host mapping", s))?;
+        let addr: IpAddr = FromStr::from_str(caps.get(2).unwrap().as_str())
+            .map_err(|_| Error::invalid_value("IP address", s))?;
         Ok(HostMapping::new(caps.get(1).unwrap().as_str(), &addr))
     }
 }
@@ -51,8 +46,12 @@ impl FromStr for HostMapping {
 #[test]
 fn host_mapping_supports_string_serialization() {
     let localhost: IpAddr = FromStr::from_str("127.0.0.1").unwrap();
-    assert_eq!(HostMapping::new("foo.example.com", &localhost),
-               HostMapping::from_str("foo.example.com:127.0.0.1").unwrap());
-    assert_eq!(HostMapping::new("foo.example.com", &localhost).to_string(),
-               "foo.example.com:127.0.0.1");
+    assert_eq!(
+        HostMapping::new("foo.example.com", &localhost),
+        HostMapping::from_str("foo.example.com:127.0.0.1").unwrap()
+    );
+    assert_eq!(
+        HostMapping::new("foo.example.com", &localhost).to_string(),
+        "foo.example.com:127.0.0.1"
+    );
 }

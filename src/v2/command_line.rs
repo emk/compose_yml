@@ -1,6 +1,4 @@
-// This is not a normal Rust module! It's included directly into v2.rs,
-// possibly after build-time preprocessing.  See v2.rs for an explanation
-// of how this works.
+use super::common::*;
 
 /// A command line to be executed by Docker.
 #[derive(Debug, Deserialize, Clone, Eq, PartialEq, Serialize)]

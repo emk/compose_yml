@@ -1,6 +1,4 @@
-// This is not a normal Rust module! It's included directly into v2.rs,
-// possibly after build-time preprocessing.  See v2.rs for an explanation
-// of how this works.
+use super::common::*;
 
 /// Permissions on devices that are mapped into the Docker container.
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
@@ -43,12 +41,11 @@ impl FromStr for DevicePermissions {
 
     fn from_str(s: &str) -> Result<Self> {
         lazy_static! {
-            static ref PERMS: Regex =
-                Regex::new("^(r)?(w)?(m)?").unwrap();
+            static ref PERMS: Regex = Regex::new("^(r)?(w)?(m)?").unwrap();
         }
-        let caps = PERMS.captures(s).ok_or_else(|| {
-            Error::invalid_value("restart-mode", s)
-        })?;
+        let caps = PERMS
+            .captures(s)
+            .ok_or_else(|| Error::invalid_value("restart-mode", s))?;
         Ok(DevicePermissions {
             read: caps.get(1).is_some(),
             write: caps.get(2).is_some(),
@@ -59,12 +56,30 @@ impl FromStr for DevicePermissions {
 
 #[test]
 fn device_permissions_has_a_string_representation() {
-    let pairs = vec!(
+    let pairs = vec![
         (Default::default(), "rwm"),
-        (DevicePermissions { read: false, ..Default::default() }, "wm"),
-        (DevicePermissions { write: false, ..Default::default() }, "rm"),
-        (DevicePermissions { mknod: false, ..Default::default() }, "rw"),
-    );
+        (
+            DevicePermissions {
+                read: false,
+                ..Default::default()
+            },
+            "wm",
+        ),
+        (
+            DevicePermissions {
+                write: false,
+                ..Default::default()
+            },
+            "rm",
+        ),
+        (
+            DevicePermissions {
+                mknod: false,
+                ..Default::default()
+            },
+            "rw",
+        ),
+    ];
     for (mode, s) in pairs {
         assert_eq!(mode.to_string(), s);
         assert_eq!(mode, DevicePermissions::from_str(s).unwrap());
@@ -109,10 +124,10 @@ impl FromStr for VolumePermissions {
 
 #[test]
 fn volume_permissions_has_a_string_representation() {
-    let pairs = vec!(
+    let pairs = vec![
         (VolumePermissions::ReadWrite, "rw"),
         (VolumePermissions::ReadOnly, "ro"),
-    );
+    ];
     for (mode, s) in pairs {
         assert_eq!(mode.to_string(), s);
         assert_eq!(mode, VolumePermissions::from_str(s).unwrap());

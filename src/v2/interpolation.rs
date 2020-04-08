@@ -1,5 +1,7 @@
 //! Interpolation of shell-style variables into strings.
 
+use lazy_static::lazy_static;
+use log::trace;
 use regex::{Captures, Regex};
 use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};

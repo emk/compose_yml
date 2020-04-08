@@ -9,6 +9,8 @@ use url::Url;
 use valico;
 */
 
+use log::warn;
+
 use super::File;
 use crate::errors::*;
 

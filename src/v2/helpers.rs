@@ -1,10 +1,10 @@
 //! Helper functions and types we use for (de)serialization.  These handle
 //! several common, annoying patterns in the `docker-compose.yml` format.
 
+use lazy_static::lazy_static;
 use regex::Regex;
-use serde::de;
 use serde::de::{
-    Deserialize, DeserializeOwned, Deserializer, MapAccess, SeqAccess, Visitor,
+    self, Deserialize, DeserializeOwned, Deserializer, MapAccess, SeqAccess, Visitor,
 };
 use std::collections::BTreeMap;
 use std::fmt;
