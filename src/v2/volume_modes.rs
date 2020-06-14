@@ -5,8 +5,14 @@ use super::common::*;
 pub enum VolumeModes {
     /// This volume can be read and written (default).
     ReadWrite,
-    /// This volume is ready-only.
+    /// This volume is read-only.
     ReadOnly,
+    /// This volume and the host are perfectly synchronized.
+    Consistent,
+    /// Permit delays before updates on the host appear in the container.
+    Cached,
+    /// Permit delays before updates on the container appear in the host.
+    Delegated,
 }
 
 impl Default for VolumeModes {
@@ -20,6 +26,9 @@ impl fmt::Display for VolumeModes {
         match self {
             VolumeModes::ReadWrite => write!(f, "rw"),
             VolumeModes::ReadOnly => write!(f, "ro"),
+            VolumeModes::Consistent => write!(f, "consistent"),
+            VolumeModes::Cached => write!(f, "cached"),
+            VolumeModes::Delegated => write!(f, "delegated"),
         }
     }
 }
@@ -31,6 +40,9 @@ impl FromStr for VolumeModes {
         match s {
             "rw" => Ok(VolumeModes::ReadWrite),
             "ro" => Ok(VolumeModes::ReadOnly),
+            "consistent" => Ok(VolumeModes::Consistent),
+            "cached" => Ok(VolumeModes::Cached),
+            "delegated" => Ok(VolumeModes::Delegated),
             _ => Err(Error::invalid_value("volume mode", s)),
         }
     }
@@ -41,6 +53,9 @@ fn volume_mode_has_a_string_representation() {
     let pairs = vec![
         (VolumeModes::ReadWrite, "rw"),
         (VolumeModes::ReadOnly, "ro"),
+        (VolumeModes::Consistent, "consistent"),
+        (VolumeModes::Cached, "cached"),
+        (VolumeModes::Delegated, "delegated"),
     ];
     for (mode, s) in pairs {
         assert_eq!(mode.to_string(), s);
