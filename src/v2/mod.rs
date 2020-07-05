@@ -50,6 +50,7 @@ mod command_line;
 mod host_mapping;
 mod image;
 mod memory_size;
+mod volume_modes;
 mod permissions;
 
 // Basic file structure.
@@ -91,6 +92,7 @@ pub use port_mapping::*;
 pub use service::*;
 pub use ulimit::*;
 pub use volume::*;
+pub use volume_modes::*;
 pub use volume_mount::*;
 pub use volumes_from::*;
 

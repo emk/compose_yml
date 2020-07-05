@@ -17,8 +17,8 @@ pub enum ServiceOrContainer {
 pub struct VolumesFrom {
     /// Where do we get these volumes from?
     pub source: ServiceOrContainer,
-    /// What permissions should we apply to these volumes?
-    pub permissions: VolumePermissions,
+    /// What mode should we apply to these volumes?
+    pub mode: VolumeModes,
     /// PRIVATE.  Mark this struct as having unknown fields for future
     /// compatibility.  This prevents direct construction and exhaustive
     /// matching.  This needs to be be public because of
@@ -39,14 +39,14 @@ impl VolumesFrom {
     ///
     /// // To override a field, try:
     /// dc::VolumesFrom {
-    ///   permissions: dc::VolumePermissions::ReadOnly,
+    ///   mode: dc::VolumeModes::ReadOnly,
     ///   ..dc::VolumesFrom::service("myservice")
     /// };
     /// ```
     pub fn service<S: Into<String>>(service: S) -> VolumesFrom {
         VolumesFrom {
             source: ServiceOrContainer::Service(service.into()),
-            permissions: Default::default(),
+            mode: Default::default(),
             _hidden: (),
         }
     }
@@ -63,7 +63,7 @@ impl VolumesFrom {
     pub fn container<S: Into<String>>(container: S) -> VolumesFrom {
         VolumesFrom {
             source: ServiceOrContainer::Container(container.into()),
-            permissions: Default::default(),
+            mode: Default::default(),
             _hidden: (),
         }
     }
@@ -79,8 +79,8 @@ impl fmt::Display for VolumesFrom {
             ServiceOrContainer::Service(name) => write!(f, "{}", name)?,
             ServiceOrContainer::Container(name) => write!(f, "container:{}", name)?,
         }
-        if self.permissions != Default::default() {
-            write!(f, ":{}", self.permissions)?
+        if self.mode != Default::default() {
+            write!(f, ":{}", self.mode)?
         }
         Ok(())
     }
@@ -104,13 +104,13 @@ impl FromStr for VolumesFrom {
         } else {
             ServiceOrContainer::Service(name)
         };
-        let permissions = match caps.get(3) {
+        let mode = match caps.get(3) {
             None => Default::default(),
             Some(permstr) => FromStr::from_str(permstr.as_str())?,
         };
         Ok(VolumesFrom {
             source,
-            permissions,
+            mode,
             _hidden: (),
         })
     }
@@ -120,7 +120,7 @@ impl FromStr for VolumesFrom {
 fn volumes_from_should_have_a_string_representation() {
     let vf1 = VolumesFrom::service("foo");
     let vf2 = VolumesFrom {
-        permissions: VolumePermissions::ReadOnly,
+        mode: VolumeModes::ReadOnly,
         ..VolumesFrom::container("foo")
     };
 

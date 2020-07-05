@@ -121,8 +121,8 @@ pub struct VolumeMount {
     /// an absolute path.  This is a string, because on Windows, it will
     /// use a different path representation than the host OS.
     pub container: String,
-    /// What should the permissions of this volume be in the container?
-    pub permissions: VolumePermissions,
+    /// What should the mode of this volume be in the container?
+    pub mode: VolumeModes,
 
     /// PRIVATE.  Mark this struct as having unknown fields for future
     /// compatibility.  This prevents direct construction and exhaustive
@@ -147,7 +147,7 @@ impl VolumeMount {
         VolumeMount {
             host: Some(HostVolume::Path(host.into())),
             container: container.into(),
-            permissions: Default::default(),
+            mode: Default::default(),
             _hidden: (),
         }
     }
@@ -166,7 +166,7 @@ impl VolumeMount {
         VolumeMount {
             host: Some(HostVolume::Name(name.into())),
             container: container.into(),
-            permissions: Default::default(),
+            mode: Default::default(),
             _hidden: (),
         }
     }
@@ -180,7 +180,7 @@ impl VolumeMount {
         VolumeMount {
             host: None,
             container: container.into(),
-            permissions: Default::default(),
+            mode: Default::default(),
             _hidden: (),
         }
     }
@@ -190,9 +190,9 @@ impl_interpolatable_value!(VolumeMount);
 
 impl fmt::Display for VolumeMount {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // We can't have permissions on a purely internal volume, if I'm
+        // We can't have mode on a purely internal volume, if I'm
         // reading this correctly.
-        if self.host.is_none() && self.permissions != Default::default() {
+        if self.host.is_none() && self.mode != Default::default() {
             return Err(fmt::Error);
         }
 
@@ -203,8 +203,8 @@ impl fmt::Display for VolumeMount {
 
         write!(f, "{}", &self.container)?;
 
-        if self.permissions != Default::default() {
-            write!(f, ":{}", self.permissions)?
+        if self.mode != Default::default() {
+            write!(f, ":{}", self.mode)?
         }
 
         Ok(())
@@ -220,19 +220,19 @@ impl FromStr for VolumeMount {
             1 => Ok(VolumeMount {
                 host: None,
                 container: items[0].to_owned(),
-                permissions: Default::default(),
+                mode: Default::default(),
                 _hidden: (),
             }),
             2 => Ok(VolumeMount {
                 host: Some(FromStr::from_str(items[0])?),
                 container: items[1].to_owned(),
-                permissions: Default::default(),
+                mode: Default::default(),
                 _hidden: (),
             }),
             3 => Ok(VolumeMount {
                 host: Some(FromStr::from_str(items[0])?),
                 container: items[1].to_owned(),
-                permissions: FromStr::from_str(items[2])?,
+                mode: FromStr::from_str(items[2])?,
                 _hidden: (),
             }),
             _ => Err(Error::invalid_value("volume", s)),
@@ -256,7 +256,7 @@ fn portable_volume_mounts_should_have_string_representations() {
 #[cfg(not(windows))]
 fn unix_windows_volume_mounts_should_have_string_representations() {
     let vol3 = VolumeMount {
-        permissions: VolumePermissions::ReadOnly,
+        mode: VolumeModes::ReadOnly,
         ..VolumeMount::host("/etc/foo", "/etc/myfoo")
     };
 
@@ -271,7 +271,7 @@ fn unix_windows_volume_mounts_should_have_string_representations() {
 #[cfg(windows)]
 fn windows_volume_mounts_should_have_string_representations() {
     let vol3 = VolumeMount {
-        permissions: VolumePermissions::ReadOnly,
+        mode: VolumeModes::ReadOnly,
         ..VolumeMount::host("c:\\home\\smith\\foo", "/etc/myfoo")
     };
     let vol4 = VolumeMount::host(".\\foo", "/etc/myfoo");
