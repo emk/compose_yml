@@ -25,7 +25,6 @@ pub use mode_enum::{IpcMode, NetworkMode, PidMode, RestartMode};
 #[cfg(test)]
 macro_rules! assert_roundtrip {
     ( $ty:ty, $yaml:expr ) => {{
-        use serde_json;
         let yaml: &str = $yaml;
         let data: $ty = serde_yaml::from_str(&yaml).unwrap();
         let serialized = serde_json::to_value(&data).unwrap();
@@ -50,8 +49,8 @@ mod command_line;
 mod host_mapping;
 mod image;
 mod memory_size;
-mod volume_modes;
 mod permissions;
+mod volume_modes;
 
 // Basic file structure.
 mod file;
@@ -103,7 +102,6 @@ pub(self) mod common {
     pub(crate) use regex::Regex;
     pub(crate) use serde;
     pub(crate) use serde::{Deserialize, Serialize, Serializer};
-    pub(crate) use serde_yaml;
     pub(crate) use std::borrow::ToOwned;
     pub(crate) use std::collections::BTreeMap;
     pub(crate) use std::convert::Into;

@@ -62,4 +62,3 @@ fn volume_mode_has_a_string_representation() {
         assert_eq!(mode, VolumeModes::from_str(s).unwrap());
     }
 }
-

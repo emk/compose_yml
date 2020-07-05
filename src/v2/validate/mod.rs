@@ -2,10 +2,8 @@
 //! schema.
 
 use lazy_static::lazy_static;
-use serde_json;
 use std::ops::Deref;
 use url::Url;
-use valico;
 
 use super::File;
 use crate::errors::*;
