@@ -61,7 +61,9 @@ mod volume;
 // Service-related types.
 mod build;
 mod context;
+mod depends_on_service;
 mod extends;
+mod healthcheck;
 mod logging;
 mod network_interface;
 mod port_mapping;
@@ -77,9 +79,11 @@ pub use aliased_name::*;
 pub use build::*;
 pub use command_line::*;
 pub use context::*;
+pub use depends_on_service::*;
 pub use extends::*;
 pub use external_network::*;
 pub use file::*;
+pub use healthcheck::*;
 pub use host_mapping::*;
 pub use image::*;
 pub use logging::*;
@@ -121,6 +125,7 @@ pub(self) mod common {
     pub(crate) use super::helpers::{
         deserialize_item_or_list, deserialize_map_or_default_list,
         deserialize_map_or_key_value_list, deserialize_map_struct_or_null, is_false,
+        serialize_key_list_or_map,
     };
     pub(crate) use super::interpolation::InterpolateAll;
     pub(crate) use super::string_or_struct::{

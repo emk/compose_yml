@@ -6,6 +6,7 @@ use regex::Regex;
 use serde::de::{
     self, Deserialize, DeserializeOwned, Deserializer, MapAccess, SeqAccess, Visitor,
 };
+use serde::ser::{Serialize, Serializer};
 use std::collections::BTreeMap;
 use std::fmt;
 use std::marker::PhantomData;
@@ -283,4 +284,22 @@ where
         result.insert(k, v.unwrap_or_default());
     }
     Ok(result)
+}
+
+/// Serialize the specified value as a key list if all values are equal to
+/// `Default::default()`, and a struct otherwise.
+pub fn serialize_key_list_or_map<T, S>(
+    value: &BTreeMap<String, T>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    T: Serialize + Default + Eq,
+    S: Serializer,
+{
+    let default_value: &T = &Default::default();
+    if value.values().all(|v| v == default_value) {
+        serializer.collect_seq(value.keys())
+    } else {
+        value.serialize(serializer)
+    }
 }

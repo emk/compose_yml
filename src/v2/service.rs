@@ -41,8 +41,13 @@ pub struct Service {
     pub devices: Vec<RawOr<AliasedName>>,
 
     /// A list of other containers to start first.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub depends_on: Vec<RawOr<String>>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        serialize_with = "serialize_key_list_or_map",
+        deserialize_with = "deserialize_map_or_default_list"
+    )]
+    pub depends_on: BTreeMap<String, DependsOnService>,
 
     /// DNS servers.
     #[serde(
@@ -189,9 +194,18 @@ pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub domainname: Option<RawOr<String>>,
 
+    /// A check that’s run to determine whether or not containers for this service are “healthy”.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub healthcheck: Option<Healthcheck>,
+
     /// The hostname to use for this container.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hostname: Option<RawOr<String>>,
+
+    /// Run an init inside the container that forwards signals and reaps processes.
+    /// Set this option to true to enable this feature for the service.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub init: Option<bool>,
 
     /// What IPC namespacing mode should we use?
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -286,7 +300,9 @@ derive_standard_impls_for!(Service, {
     extends,
     external_links,
     extra_hosts,
+    healthcheck,
     image,
+    init,
     labels,
     links,
     logging,
@@ -394,6 +410,58 @@ ulimits:
   nofile:
     soft: 20000
     hard: 40000
+"#;
+    assert_roundtrip!(Service, yaml);
+}
+
+#[test]
+fn service_healtchcheck_regular() {
+    let yaml = r#"---
+healthcheck:
+  test: ["CMD", "curl", "-f", "http://localhost"]
+  interval: 1m30s
+  timeout: 10s
+  retries: 3
+  start_period: 40s
+"#;
+    assert_roundtrip!(Service, yaml);
+}
+
+#[test]
+fn service_healtchcheck_disable() {
+    let yaml = r#"---
+healthcheck:
+  disable: true
+"#;
+    assert_roundtrip!(Service, yaml);
+}
+
+#[test]
+fn service_depends_on_supports_list() {
+    let yaml = r#"---
+depends_on:
+  - a
+  - b
+"#;
+    assert_roundtrip!(Service, yaml);
+}
+
+#[test]
+fn service_depends_on_supports_map() {
+    let yaml = r#"---
+depends_on:
+  a:
+    condition: service_healthy
+  b:
+    condition: service_healthy
+"#;
+    assert_roundtrip!(Service, yaml);
+}
+
+#[test]
+fn service_init() {
+    let yaml = r#"---
+init: true
 "#;
     assert_roundtrip!(Service, yaml);
 }

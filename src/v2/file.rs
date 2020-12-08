@@ -163,6 +163,20 @@ volumes:
 }
 
 #[test]
+fn file_can_be_converted_from_and_to_yaml_version_2_2() {
+    let yaml = r#"---
+services:
+  foo:
+    build: .
+version: "2.2"
+volumes:
+  db:
+    external: true
+"#;
+    assert_roundtrip!(File, yaml);
+}
+
+#[test]
 fn file_allows_null_volumes_and_networks() {
     let yaml = r#"---
 "services":
