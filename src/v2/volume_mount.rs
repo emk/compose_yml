@@ -1,6 +1,4 @@
-// This is not a normal Rust module! It's included directly into v2.rs,
-// possibly after build-time preprocessing.  See v2.rs for an explanation
-// of how this works.
+use super::common::*;
 
 /// Where can we find the volume we want to map into a container?
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -11,38 +9,31 @@ pub enum HostVolume {
     /// A path relative to the current user's home directory on the host.
     /// Must be a relative path.
     UserRelativePath(PathBuf),
-    /// This volume corresponds to a special directory like '/dev' or '/var'.
-    Special(String),
     /// This volume corresponds to a volume named in the top-level
     /// `volumes` section.
     Name(String),
 }
 
-const SPECIAL_PATHS: [&str; 3] = ["/dev", "/var", "/sys"];
-
 impl fmt::Display for HostVolume {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            &HostVolume::Path(ref path) => {
+            HostVolume::Path(path) => {
                 let p = path_str_to_docker(path.to_str().ok_or(fmt::Error)?);
-                if path.is_absolute() {
-                    write!(f, "{}", p)
-                } else if p.starts_with("./") || p.starts_with("../") {
+                if path.is_absolute() || p.starts_with("./") || p.starts_with("../") {
                     write!(f, "{}", p)
                 } else {
                     // Relative paths must begin with `./` when serialized.
                     write!(f, "./{}", p)
                 }
             }
-            &HostVolume::UserRelativePath(ref path) => {
+            HostVolume::UserRelativePath(path) => {
                 let p = path.to_str().ok_or(fmt::Error)?;
                 if path.is_absolute() {
                     return Err(fmt::Error);
                 }
                 write!(f, "~/{}", p)
             }
-            &HostVolume::Special(ref path) => write!(f, "{}", path),
-            &HostVolume::Name(ref name) => write!(f, "{}", name),
+            HostVolume::Name(name) => write!(f, "{}", name),
         }
     }
 }
@@ -72,10 +63,6 @@ impl FromStr for HostVolume {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        if SPECIAL_PATHS.into_iter().any(|p| s.starts_with(p)) {
-            return Ok(HostVolume::Special(s.to_owned()));
-        }
-
         lazy_static! {
             static ref HOST_VOLUME: Regex =
                 Regex::new(r#"^(\.{0,2}/.*)|~/(.+)|([^./~].*)$"#).unwrap();
@@ -117,7 +104,7 @@ fn path_str_from_docker(s: &str) -> Result<String> {
         if DRIVE_LETTER.is_match(s) {
             Ok(DRIVE_LETTER.replace(s, "$letter:\\").replace("/", "\\"))
         } else {
-            Err(ErrorKind::ConvertMountedPathToWindows(s.to_owned()).into())
+            Err(Error::ConvertMountedPathToWindows(s.to_owned()))
         }
     } else {
         Ok(s.replace("/", "\\"))
@@ -134,8 +121,8 @@ pub struct VolumeMount {
     /// an absolute path.  This is a string, because on Windows, it will
     /// use a different path representation than the host OS.
     pub container: String,
-    /// What should the permissions of this volume be in the container?
-    pub permissions: VolumePermissions,
+    /// What should the mode of this volume be in the container?
+    pub mode: VolumeModes,
 
     /// PRIVATE.  Mark this struct as having unknown fields for future
     /// compatibility.  This prevents direct construction and exhaustive
@@ -160,26 +147,7 @@ impl VolumeMount {
         VolumeMount {
             host: Some(HostVolume::Path(host.into())),
             container: container.into(),
-            permissions: Default::default(),
-            _hidden: (),
-        }
-    }
-
-    /// Map a special path in container.
-    ///
-    /// ```
-    /// use compose_yml::v2 as dc;
-    /// dc::VolumeMount::special("/var/run/docker.sock", "/var/run/docker.sock");
-    /// ```
-    pub fn special<P1, P2>(host: P1, container: P2) -> VolumeMount
-    where
-        P1: Into<String>,
-        P2: Into<String>,
-    {
-        VolumeMount {
-            host: Some(HostVolume::Special(host.into())),
-            container: container.into(),
-            permissions: Default::default(),
+            mode: Default::default(),
             _hidden: (),
         }
     }
@@ -198,7 +166,7 @@ impl VolumeMount {
         VolumeMount {
             host: Some(HostVolume::Name(name.into())),
             container: container.into(),
-            permissions: Default::default(),
+            mode: Default::default(),
             _hidden: (),
         }
     }
@@ -212,7 +180,7 @@ impl VolumeMount {
         VolumeMount {
             host: None,
             container: container.into(),
-            permissions: Default::default(),
+            mode: Default::default(),
             _hidden: (),
         }
     }
@@ -221,22 +189,22 @@ impl VolumeMount {
 impl_interpolatable_value!(VolumeMount);
 
 impl fmt::Display for VolumeMount {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // We can't have permissions on a purely internal volume, if I'm
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // We can't have mode on a purely internal volume, if I'm
         // reading this correctly.
-        if self.host.is_none() && self.permissions != Default::default() {
+        if self.host.is_none() && self.mode != Default::default() {
             return Err(fmt::Error);
         }
 
         match &self.host {
-            &Some(ref host) => write!(f, "{}:", host)?,
-            &None => {}
+            Some(host) => write!(f, "{}:", host)?,
+            None => {}
         }
 
         write!(f, "{}", &self.container)?;
 
-        if self.permissions != Default::default() {
-            write!(f, ":{}", self.permissions)?
+        if self.mode != Default::default() {
+            write!(f, ":{}", self.mode)?
         }
 
         Ok(())
@@ -247,24 +215,24 @@ impl FromStr for VolumeMount {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        let items = s.split(":").collect::<Vec<_>>();
+        let items = s.split(':').collect::<Vec<_>>();
         match items.len() {
             1 => Ok(VolumeMount {
                 host: None,
                 container: items[0].to_owned(),
-                permissions: Default::default(),
+                mode: Default::default(),
                 _hidden: (),
             }),
             2 => Ok(VolumeMount {
                 host: Some(FromStr::from_str(items[0])?),
                 container: items[1].to_owned(),
-                permissions: Default::default(),
+                mode: Default::default(),
                 _hidden: (),
             }),
             3 => Ok(VolumeMount {
                 host: Some(FromStr::from_str(items[0])?),
                 container: items[1].to_owned(),
-                permissions: FromStr::from_str(items[2])?,
+                mode: FromStr::from_str(items[2])?,
                 _hidden: (),
             }),
             _ => Err(Error::invalid_value("volume", s)),
@@ -276,17 +244,8 @@ impl FromStr for VolumeMount {
 fn portable_volume_mounts_should_have_string_representations() {
     let vol1 = VolumeMount::anonymous("/var/lib");
     let vol2 = VolumeMount::named("named", "/var/lib");
-    let vol3 = VolumeMount::special("/var/run/docker.sock", "/var/run/docker.sock");
-    let vol4 = VolumeMount::special("/dev/shm", "/dev/shm");
-    let vol5 = VolumeMount::special("/sys", "/sys");
 
-    let pairs = vec![
-        (vol1, "/var/lib"),
-        (vol2, "named:/var/lib"),
-        (vol3, "/var/run/docker.sock:/var/run/docker.sock"),
-        (vol4, "/dev/shm:/dev/shm"),
-        (vol5, "/sys:/sys"),
-    ];
+    let pairs = vec![(vol1, "/var/lib"), (vol2, "named:/var/lib")];
     for (mode, s) in pairs {
         assert_eq!(mode.to_string(), s);
         assert_eq!(mode, VolumeMount::from_str(s).unwrap());
@@ -297,7 +256,7 @@ fn portable_volume_mounts_should_have_string_representations() {
 #[cfg(not(windows))]
 fn unix_windows_volume_mounts_should_have_string_representations() {
     let vol3 = VolumeMount {
-        permissions: VolumePermissions::ReadOnly,
+        mode: VolumeModes::ReadOnly,
         ..VolumeMount::host("/etc/foo", "/etc/myfoo")
     };
 
@@ -312,7 +271,7 @@ fn unix_windows_volume_mounts_should_have_string_representations() {
 #[cfg(windows)]
 fn windows_volume_mounts_should_have_string_representations() {
     let vol3 = VolumeMount {
-        permissions: VolumePermissions::ReadOnly,
+        mode: VolumeModes::ReadOnly,
         ..VolumeMount::host("c:\\home\\smith\\foo", "/etc/myfoo")
     };
     let vol4 = VolumeMount::host(".\\foo", "/etc/myfoo");

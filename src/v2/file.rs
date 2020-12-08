@@ -1,6 +1,4 @@
-// This is not a normal Rust module! It's included directly into v2.rs,
-// possibly after build-time preprocessing.  See v2.rs for an explanation
-// of how this works.
+use super::common::*;
 
 /// A `docker-compose.yml` file.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -69,9 +67,10 @@ impl File {
         P: AsRef<Path>,
     {
         let path = path.as_ref();
-        let mkerr = || ErrorKind::ReadFile(path.to_owned());
-        let f = fs::File::open(path).chain_err(&mkerr)?;
-        Self::read(io::BufReader::new(f)).chain_err(&mkerr)
+        let f = fs::File::open(path)
+            .map_err(|err| Error::read_file(path.to_owned(), err))?;
+        Self::read(io::BufReader::new(f))
+            .map_err(|err| Error::read_file(path.to_owned(), err))
     }
 
     /// Write a file to the specified path.
@@ -80,9 +79,10 @@ impl File {
         P: AsRef<Path>,
     {
         let path = path.as_ref();
-        let mkerr = || ErrorKind::WriteFile(path.to_owned());
-        let f = fs::File::create(path).chain_err(&mkerr)?;
-        self.write(&mut io::BufWriter::new(f)).chain_err(&mkerr)
+        let f = fs::File::create(path)
+            .map_err(|err| Error::write_file(path.to_owned(), err))?;
+        self.write(&mut io::BufWriter::new(f))
+            .map_err(|err| Error::write_file(path.to_owned(), err))
     }
 
     /// Inline all our external resources, such as `env_files`, looking up
@@ -149,12 +149,12 @@ volumes:
 }
 
 #[test]
-fn file_can_be_converted_from_and_to_yaml_version_2_1() {
+fn file_can_be_converted_from_and_to_yaml_version_2_4() {
     let yaml = r#"---
 services:
   foo:
     build: .
-version: "2.1"
+version: "2.4"
 volumes:
   db:
     external: true

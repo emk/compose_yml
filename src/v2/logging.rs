@@ -1,6 +1,4 @@
-// This is not a normal Rust module! It's included directly into v2.rs,
-// possibly after build-time preprocessing.  See v2.rs for an explanation
-// of how this works.
+use super::common::*;
 
 /// Logging configuration.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -32,7 +30,7 @@ impl MergeOverride for Logging {
         Logging {
             driver: self.driver.merge_override(&ovr.driver),
             // Don't merge options if driver has changed.
-            options: if &self.driver == &ovr.driver || ovr.driver.is_none() {
+            options: if self.driver == ovr.driver || ovr.driver.is_none() {
                 self.options.merge_override(&ovr.options)
             } else {
                 ovr.options.clone()
@@ -59,10 +57,24 @@ options:
 
     let merged = logging1.merge_override(&logging2);
     assert_eq!(merged.driver.unwrap().value().unwrap(), "d1");
-    assert_eq!(merged.options.get("opt1").expect("should have opt1").value().unwrap(),
-               "value1");
-    assert_eq!(merged.options.get("opt2").expect("should have opt2").value().unwrap(),
-               "value2");
+    assert_eq!(
+        merged
+            .options
+            .get("opt1")
+            .expect("should have opt1")
+            .value()
+            .unwrap(),
+        "value1"
+    );
+    assert_eq!(
+        merged
+            .options
+            .get("opt2")
+            .expect("should have opt2")
+            .value()
+            .unwrap(),
+        "value2"
+    );
 }
 
 #[test]
@@ -83,6 +95,13 @@ options:
     let merged = logging1.merge_override(&logging2);
     assert_eq!(merged.driver.unwrap().value().unwrap(), "d2");
     assert!(merged.options.get("opt1").is_none());
-    assert_eq!(merged.options.get("opt2").expect("should have opt2").value().unwrap(),
-               "value2");
+    assert_eq!(
+        merged
+            .options
+            .get("opt2")
+            .expect("should have opt2")
+            .value()
+            .unwrap(),
+        "value2"
+    );
 }

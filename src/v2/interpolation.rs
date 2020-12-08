@@ -1,5 +1,7 @@
 //! Interpolation of shell-style variables into strings.
 
+use lazy_static::lazy_static;
+use log::trace;
 use regex::{Captures, Regex};
 use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
@@ -62,8 +64,12 @@ enum Mode {
 /// An internal function which handles interpolating, unescaping and
 /// validating interpolation strings.  We use a single function for all
 /// three to prevent the risk of divergent code paths.
-fn interpolate_helper(input: &str, mode: Mode, env: &Environment) -> Result<String> {
-    #[cfg_attr(rustfmt, rustfmt_skip)]
+fn interpolate_helper(
+    input: &str,
+    mode: Mode,
+    env: &dyn Environment,
+) -> Result<String> {
+    #[rustfmt::skip]
     lazy_static! {
         static ref VAR: Regex = Regex::new(r#"(?x)
 # We found a '$',
@@ -85,19 +91,19 @@ fn interpolate_helper(input: &str, mode: Mode, env: &Environment) -> Result<Stri
 "#).unwrap();
     }
     let mut err = None;
-    let result = VAR.replace_all(input, |caps: &Captures| {
+    let result = VAR.replace_all(input, |caps: &Captures<'_>| {
         if caps.name("unknown").is_some() {
             // Our "fallback" group matched, which means that no valid
             // group matched.  Mark as invalid and return an empty
             // replacement.
-            err = Some(ErrorKind::InterpolateInvalidSyntax(input.to_owned()));
+            err = Some(Error::InterpolateInvalidSyntax(input.to_owned()));
             "".to_owned()
         } else if caps.name("dollar").is_some() {
             // If we have `$$`, replace it with a single `$`.
             "$".to_owned()
         } else if mode == Mode::Unescape {
             // If we're not allowed to interpolate, bail now.
-            err = Some(ErrorKind::InterpolationDisabled(input.to_owned()));
+            err = Some(Error::InterpolationDisabled(input.to_owned()));
             "".to_owned()
         } else {
             // Handle actual interpolations.
@@ -119,22 +125,21 @@ fn interpolate_helper(input: &str, mode: Mode, env: &Environment) -> Result<Stri
                 (Err(_), _, Some(default)) => default.as_str().to_owned(),
                 // An unset environment variable with no default provided.
                 (Err(_), _, _) => {
-                    err =
-                        Some(ErrorKind::InterpolateUndefinedVariable(var.to_owned()));
+                    err = Some(Error::InterpolateUndefinedVariable(var.to_owned()));
                     "".to_owned()
                 }
             }
         }
     });
     if let Some(e) = err {
-        return Err(e.into());
+        return Err(e);
     }
     Ok(result.into_owned())
 }
 
 /// Interpolate environment variables into a string using the same rules as
 /// `docker-compose.yml`.
-fn interpolate_env(input: &str, env: &Environment) -> Result<String> {
+fn interpolate_env(input: &str, env: &dyn Environment) -> Result<String> {
     interpolate_helper(input, Mode::Interpolate, env)
 }
 
@@ -284,7 +289,7 @@ pub trait InterpolatableValue: Clone + Eq {
     /// Our equivalent of `from_str`.
     fn iv_from_str(s: &str) -> Result<Self>;
     /// Our equivalent of `fmt`.
-    fn fmt_iv(&self, f: &mut fmt::Formatter) -> fmt::Result;
+    fn fmt_iv(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
 }
 
 /// Provide a default implementation of InterpolatableValue that works for
@@ -306,7 +311,7 @@ pub trait InterpolatableValue: Clone + Eq {
 ///         })
 ///     }
 ///
-///     default fn fmt_iv(&self, f: &mut fmt::Formatter) -> std::fmt::Result {
+///     default fn fmt_iv(&self, f: &mut fmt::Formatter<'_>) -> std::fmt::Result {
 ///         self.fmt(f)
 ///     }
 /// }
@@ -326,7 +331,7 @@ macro_rules! impl_interpolatable_value {
                 FromStr::from_str(s).map_err(|err| convert_err(err, s))
             }
 
-            fn fmt_iv(&self, f: &mut fmt::Formatter) -> std::fmt::Result {
+            fn fmt_iv(&self, f: &mut fmt::Formatter<'_>) -> ::std::fmt::Result {
                 use std::fmt::Display;
                 self.fmt(f)
             }
@@ -342,7 +347,7 @@ impl InterpolatableValue for PathBuf {
         Ok(Path::new(s).to_owned())
     }
 
-    fn fmt_iv(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt_iv(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.display().fmt(f)
     }
 }
@@ -350,13 +355,13 @@ impl InterpolatableValue for PathBuf {
 /// A wrapper type to make `format!` call `fmt_iv` instead of `fmt`.
 struct DisplayInterpolatableValue<'a, V>(&'a V)
 where
-    V: 'a + InterpolatableValue;
+    V: InterpolatableValue;
 
 impl<'a, T> Display for DisplayInterpolatableValue<'a, T>
 where
     T: InterpolatableValue,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             DisplayInterpolatableValue(val) => val.fmt_iv(f),
         }
@@ -522,7 +527,7 @@ where
     /// Return a `&mut T` for this `RawOr<T>`, performing any necessary
     /// environment variable interpolations using the supplied `env` object
     /// and updating the value in place.
-    pub fn interpolate_env(&mut self, env: &Environment) -> Result<&mut T> {
+    pub fn interpolate_env(&mut self, env: &dyn Environment) -> Result<&mut T> {
         let RawOr(ref mut inner) = *self;
 
         // We have to very careful about how we destructure this value to
@@ -583,7 +588,7 @@ impl<T> Display for RawOr<T>
 where
     T: InterpolatableValue,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             RawOr(RawOrValue::Raw(ref raw)) => write!(f, "{}", raw),
             RawOr(RawOrValue::Value(ref value)) => {

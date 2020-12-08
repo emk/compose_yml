@@ -1,10 +1,10 @@
 //! Helper functions and types we use for (de)serialization.  These handle
 //! several common, annoying patterns in the `docker-compose.yml` format.
 
+use lazy_static::lazy_static;
 use regex::Regex;
-use serde::de;
 use serde::de::{
-    Deserialize, DeserializeOwned, Deserializer, MapAccess, SeqAccess, Visitor,
+    self, Deserialize, DeserializeOwned, Deserializer, MapAccess, SeqAccess, Visitor,
 };
 use serde::ser::{Serialize, Serializer};
 use std::collections::BTreeMap;
@@ -15,6 +15,7 @@ use super::interpolation::{raw, InterpolatableValue, RawOr};
 
 /// Test whether a value is false.  Used to determine when to serialize
 /// things.
+#[allow(clippy::trivially_copy_pass_by_ref)]
 pub fn is_false(b: &bool) -> bool {
     !b
 }
@@ -56,7 +57,7 @@ impl<'de> Visitor<'de> for ToStringVisitor {
         Ok(v.to_owned())
     }
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(formatter, "a value which can be converted to a string")
     }
 }
@@ -162,7 +163,7 @@ where
             Ok(map)
         }
 
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(formatter, "a map or a key/value list")
         }
     }
@@ -208,7 +209,7 @@ where
             Ok(map)
         }
 
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(formatter, "a map or a list of strings")
         }
     }
@@ -260,7 +261,7 @@ where
             Ok(items)
         }
 
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(formatter, "a string or a list of strings")
         }
     }

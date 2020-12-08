@@ -1,3 +1,7 @@
+//! Limits on resource use.
+
+use super::common::*;
+
 /// A limit imposed on the resources used by a process.
 ///
 /// We use `#[serde(untagged)]` to parse the two different variants of this enum
@@ -15,7 +19,7 @@ pub enum Ulimit {
         soft: i64,
         /// This limit can only be changed by root.
         hard: i64,
-    }
+    },
 }
 
 impl InterpolateAll for Ulimit {}
