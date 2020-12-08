@@ -1,6 +1,4 @@
-// This is not a normal Rust module! It's included directly into v2.rs,
-// possibly after build-time preprocessing.  See v2.rs for an explanation
-// of how this works.
+use super::common::*;
 
 /// A check that’s run to determine whether or not containers for this service are “healthy”.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
