@@ -95,10 +95,16 @@ fn path_str_from_docker(s: &str) -> Result<String> {
 /// Convert from Docker path syntax to Windows path syntax.
 #[cfg(windows)]
 fn path_str_from_docker(s: &str) -> Result<String> {
+    const SPECIAL_PATHS: [&str; 3] = ["/dev", "/var", "/sys"];
+
     if s.starts_with("/") {
         lazy_static! {
             static ref DRIVE_LETTER: Regex =
                 Regex::new(r#"/(?P<letter>[A-Za-z])/"#).unwrap();
+        }
+
+        if SPECIAL_PATHS.iter().any(|p| s.starts_with(p)) {
+            return Ok(s.to_owned());
         }
 
         if DRIVE_LETTER.is_match(s) {
@@ -284,4 +290,17 @@ fn windows_volume_mounts_should_have_string_representations() {
         assert_eq!(mode.to_string(), s);
         assert_eq!(mode, VolumeMount::from_str(s).unwrap());
     }
+}
+
+#[test]
+fn windows_special_volume_mounts_should_not_be_converted() -> Result<(), Error> {
+    const SPECIAL_PATHS: [&str; 4] =
+        ["/dev/shm", "/var/run/docker.sock", "/sys", "/var/run"];
+
+    for path in SPECIAL_PATHS.iter() {
+        let vol: HostVolume = path.parse()?;
+        assert_eq!(vol, HostVolume::Path(Path::new(path).to_owned()));
+    }
+
+    Ok(())
 }
