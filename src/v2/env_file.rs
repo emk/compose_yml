@@ -6,8 +6,7 @@ use std::fs;
 use std::io::{self, BufRead};
 use std::path::Path;
 
-use crate::errors::*;
-use super::interpolation::{escape, RawOr};
+use super::common::*;
 
 /// A file pointed to by an `env_file:` field.
 pub struct EnvFile {
@@ -21,7 +20,7 @@ impl EnvFile {
         let mut vars: BTreeMap<String, String> = BTreeMap::new();
         let reader = io::BufReader::new(input);
         for line_result in reader.lines() {
-            let line = line_result.chain_err(|| "I/O error")?;
+            let line = line_result.map_err(Error::IoError)?;
 
             lazy_static! {
                 static ref BLANK: Regex =
@@ -35,21 +34,23 @@ impl EnvFile {
                 continue;
             }
 
-            let caps = VAR.captures(&line)
-                .ok_or_else(|| ErrorKind::ParseEnv(line.clone()))?;
+            let caps = VAR.captures(&line).ok_or_else(|| Error::ParseEnv {
+                line: line.to_owned(),
+            })?;
             vars.insert(
                 caps.get(1).unwrap().as_str().to_owned(),
                 caps.get(2).unwrap().as_str().to_owned(),
             );
         }
-        Ok(EnvFile { vars: vars })
+        Ok(EnvFile { vars })
     }
 
     /// Load an `EnvFile` from the disk.
     pub fn load(path: &Path) -> Result<EnvFile> {
-        let mkerr = || ErrorKind::ReadFile(path.to_owned());
-        let f = fs::File::open(path).chain_err(&mkerr)?;
-        EnvFile::read(io::BufReader::new(f)).chain_err(&mkerr)
+        let f = fs::File::open(path)
+            .map_err(|err| Error::read_file(path.to_owned(), err))?;
+        EnvFile::read(io::BufReader::new(f))
+            .map_err(|err| Error::read_file(path.to_owned(), err))
     }
 
     /// Convert this `EnvFile` to the format we use for the `environment`

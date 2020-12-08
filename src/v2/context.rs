@@ -1,6 +1,4 @@
-// This is not a normal Rust module! It's included directly into v2.rs,
-// possibly after build-time preprocessing.  See v2.rs for an explanation
-// of how this works.
+use super::common::*;
 
 /// Either a local directory path, or a Git-format "URL" (not necessarily a
 /// real URL, alas).
@@ -37,10 +35,10 @@ impl Context {
     /// this one, but without any subdirectory part
     pub fn without_repository_subdirectory(&self) -> Context {
         match self {
-            &Context::Dir(_) => self.clone(),
-            &Context::GitUrl(ref git_url) => {
+            Context::Dir(_) => self.clone(),
+            Context::GitUrl(git_url) => {
                 Context::GitUrl(git_url.without_subdirectory())
-            },
+            }
         }
     }
 }
@@ -56,10 +54,10 @@ impl FromStr for Context {
 }
 
 impl fmt::Display for Context {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &Context::Dir(ref path) => write!(f, "{}", path.display()),
-            &Context::GitUrl(ref url) => write!(f, "{}", url),
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self {
+            Context::Dir(path) => write!(f, "{}", path.display()),
+            Context::GitUrl(url) => write!(f, "{}", url),
         }
     }
 }
@@ -67,24 +65,28 @@ impl fmt::Display for Context {
 #[test]
 fn context_may_contain_git_urls() {
     // See http://stackoverflow.com/a/34120821/12089
-    let urls =
-        vec!("git://github.com/docker/docker",
-             "git@github.com:docker/docker.git",
-             "git@bitbucket.org:atlassianlabs/atlassian-docker.git",
-             "https://github.com/docker/docker.git",
-             "http://github.com/docker/docker.git",
-             "github.com/docker/docker.git");
+    let urls = vec![
+        "git://github.com/docker/docker",
+        "git@github.com:docker/docker.git",
+        "git@bitbucket.org:atlassianlabs/atlassian-docker.git",
+        "https://github.com/docker/docker.git",
+        "http://github.com/docker/docker.git",
+        "github.com/docker/docker.git",
+    ];
 
     for url in urls {
         let context: Context = FromStr::from_str(url).unwrap();
-        assert_eq!(context, Context::GitUrl(GitUrl::new(url.to_string()).unwrap()));
+        assert_eq!(
+            context,
+            Context::GitUrl(GitUrl::new(url.to_string()).unwrap())
+        );
         assert_eq!(context.to_string(), url);
     }
 }
 
 #[test]
 fn context_may_contain_dir_paths() {
-    let paths = vec!(".", "./foo", "./foo/bar/");
+    let paths = vec![".", "./foo", "./foo/bar/"];
     for path in paths {
         let context: Context = FromStr::from_str(path).unwrap();
         assert_eq!(context, Context::Dir(Path::new(path).to_owned()));
@@ -95,15 +97,29 @@ fn context_may_contain_dir_paths() {
 #[test]
 fn without_subdirectory_removes_the_optional_subdir() {
     let dir: Context = FromStr::from_str("./foo").unwrap();
-    let plain_repo: Context = FromStr::from_str("git@github.com:docker/docker.git").unwrap();
-    let repo_with_branch: Context = FromStr::from_str("git@github.com:docker/docker.git#somebranch").unwrap();
-    let repo_with_subdir: Context = FromStr::from_str("git@github.com:docker/docker.git#:somedir").unwrap();
-    let repo_with_branch_and_subdir: Context = FromStr::from_str("git@github.com:docker/docker.git#somebranch:somedir").unwrap();
+    let plain_repo: Context =
+        FromStr::from_str("git@github.com:docker/docker.git").unwrap();
+    let repo_with_branch: Context =
+        FromStr::from_str("git@github.com:docker/docker.git#somebranch").unwrap();
+    let repo_with_subdir: Context =
+        FromStr::from_str("git@github.com:docker/docker.git#:somedir").unwrap();
+    let repo_with_branch_and_subdir: Context =
+        FromStr::from_str("git@github.com:docker/docker.git#somebranch:somedir")
+            .unwrap();
 
     assert_eq!(dir, dir.without_repository_subdirectory());
     assert_eq!(plain_repo, plain_repo.without_repository_subdirectory());
-    assert_eq!(repo_with_branch, repo_with_branch.without_repository_subdirectory());
+    assert_eq!(
+        repo_with_branch,
+        repo_with_branch.without_repository_subdirectory()
+    );
 
-    assert_eq!(plain_repo, repo_with_subdir.without_repository_subdirectory());
-    assert_eq!(repo_with_branch, repo_with_branch_and_subdir.without_repository_subdirectory());
+    assert_eq!(
+        plain_repo,
+        repo_with_subdir.without_repository_subdirectory()
+    );
+    assert_eq!(
+        repo_with_branch,
+        repo_with_branch_and_subdir.without_repository_subdirectory()
+    );
 }
