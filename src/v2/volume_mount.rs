@@ -19,7 +19,11 @@ impl fmt::Display for HostVolume {
         match self {
             HostVolume::Path(path) => {
                 let p = path_str_to_docker(path.to_str().ok_or(fmt::Error)?);
-                if path.is_absolute() || p.starts_with("./") || p.starts_with("../") {
+                if path.is_absolute()
+                    || p.starts_with("./")
+                    || p.starts_with("../")
+                    || is_special_path(&p)
+                {
                     write!(f, "{}", p)
                 } else {
                     // Relative paths must begin with `./` when serialized.
@@ -86,6 +90,19 @@ impl FromStr for HostVolume {
     }
 }
 
+/// There is no special directories on non-Windows
+#[cfg(not(windows))]
+fn is_special_path(s: &str) -> bool {
+    false
+}
+
+/// Leave these special directories unchanged on Windows
+#[cfg(windows)]
+fn is_special_path(s: &str) -> bool {
+    const SPECIAL_PATHS: [&str; 3] = ["/dev", "/var", "/sys"];
+    SPECIAL_PATHS.iter().any(|p| s.starts_with(p))
+}
+
 /// Leave non-Windows paths unchanged.
 #[cfg(not(windows))]
 fn path_str_from_docker(s: &str) -> Result<String> {
@@ -99,6 +116,10 @@ fn path_str_from_docker(s: &str) -> Result<String> {
         lazy_static! {
             static ref DRIVE_LETTER: Regex =
                 Regex::new(r#"/(?P<letter>[A-Za-z])/"#).unwrap();
+        }
+
+        if is_special_path(s) {
+            return Ok(s.to_owned());
         }
 
         if DRIVE_LETTER.is_match(s) {
@@ -284,4 +305,18 @@ fn windows_volume_mounts_should_have_string_representations() {
         assert_eq!(mode.to_string(), s);
         assert_eq!(mode, VolumeMount::from_str(s).unwrap());
     }
+}
+
+#[test]
+fn windows_special_volume_mounts_should_not_be_converted() -> Result<(), Error> {
+    const SPECIAL_PATHS: [&str; 4] =
+        ["/dev/shm", "/var/run/docker.sock", "/sys", "/var/run"];
+
+    for path in SPECIAL_PATHS.iter() {
+        let vol: HostVolume = path.parse()?;
+        assert_eq!(vol, HostVolume::Path(Path::new(path).to_owned()));
+        assert_eq!(vol.to_string(), *path);
+    }
+
+    Ok(())
 }
